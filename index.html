@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fragile Dworf Colony</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            display: flex;
+            gap: 20px;
+            height: 100vh;
+        }
+        
+        #gameCanvas {
+            border: 3px solid #FFD700;
+            background: linear-gradient(180deg, #0f0f23, #16213e);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+            border-radius: 10px;
+        }
+        
+        #rightPanel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 280px;
+        }
+        
+        #stats {
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+        }
+        
+        #rocketProgress {
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #FF6B6B;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.2);
+        }
+        
+        #stabilityPanel {
+            background: rgba(0,0,0,0.9);
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px solid #FF4444;
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
+        }
+        
+        .stat-item {
+            margin: 12px 0;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stat-value {
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .gold-value {
+            color: #FFD700;
+            text-shadow: 0 0 10px #FFD700;
+        }
+        
+        #title {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #FFD700;
+            text-shadow: 0 0 20px #FFD700;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 20px #FFD700; }
+            to { text-shadow: 0 0 30px #FFD700, 0 0 40px #FFD700; }
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: 15px;
+            background: #333;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+            border: 1px solid #555;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #FFD700, #FF6B6B, #4ECDC4);
+            transition: width 0.5s ease;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        .rocket-part {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid #4ECDC4;
+        }
+        
+        .rocket-part.completed {
+            background: rgba(76, 205, 196, 0.2);
+            border-left-color: #4ECDC4;
+        }
+        
+        .rocket-part.building {
+            background: rgba(255, 215, 0, 0.2);
+            border-left-color: #FFD700;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        #log {
+            background: rgba(0,0,0,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            height: 150px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .log-entry {
+            margin: 3px 0;
+            opacity: 0.8;
+        }
+        
+        .log-entry.important {
+            color: #FFD700;
+            opacity: 1;
+            font-weight: bold;
+        }
+        
+        .log-entry.disaster {
+            color: #FF4444;
+            font-weight: bold;
+            text-shadow: 0 0 5px #FF4444;
+        }
+        
+        .stability-meter {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .stability-bar {
+            height: 100%;
+            transition: width 0.3s ease, background-color 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        .stability-high { background: linear-gradient(90deg, #4CAF50, #8BC34A); }
+        .stability-medium { background: linear-gradient(90deg, #FF9800, #FFC107); }
+        .stability-low { background: linear-gradient(90deg, #FF5722, #F44336); }
+        .stability-critical { background: linear-gradient(90deg, #B71C1C, #D32F2F); animation: shake 0.5s infinite; }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+        
+        .permission-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 15px;
+            cursor: pointer;
+            margin: 10px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .permission-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .permission-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="title">🚀 Fragile Dworf Colony 🚀</div>
+    
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="700" height="500"></canvas>
+        
+        <div id="rightPanel">
+            <div id="stats">
+                <div style="color: #FFD700; font-size: 18px; margin-bottom: 15px; text-align: center;">
+                    ⚡ Colony Resources ⚡
+                </div>
+                
+                <div class="stat-item">
+                    <span>🏅 Forbidden Gold:</span>
+                    <span class="stat-value gold-value" id="goldCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>👤 Dworfs:</span>
+                    <span class="stat-value" id="dworfsCount">3</span>
+                </div>
+                <div class="stat-item">
+                    <span>⚙️ Suction Machines:</span>
+                    <span class="stat-value" id="machinesCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>🏠 City Buildings:</span>
+                    <span class="stat-value" id="buildingsCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>⚡ Gold/sec:</span>
+                    <span class="stat-value" id="goldPerSec">1.0</span>
+                </div>
+            </div>
+            
+            <div id="stabilityPanel">
+                <div style="color: #FF4444; font-size: 16px; margin-bottom: 10px; text-align: center;">
+                    ⚠️ Colony Stability ⚠️
+                </div>
+                
+                <div class="stability-meter">
+                    <div class="stability-bar stability-high" id="stabilityBar" style="width: 100%"></div>
+                </div>
+                <div style="text-align: center; font-size: 12px; color: #aaa;" id="stabilityText">
+                    Stable
+                </div>
+                
+                <button id="enableMotion" class="permission-btn">Enable Motion Detection</button>
+                <button id="testMotion" class="permission-btn" style="background: #2196F3;">Test Motion System</button>
+                <button id="testBall" class="permission-btn" style="background: #9C27B0;">Test Ball Movement</button>
+                
+                <div style="margin-top: 15px; font-size: 12px; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px;">
+                    <div style="color: #4ECDC4; margin-bottom: 5px;">📊 Accelerometer Debug:</div>
+                    <div>X: <span id="debugX">0.0</span> m/s²</div>
+                    <div>Y: <span id="debugY">0.0</span> m/s²</div>
+                    <div>Z: <span id="debugZ">0.0</span> m/s²</div>
+                    <div>Intensity: <span id="debugIntensity">0.0</span></div>
+                    <div>Status: <span id="debugQueue">Inactive</span></div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2);">
+                        <div style="color: #FF6B6B;">🎯 Visual Test:</div>
+                        <div>Look for red "ACCEL" ball moving on screen</div>
+                        <div>Ball should move when you tilt device</div>
+                    </div>
+                </div>
+                
+                <div style="font-size: 11px; color: #888; line-height: 1.3; margin-top: 10px;">
+                    💡 Keep your device steady to maintain colony stability!
+                </div>
+            </div>
+            
+            <div id="rocketProgress">
+                <div style="color: #FF6B6B; font-size: 18px; margin-bottom: 15px; text-align: center;">
+                    🚀 Rocket Progress 🚀
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="overallProgress" style="width: 0%"></div>
+                </div>
+                <div style="text-align: center; font-size: 12px; color: #aaa;" id="progressText">
+                    Planning phase...
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <div class="rocket-part" id="engine">🔥 Engine: Not started</div>
+                    <div class="rocket-part" id="fuel">⛽ Fuel Tank: Not started</div>
+                    <div class="rocket-part" id="hull">🛡️ Hull: Not started</div>
+                    <div class="rocket-part" id="navigation">📡 Navigation: Not started</div>
+                    <div class="rocket-part" id="launchpad">🏗️ Launch Pad: Not started</div>
+                </div>
+            </div>
+            
+            <div id="log">
+                <div style="color: #4ECDC4; margin-bottom: 10px;">📜 Colony Log:</div>
+                <div class="log-entry">Colony established. Dworfs ready to work!</div>
+                <div class="log-entry">Scanning for Forbidden Gold deposits...</div>
+                <div class="log-entry important">⚠️ Keep device steady for optimal stability!</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Motion detection variables - using the working approach
+        let isTracking = false;
+        let stabilityLevel = 100;
+        let motionFlash = 0;
+        let lastMotionIntensity = 0;
+        let lastMotionDetected = 0;
+        
+        // Working accelerometer variables (from your example)
+        let isAccelerometerEnabled = false;
+        let currentAccelX = 0;
+        let currentAccelY = 0;
+        let currentAccelZ = 9.8; // Start with gravity
+        let currentAlpha = 0;
+        let currentBeta = 0;
+        let currentGamma = 0;
+        
+        // Game state
+        const game = {
+            gold: 0,
+            goldPerSecond: 1,
+            dworfs: [],
+            machines: [],
+            buildings: [],
+            goldDeposits: [],
+            time: 0,
+            rocketParts: {
+                engine: { cost: 1000, built: false, building: false, progress: 0 },
+                fuel: { cost: 2500, built: false, building: false, progress: 0 },
+                hull: { cost: 5000, built: false, building: false, progress: 0 },
+                navigation: { cost: 8000, built: false, building: false, progress: 0 },
+                launchpad: { cost: 15000, built: false, building: false, progress: 0 }
+            },
+            milestones: {
+                firstMachine: false,
+                firstBuilding: false,
+                hundredGold: false,
+                thousandGold: false,
+                tenThousandGold: false
+            }
+        };
+        
+        // Simple motion detection system - based on working code
+        function handleMotionDamage(intensity) {
+            lastMotionIntensity = intensity;
+            lastMotionDetected = Date.now();
+            
+            // Simple damage system - any motion above threshold causes damage
+            if (intensity > 0.5) {
+                motionFlash = 20;
+                stabilityLevel = Math.max(0, stabilityLevel - (intensity * 3));
+                
+                // Log motion detection
+                addLog('📳 Motion detected! Intensity: ' + intensity.toFixed(2), true, 'disaster');
+                
+                // Random damage to colony
+                if (Math.random() < 0.3) {
+                    destroyRandomThing();
+                }
+            }
+        }
+        
+        // Working accelerometer event handlers (from your example)
+        function handleAccelerometerMotion(event) {
+            console.log('Accelerometer motion event received!', event);
+            
+            // Get acceleration data (including gravity)
+            const accel = event.accelerationIncludingGravity;
+            if (accel) {
+                const x = accel.x || 0;
+                const y = accel.y || 0;
+                const z = accel.z || 0;
+                
+                // Store current values
+                currentAccelX = x;
+                currentAccelY = y;
+                currentAccelZ = z;
+                
+                // Update debug display
+                document.getElementById('debugX').textContent = x.toFixed(2);
+                document.getElementById('debugY').textContent = y.toFixed(2);
+                document.getElementById('debugZ').textContent = z.toFixed(2);
+                
+                // Calculate motion intensity
+                const intensity = Math.sqrt(x * x + y * y + z * z);
+                document.getElementById('debugIntensity').textContent = intensity.toFixed(2);
+                
+                // Update status
+                document.getElementById('debugQueue').textContent = 'Active';
+                
+                // Log motion data
+                console.log('Accelerometer Motion: X:' + x.toFixed(2) + ' Y:' + y.toFixed(2) + ' Z:' + z.toFixed(2) + ' Intensity:' + intensity.toFixed(2));
+                
+                // Process motion damage
+                handleMotionDamage(intensity);
+            }
+        }
+        
+        // Keep old handler for compatibility
+        function handleDeviceMotion(event) {
+            handleAccelerometerMotion(event);
+        }
+        
+        function handleAccelerometerOrientation(event) {
+            console.log('Accelerometer orientation event received!', event);
+            
+            const alpha = event.alpha || 0; // Z-axis rotation
+            const beta = event.beta || 0;   // X-axis rotation  
+            const gamma = event.gamma || 0; // Y-axis rotation
+            
+            // Store current values
+            currentAlpha = alpha;
+            currentBeta = beta;
+            currentGamma = gamma;
+            
+            // Update debug display for orientation
+            document.getElementById('debugX').textContent = 'α:' + alpha.toFixed(1);
+            document.getElementById('debugY').textContent = 'β:' + beta.toFixed(1);
+            document.getElementById('debugZ').textContent = 'γ:' + gamma.toFixed(2);
+            
+            // Calculate motion intensity from orientation changes
+            const orientationIntensity = Math.sqrt(alpha * alpha + beta * beta + gamma * gamma) * 0.01;
+            document.getElementById('debugIntensity').textContent = orientationIntensity.toFixed(2);
+            
+            if (orientationIntensity > 0.1) {
+                console.log('Accelerometer Orientation: Alpha:' + alpha.toFixed(2) + ' Beta:' + beta.toFixed(2) + ' Gamma:' + orientationIntensity.toFixed(2));
+                handleMotionDamage(orientationIntensity);
+            }
+        }
+        
+        // Keep old handler for compatibility
+        function handleDeviceOrientation(event) {
+            handleAccelerometerOrientation(event);
+        }
+        
+        function destroyRandomThing() {
+            const targets = [];
+            
+            if (game.dworfs.length > 1) targets.push('dwarf');
+            if (game.machines.length > 0) targets.push('machine');
+            if (game.buildings.length > 0) targets.push('building');
+            if (game.goldDeposits.length > 0) targets.push('deposit');
+            
+            if (targets.length === 0) return false;
+            
+            const target = targets[Math.floor(Math.random() * targets.length)];
+            
+            switch (target) {
+                case 'dwarf':
+                    if (game.dworfs.length > 1) {
+                        game.dworfs.pop();
+                        return true;
+                    }
+                    break;
+                case 'machine':
+                    if (game.machines.length > 0) {
+                        game.machines.pop();
+                        return true;
+                    }
+                    break;
+                case 'building':
+                    if (game.buildings.length > 0) {
+                        game.buildings.pop();
+                        return true;
+                    }
+                    break;
+                case 'deposit':
+                    if (game.goldDeposits.length > 0) {
+                        game.goldDeposits.pop();
+                        return true;
+                    }
+                    break;
+            }
+            return false;
+        }
+        
+        function applyQueuedDamage() {
+            if (motionDamageQueue.length === 0) return;
+            
+            const damage = motionDamageQueue.shift();
+            const disasters = [
+                '💥 Seismic activity detected!',
+                '🌪️ Mysterious tremor strikes!',
+                '⚡ Unstable energy field!',
+                '🔮 Cosmic interference!',
+                '👻 Strange phenomena!',
+                '🌊 Reality fluctuation!'
+            ];
+            
+            if (damage.type === 'catastrophic') {
+                const destroyed = game.dworfs.length + game.machines.length + game.buildings.length;
+                game.dworfs = game.dworfs.slice(0, 1);
+                game.machines = [];
+                game.buildings = [];
+                game.goldDeposits = [];
+                game.gold = Math.floor(game.gold * 0.1);
+                
+                addLog('☢️ CATASTROPHIC ' + disasters[Math.floor(Math.random() * disasters.length)], true, 'disaster');
+                addLog('💀 Colony devastated! Lost ' + destroyed + ' structures!', true, 'disaster');
+                
+            } else if (damage.type === 'major') {
+                let destroyed = 0;
+                for (let i = 0; i < damage.amount; i++) {
+                    if (destroyRandomThing()) destroyed++;
+                }
+                addLog('⚠️ ' + disasters[Math.floor(Math.random() * disasters.length)], true, 'disaster');
+                if (destroyed > 0) {
+                    addLog('💥 Lost ' + destroyed + ' colony assets!', true, 'disaster');
+                }
+                
+            } else {
+                let destroyed = 0;
+                for (let i = 0; i < damage.amount; i++) {
+                    if (destroyRandomThing()) destroyed++;
+                }
+                if (destroyed > 0) {
+                    addLog('⚡ ' + disasters[Math.floor(Math.random() * disasters.length)], false, 'disaster');
+                    addLog('💔 Lost ' + destroyed + ' assets to instability', false, 'disaster');
+                }
+            }
+        }
+        
+        // Working accelerometer functions (from your example)
+        async function requestPermissioniOS() {
+            // iOS 13+ requires explicit permission request
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                try {
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    return permission === 'granted';
+                } catch (error) {
+                    console.error('Error requesting permission:', error);
+                    return false;
+                }
+            }
+            return true; // Not iOS or older iOS
+        }
+        
+        async function enableAccelerometer() {
+            addLog('Requesting permissions...', true);
+            
+            try {
+                // Check for iOS permission requirement
+                const hasPermission = await requestPermissioniOS();
+                
+                if (!hasPermission) {
+                    addLog('❌ Permission denied. Please enable in Safari settings.', true, 'disaster');
+                    return;
+                }
+                
+                // Check if events are supported
+                if (!window.DeviceMotionEvent && !window.DeviceOrientationEvent) {
+                    addLog('❌ Device motion/orientation not supported on this device.', true, 'disaster');
+                    return;
+                }
+                
+                // Add event listeners
+                if (window.DeviceMotionEvent) {
+                    window.addEventListener('devicemotion', handleAccelerometerMotion);
+                    addLog('✓ DeviceMotionEvent listener added', false);
+                }
+                
+                if (window.DeviceOrientationEvent) {
+                    window.addEventListener('deviceorientation', handleAccelerometerOrientation);
+                    addLog('✓ DeviceOrientationEvent listener added', false);
+                }
+                
+                isAccelerometerEnabled = true;
+                isTracking = true;
+                addLog('✅ Accelerometer enabled! Tilt your device.', true);
+                addLog('⚠️ Keep device steady for stability!', true);
+                addLog('🧪 Try tapping or moving your device!', true);
+                
+                document.getElementById('enableMotion').textContent = 'Test Motion Damage';
+                document.getElementById('enableMotion').disabled = false;
+                document.getElementById('enableMotion').style.background = '#FF6B6B';
+                
+            } catch (error) {
+                console.error('Error enabling accelerometer:', error);
+                addLog('❌ Failed to enable accelerometer. Try refreshing.', true, 'disaster');
+            }
+        }
+        
+        // Keep the old function for compatibility
+        async function enableMotionDetection() {
+            await enableAccelerometer();
+        }
+        
+        function simulateMotionDamage() {
+            if (!isTracking) return;
+            
+            // Simple test motion
+            const testIntensity = 2.0;
+            
+            // Simulate accelerometer data
+            currentAccelX = 5.0;
+            currentAccelY = -3.0;
+            currentAccelZ = 9.8;
+            
+            document.getElementById('debugX').textContent = currentAccelX.toFixed(2);
+            document.getElementById('debugY').textContent = currentAccelY.toFixed(2);
+            document.getElementById('debugZ').textContent = currentAccelZ.toFixed(2);
+            document.getElementById('debugIntensity').textContent = testIntensity.toFixed(2);
+            document.getElementById('debugQueue').textContent = 'Active';
+            
+            addLog('🧪 Simulating motion damage (' + testIntensity.toFixed(1) + ')', true, 'disaster');
+            addLog('🎯 Ball should now move! Check screen for red ACCEL ball', true);
+            handleMotionDamage(testIntensity);
+        }
+        
+        function testMotionDetection() {
+            addLog('🧪 Testing motion detection system...', true);
+            
+            // Check if events are supported
+            if (window.DeviceMotionEvent) {
+                addLog('✅ DeviceMotionEvent supported', false);
+            } else {
+                addLog('❌ DeviceMotionEvent NOT supported', true, 'disaster');
+            }
+            
+            if (window.DeviceOrientationEvent) {
+                addLog('✅ DeviceOrientationEvent supported', false);
+            } else {
+                addLog('❌ DeviceOrientationEvent NOT supported', true, 'disaster');
+            }
+            
+            // Check if we're on HTTPS/localhost
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                addLog('⚠️ HTTPS required for device sensors in production', true, 'disaster');
+            } else {
+                addLog('✅ HTTPS/localhost detected', false);
+            }
+        }
+        
+        function updateStability() {
+            if (isTracking) {
+                // Slower stability recovery to make motion damage more impactful
+                stabilityLevel = Math.min(100, stabilityLevel + 0.05);
+            }
+            
+            if (motionFlash > 0) motionFlash--;
+            
+            const stabilityBar = document.getElementById('stabilityBar');
+            const stabilityText = document.getElementById('stabilityText');
+            
+            stabilityBar.style.width = stabilityLevel + '%';
+            
+            const motionText = 'Motion: ' + lastMotionIntensity.toFixed(1);
+            
+            if (stabilityLevel > 75) {
+                stabilityBar.className = 'stability-bar stability-high';
+                stabilityText.textContent = 'Stable (' + motionText + ')';
+            } else if (stabilityLevel > 50) {
+                stabilityBar.className = 'stability-bar stability-medium';
+                stabilityText.textContent = 'Unstable (' + motionText + ')';
+            } else if (stabilityLevel > 25) {
+                stabilityBar.className = 'stability-bar stability-low';
+                stabilityText.textContent = 'Dangerous (' + motionText + ')';
+            } else {
+                stabilityBar.className = 'stability-bar stability-critical';
+                stabilityText.textContent = 'Critical! (' + motionText + ')';
+            }
+        }
+        
+        // Dworf class
+        class Dworf {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.targetX = x;
+                this.targetY = y;
+                this.speed = 0.8 + Math.random() * 0.4;
+                this.task = 'exploring';
+                this.workTimer = 0;
+                this.target = null;
+                this.color = 'hsl(' + (Math.random() * 60 + 20) + ', 70%, 60%)';
+                this.goldCarried = 0;
+                this.efficiency = 0.8 + Math.random() * 0.4;
+                this.sparkles = [];
+            }
+            
+            update() {
+                this.updateSparkles();
+                
+                const dx = this.targetX - this.x;
+                const dy = this.targetY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 3) {
+                    this.x += (dx / distance) * this.speed;
+                    this.y += (dy / distance) * this.speed;
+                } else {
+                    this.handleTask();
+                }
+                
+                if (this.task === 'idle' || (this.task === 'exploring' && Math.random() < 0.01)) {
+                    this.findNewTask();
+                }
+            }
+            
+            updateSparkles() {
+                this.sparkles = this.sparkles.filter(sparkle => {
+                    sparkle.life--;
+                    sparkle.y -= 1;
+                    return sparkle.life > 0;
+                });
+                
+                if (this.goldCarried > 0 && Math.random() < 0.3) {
+                    this.sparkles.push({
+                        x: this.x + (Math.random() - 0.5) * 20,
+                        y: this.y + (Math.random() - 0.5) * 20,
+                        life: 20
+                    });
+                }
+            }
+            
+            findNewTask() {
+                const totalGold = game.gold;
+                
+                if (this.shouldBuildRocket(totalGold)) {
+                    this.startRocketConstruction();
+                } else if (this.shouldBuildInfrastructure(totalGold)) {
+                    this.startInfrastructureConstruction();
+                } else {
+                    this.findGoldDeposit();
+                }
+            }
+            
+            shouldBuildRocket(gold) {
+                for (let part in game.rocketParts) {
+                    const data = game.rocketParts[part];
+                    if (!data.built && !data.building && gold >= data.cost) {
+                        return part;
+                    }
+                }
+                return false;
+            }
+            
+            shouldBuildInfrastructure(gold) {
+                const machineRatio = game.machines.length / game.dworfs.length;
+                const buildingRatio = game.buildings.length / game.dworfs.length;
+                
+                if (machineRatio < 0.5 && gold >= 50) return 'machine';
+                if (buildingRatio < 0.3 && gold >= 100) return 'building';
+                return false;
+            }
+            
+            startRocketConstruction() {
+                const part = this.shouldBuildRocket(game.gold);
+                if (part) {
+                    this.task = 'building_rocket';
+                    this.workTimer = 600;
+                    this.rocketPart = part;
+                    this.targetX = 350;
+                    this.targetY = 100;
+                    
+                    game.rocketParts[part].building = true;
+                    game.gold -= game.rocketParts[part].cost;
+                    
+                    addLog('🚀 Starting ' + part + ' construction!', true);
+                }
+            }
+            
+            startInfrastructureConstruction() {
+                const type = this.shouldBuildInfrastructure(game.gold);
+                if (type === 'machine') {
+                    this.task = 'building_machine';
+                    this.workTimer = 300;
+                    this.targetX = Math.random() * 600 + 50;
+                    this.targetY = Math.random() * 400 + 50;
+                    game.gold -= 50;
+                } else if (type === 'building') {
+                    this.task = 'building_structure';
+                    this.workTimer = 400;
+                    this.targetX = Math.random() * 600 + 50;
+                    this.targetY = Math.random() * 400 + 50;
+                    game.gold -= 100;
+                }
+            }
+            
+            findGoldDeposit() {
+                if (game.goldDeposits.length === 0) {
+                    game.goldDeposits.push({
+                        x: Math.random() * 600 + 50,
+                        y: Math.random() * 400 + 50,
+                        gold: 50 + Math.random() * 100
+                    });
+                }
+                
+                let nearest = game.goldDeposits[0];
+                let minDist = Infinity;
+                
+                for (let i = 0; i < game.goldDeposits.length; i++) {
+                    const deposit = game.goldDeposits[i];
+                    const dist = Math.sqrt((this.x - deposit.x) * (this.x - deposit.x) + (this.y - deposit.y) * (this.y - deposit.y));
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearest = deposit;
+                    }
+                }
+                
+                this.task = 'mining';
+                this.target = nearest;
+                this.targetX = nearest.x;
+                this.targetY = nearest.y;
+            }
+            
+            handleTask() {
+                switch (this.task) {
+                    case 'mining':
+                        this.workTimer--;
+                        if (this.workTimer <= 0) {
+                            if (this.target && this.target.gold > 0) {
+                                const mined = Math.min(5, this.target.gold);
+                                this.target.gold -= mined;
+                                this.goldCarried += mined;
+                                
+                                if (this.target.gold <= 0) {
+                                    const index = game.goldDeposits.indexOf(this.target);
+                                    if (index > -1) game.goldDeposits.splice(index, 1);
+                                }
+                            }
+                            
+                            this.task = 'returning';
+                            this.targetX = 350;
+                            this.targetY = 250;
+                            this.workTimer = 60;
+                        }
+                        break;
+                        
+                    case 'returning':
+                        if (this.goldCarried > 0) {
+                            game.gold += this.goldCarried * this.efficiency;
+                            this.goldCarried = 0;
+                        }
+                        this.task = 'idle';
+                        break;
+                        
+                    case 'building_machine':
+                        this.workTimer--;
+                        if (this.workTimer <= 0) {
+                            game.machines.push({
+                                x: this.targetX,
+                                y: this.targetY,
+                                efficiency: 1 + Math.random()
+                            });
+                            this.task = 'idle';
+                            if (!game.milestones.firstMachine) {
+                                game.milestones.firstMachine = true;
+                                addLog('🎉 First Suction Machine built!', true);
+                            }
+                        }
+                        break;
+                        
+                    case 'building_structure':
+                        this.workTimer--;
+                        if (this.workTimer <= 0) {
+                            game.buildings.push({
+                                x: this.targetX,
+                                y: this.targetY,
+                                type: Math.random() < 0.5 ? 'house' : 'lab'
+                            });
+                            this.task = 'idle';
+                            if (!game.milestones.firstBuilding) {
+                                game.milestones.firstBuilding = true;
+                                addLog('🏠 First city building completed!', true);
+                            }
+                        }
+                        break;
+                        
+                    case 'building_rocket':
+                        this.workTimer--;
+                        const part = game.rocketParts[this.rocketPart];
+                        part.progress = 1 - (this.workTimer / 600);
+                        
+                        if (this.workTimer <= 0) {
+                            part.built = true;
+                            part.building = false;
+                            part.progress = 1;
+                            this.task = 'idle';
+                            addLog('✅ ' + this.rocketPart + ' completed!', true);
+                            
+                            let allComplete = true;
+                            for (let p in game.rocketParts) {
+                                if (!game.rocketParts[p].built) {
+                                    allComplete = false;
+                                    break;
+                                }
+                            }
+                            
+                            if (allComplete) {
+                                addLog('🎊 ROCKET COMPLETE! READY FOR LAUNCH!', true);
+                                setTimeout(function() {
+                                    addLog('🚀 LAUNCHING TO OUTER SPACE!', true);
+                                }, 2000);
+                            }
+                        }
+                        break;
+                }
+            }
+            
+            draw() {
+                const self = this;
+                
+                self.sparkles.forEach(function(sparkle) {
+                    ctx.fillStyle = 'rgba(255, 215, 0, ' + (sparkle.life / 20) + ')';
+                    ctx.fillRect(sparkle.x, sparkle.y, 2, 2);
+                });
+                
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(self.x - 6, self.y + 8, 12, 4);
+                
+                ctx.fillStyle = self.color;
+                ctx.fillRect(self.x - 6, self.y - 8, 12, 16);
+                
+                ctx.fillStyle = '#FFDBAC';
+                ctx.beginPath();
+                ctx.arc(self.x, self.y - 10, 6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#000';
+                ctx.fillRect(self.x - 2, self.y - 12, 1, 1);
+                ctx.fillRect(self.x + 1, self.y - 12, 1, 1);
+                
+                ctx.fillStyle = '#8B0000';
+                ctx.fillRect(self.x - 7, self.y - 17, 14, 5);
+                
+                switch (self.task) {
+                    case 'mining':
+                        ctx.fillStyle = '#8B4513';
+                        ctx.fillRect(self.x + 8, self.y - 5, 8, 2);
+                        ctx.fillStyle = '#C0C0C0';
+                        ctx.fillRect(self.x + 14, self.y - 8, 3, 8);
+                        break;
+                        
+                    case 'building_machine':
+                    case 'building_structure':
+                    case 'building_rocket':
+                        ctx.fillStyle = '#8B4513';
+                        ctx.fillRect(self.x + 6, self.y - 6, 6, 2);
+                        ctx.fillStyle = '#696969';
+                        ctx.fillRect(self.x + 10, self.y - 8, 4, 6);
+                        
+                        if (self.workTimer > 0) {
+                            const maxTimer = self.task === 'building_rocket' ? 600 : 
+                                           self.task === 'building_machine' ? 300 : 400;
+                            const progress = 1 - (self.workTimer / maxTimer);
+                            ctx.fillStyle = '#FFD700';
+                            ctx.fillRect(self.x - 10, self.y - 25, 20 * progress, 3);
+                        }
+                        break;
+                }
+                
+                if (self.goldCarried > 0) {
+                    ctx.fillStyle = '#FFD700';
+                    ctx.font = '10px Arial';
+                    ctx.fillText('+' + Math.floor(self.goldCarried), self.x - 8, self.y - 20);
+                }
+            }
+        }
+        
+        function initDworfs() {
+            for (let i = 0; i < 3; i++) {
+                game.dworfs.push(new Dworf(
+                    350 + (i - 1) * 40,
+                    250
+                ));
+            }
+        }
+        
+        function drawGoldDeposit(deposit) {
+            ctx.shadowColor = '#FFD700';
+            ctx.shadowBlur = 10;
+            
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(deposit.x, deposit.y, 8 + Math.sin(game.time * 0.1) * 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            for (let i = 0; i < 3; i++) {
+                const angle = game.time * 0.05 + i * (Math.PI * 2 / 3);
+                const sparkleX = deposit.x + Math.cos(angle) * 15;
+                const sparkleY = deposit.y + Math.sin(angle) * 15;
+                
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.7)';
+                ctx.fillRect(sparkleX, sparkleY, 2, 2);
+            }
+            
+            ctx.shadowBlur = 0;
+            
+            ctx.fillStyle = '#FFD700';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(Math.floor(deposit.gold), deposit.x, deposit.y - 15);
+            ctx.textAlign = 'left';
+        }
+        
+        function drawMachine(machine) {
+            ctx.fillStyle = '#696969';
+            ctx.fillRect(machine.x - 12, machine.y - 8, 24, 16);
+            
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(machine.x - 3, machine.y - 20, 6, 12);
+            
+            const rotation = game.time * 0.1;
+            ctx.save();
+            ctx.translate(machine.x, machine.y - 14);
+            ctx.rotate(rotation);
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(-2, -8, 4, 16);
+            ctx.fillRect(-8, -2, 16, 4);
+            ctx.restore();
+            
+            if (Math.random() < 0.5) {
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.6)';
+                ctx.fillRect(machine.x + Math.random() * 6 - 3, machine.y - 30, 1, 1);
+            }
+        }
+        
+        function drawBuilding(building) {
+            if (building.type === 'house') {
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(building.x - 15, building.y - 12, 30, 20);
+                
+                ctx.fillStyle = '#CD853F';
+                ctx.beginPath();
+                ctx.moveTo(building.x - 18, building.y - 12);
+                ctx.lineTo(building.x, building.y - 25);
+                ctx.lineTo(building.x + 18, building.y - 12);
+                ctx.closePath();
+                ctx.fill();
+                
+                ctx.fillStyle = '#87CEEB';
+                ctx.fillRect(building.x - 8, building.y - 8, 6, 6);
+                ctx.fillRect(building.x + 2, building.y - 8, 6, 6);
+                
+            } else {
+                ctx.fillStyle = '#4682B4';
+                ctx.fillRect(building.x - 15, building.y - 15, 30, 25);
+                
+                ctx.fillStyle = '#C0C0C0';
+                ctx.fillRect(building.x - 1, building.y - 30, 2, 15);
+                
+                if (Math.floor(game.time * 0.1) % 2) {
+                    ctx.fillStyle = '#FF0000';
+                    ctx.beginPath();
+                    ctx.arc(building.x, building.y - 30, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        function addLog(message, important, type) {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            
+            if (important) {
+                entry.className = 'log-entry important';
+            } else if (type === 'disaster') {
+                entry.className = 'log-entry disaster';
+            } else {
+                entry.className = 'log-entry';
+            }
+            
+            entry.textContent = '[' + Math.floor(game.time / 60) + 's] ' + message;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            while (logDiv.children.length > 22) {
+                logDiv.removeChild(logDiv.children[1]);
+            }
+        }
+        
+        function updateGame() {
+            game.goldPerSecond = 1 + (game.machines.length * 2) + (game.buildings.length * 0.5);
+            
+            if (game.time % 60 === 0) {
+                game.gold += game.goldPerSecond;
+            }
+            
+            if (game.buildings.length > game.dworfs.length && game.time % 900 === 0) {
+                game.dworfs.push(new Dworf(350 + Math.random() * 100 - 50, 250));
+                addLog('👤 New Dworf joined the colony!');
+            }
+            
+            if (!game.milestones.hundredGold && game.gold >= 100) {
+                game.milestones.hundredGold = true;
+                addLog('💰 First 100 gold collected!', true);
+            }
+            if (!game.milestones.thousandGold && game.gold >= 1000) {
+                game.milestones.thousandGold = true;
+                addLog('💎 1000 gold milestone reached!', true);
+            }
+            if (!game.milestones.tenThousandGold && game.gold >= 10000) {
+                game.milestones.tenThousandGold = true;
+                addLog('🏆 10,000 gold! Colony is thriving!', true);
+            }
+        }
+        
+        function updateUI() {
+            document.getElementById('goldCount').textContent = Math.floor(game.gold);
+            document.getElementById('dworfsCount').textContent = game.dworfs.length;
+            document.getElementById('machinesCount').textContent = game.machines.length;
+            document.getElementById('buildingsCount').textContent = game.buildings.length;
+            document.getElementById('goldPerSec').textContent = game.goldPerSecond.toFixed(1);
+            
+            const totalParts = Object.keys(game.rocketParts).length;
+            let completedParts = 0;
+            for (let part in game.rocketParts) {
+                if (game.rocketParts[part].built) completedParts++;
+            }
+            const overallProgress = (completedParts / totalParts) * 100;
+            
+            document.getElementById('overallProgress').style.width = overallProgress + '%';
+            
+            let progressText = 'Planning phase...';
+            if (overallProgress === 100) progressText = '🚀 READY FOR LAUNCH!';
+            else if (overallProgress > 80) progressText = 'Final assembly...';
+            else if (overallProgress > 60) progressText = 'Major construction...';
+            else if (overallProgress > 40) progressText = 'Building components...';
+            else if (overallProgress > 20) progressText = 'Foundation work...';
+            else if (overallProgress > 0) progressText = 'Starting construction...';
+            
+            document.getElementById('progressText').textContent = progressText;
+            
+            const partNames = ['engine', 'fuel', 'hull', 'navigation', 'launchpad'];
+            const partIcons = ['🔥', '⛽', '🛡️', '📡', '🏗️'];
+            
+            for (let i = 0; i < partNames.length; i++) {
+                const partName = partNames[i];
+                const partData = game.rocketParts[partName];
+                const element = document.getElementById(partName);
+                const icon = partIcons[i];
+                const capitalName = partName.charAt(0).toUpperCase() + partName.slice(1);
+                
+                if (partData.built) {
+                    element.className = 'rocket-part completed';
+                    element.textContent = icon + ' ' + capitalName + ': ✅ Complete';
+                } else if (partData.building) {
+                    element.className = 'rocket-part building';
+                    element.textContent = icon + ' ' + capitalName + ': 🔨 Building... ' + Math.floor(partData.progress * 100) + '%';
+                } else if (game.gold >= partData.cost) {
+                    element.className = 'rocket-part';
+                    element.textContent = icon + ' ' + capitalName + ': 💰 Ready to build (' + partData.cost + ' gold)';
+                } else {
+                    element.className = 'rocket-part';
+                    element.textContent = icon + ' ' + capitalName + ': ⏳ Need ' + partData.cost + ' gold';
+                }
+            }
+            
+            updateStability();
+        }
+        
+        function gameLoop() {
+            ctx.fillStyle = '#0f0f23';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Motion flash effect
+            if (motionFlash > 0) {
+                ctx.fillStyle = 'rgba(255, 0, 0, ' + (motionFlash / 40) + ')';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Motion detection indicator
+            if (isTracking && (Date.now() - lastMotionDetected) < 1000) {
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+                ctx.fillRect(0, 0, canvas.width, 5);
+                ctx.fillRect(0, canvas.height - 5, canvas.width, 5);
+            }
+            
+            // Add a pulsing motion indicator when motion is enabled
+            if (isTracking) {
+                const pulseAlpha = Math.sin(game.time * 0.1) * 0.3 + 0.3;
+                ctx.fillStyle = 'rgba(0, 255, 0, ' + pulseAlpha + ')';
+                ctx.fillRect(canvas.width - 20, 10, 10, 10);
+            }
+            
+            // Add a moving ball indicator that responds to accelerometer (like your example)
+            // Always show the ball for debugging, but move it based on accelerometer data
+            const moveX = -currentAccelY * 2; // Invert Y for X movement
+            const moveY = currentAccelX * 2;  // Use X for Y movement
+            
+            // Draw the moving ball
+            ctx.fillStyle = 'rgba(255, 107, 107, 0.8)';
+            ctx.beginPath();
+            ctx.arc(350 + moveX, 250 + moveY, 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add a label
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('ACCEL', 350 + moveX, 250 + moveY + 25);
+            ctx.textAlign = 'left';
+            
+            // Add debug info on screen
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('X: ' + currentAccelX.toFixed(1), 10, 20);
+            ctx.fillText('Y: ' + currentAccelY.toFixed(1), 10, 35);
+            ctx.fillText('Z: ' + currentAccelZ.toFixed(1), 10, 50);
+            ctx.fillText('MoveX: ' + moveX.toFixed(1), 10, 65);
+            ctx.fillText('MoveY: ' + moveY.toFixed(1), 10, 80);
+            ctx.fillText('Enabled: ' + isAccelerometerEnabled, 10, 95);
+            
+            for (let i = 0; i < 50; i++) {
+                const x = (game.time * 0.01 + i * 123) % canvas.width;
+                const y = (game.time * 0.005 + i * 456) % canvas.height;
+                const brightness = Math.sin(game.time * 0.01 + i) * 0.5 + 0.5;
+                ctx.fillStyle = 'rgba(255, 255, 255, ' + (brightness * 0.8) + ')';
+                ctx.fillRect(x, y, 1, 1);
+            }
+            
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.1)';
+            ctx.beginPath();
+            ctx.arc(350, 250, 50, 0, Math.PI * 2);
+            ctx.fill();
+            
+            game.goldDeposits.forEach(drawGoldDeposit);
+            game.machines.forEach(drawMachine);
+            game.buildings.forEach(drawBuilding);
+            
+            game.dworfs.forEach(function(dworf) {
+                dworf.update();
+                dworf.draw();
+            });
+            
+            let anyBuilding = false;
+            for (let part in game.rocketParts) {
+                if (game.rocketParts[part].building || game.rocketParts[part].built) {
+                    anyBuilding = true;
+                    break;
+                }
+            }
+            
+            if (anyBuilding) {
+                ctx.strokeStyle = '#FF6B6B';
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(320, 70, 60, 60);
+                ctx.setLineDash([]);
+                
+                ctx.fillStyle = '#FF6B6B';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('🚀 ROCKET', 350, 60);
+                ctx.textAlign = 'left';
+            }
+            
+            updateGame();
+            updateUI();
+            game.time++;
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        document.getElementById('enableMotion').addEventListener('click', function() {
+            if (!isTracking) {
+                enableMotionDetection();
+            } else {
+                simulateMotionDamage();
+            }
+        });
+        
+        document.getElementById('testMotion').addEventListener('click', function() {
+            testMotionDetection();
+        });
+        
+        document.getElementById('testBall').addEventListener('click', function() {
+            // Test ball movement with different values
+            currentAccelX = Math.random() * 10 - 5;
+            currentAccelY = Math.random() * 10 - 5;
+            currentAccelZ = 9.8 + Math.random() * 2 - 1;
+            
+            addLog('🎯 Testing ball movement with random values', true);
+            addLog('X: ' + currentAccelX.toFixed(2) + ' Y: ' + currentAccelY.toFixed(2) + ' Z: ' + currentAccelZ.toFixed(2), false);
+        });
+        
+        // Initial motion system check
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                addLog('🔍 Checking motion system support...', false);
+                if (window.DeviceMotionEvent || window.DeviceOrientationEvent) {
+                    addLog('✅ Device motion/orientation supported', false);
+                } else {
+                    addLog('❌ Device motion NOT supported on this device', true, 'disaster');
+                }
+                
+                if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                    addLog('⚠️ HTTPS required for device sensors', true);
+                }
+            }, 1000);
+        });
+        
+        initDworfs();
+        addLog('🌟 Fragile Dworf colony started!');
+        addLog('🎯 Goal: Build a rocket to reach outer space!');
+        addLog('⚠️ Warning: This colony is sensitive to disturbances...');
+        gameLoop();
+    </script>
+</body>
+</html>
