@@ -362,7 +362,7 @@
             lastMotionDetected = Date.now();
             
             // Simple damage system - any motion above threshold causes damage
-            if (intensity > 0.5) {
+            if (intensity > 5.0) {
                 motionFlash = 20;
                 stabilityLevel = Math.max(0, stabilityLevel - (intensity * 3));
                 
