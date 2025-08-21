@@ -362,7 +362,7 @@
             lastMotionDetected = Date.now();
             
             // Simple damage system - any motion above threshold causes damage
-            if (intensity > 5.0) {
+            if (intensity > 10.0) {
                 motionFlash = 20;
                 stabilityLevel = Math.max(0, stabilityLevel - (intensity * 3));
                 
@@ -370,7 +370,7 @@
                 addLog('📳 Motion detected! Intensity: ' + intensity.toFixed(2), true, 'disaster');
                 
                 // Random damage to colony
-                if (Math.random() < 0.3) {
+                if (Math.random() < 0.1) {
                     destroyRandomThing();
                 }
             }
