@@ -752,12 +752,16 @@
             }
             
             shouldBuildInfrastructure(gold) {
-                const machineRatio = game.machines.length / game.dworfs.length;
-                const buildingRatio = game.buildings.length / game.dworfs.length;
-                
-                if (machineRatio < 0.5 && gold >= 50) return 'machine';
-                if ((game.buildings.length <= game.dwarfs.length || buildingRatio < 0.3) && gold >= 100) return 'building';
-                return false;
+    const machineRatio = game.machines.length / game.dworfs.length;
+    const buildingRatio = game.buildings.length / game.dworfs.length;
+    
+    // Prioritize buildings when we need population growth (buildings <= dwarfs)
+    if (game.buildings.length <= game.dworfs.length && gold >= 100) return 'building';
+    
+    // Otherwise, normal expansion logic
+    if (machineRatio < 0.5 && gold >= 50) return 'machine';
+    if (buildingRatio < 0.3 && gold >= 100) return 'building';
+    return false;
             }
             
             startRocketConstruction() {
