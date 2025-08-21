@@ -756,7 +756,7 @@
                 const buildingRatio = game.buildings.length / game.dworfs.length;
                 
                 if (machineRatio < 0.5 && gold >= 50) return 'machine';
-                if (buildingRatio < 0.3 && gold >= 100) return 'building';
+                if ((game.buildings.length <= game.dwarfs.length || buildingRatio < 0.3) && gold >= 100) return 'building';
                 return false;
             }
             
