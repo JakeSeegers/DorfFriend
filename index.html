@@ -7,17 +7,20 @@
     <style>
         body {
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             background: linear-gradient(135deg, #1a1a2e, #16213e);
             font-family: 'Courier New', monospace;
             color: #fff;
-            overflow: hidden;
+            overflow-x: hidden;
+            min-height: 100vh;
         }
         
         #gameContainer {
             display: flex;
-            gap: 20px;
-            height: 100vh;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 100vw;
         }
         
         #gameCanvas {
@@ -25,42 +28,39 @@
             background: linear-gradient(180deg, #0f0f23, #16213e);
             box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
             border-radius: 10px;
+            width: calc(100vw - 26px);
+            height: 80vh;
+            max-height: none;
         }
         
         #rightPanel {
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            min-width: 280px;
+            gap: 15px;
+            width: 100%;
         }
         
-        #stats {
+        #stats, #rocketProgress, #stabilityPanel {
             background: rgba(0,0,0,0.8);
-            padding: 20px;
+            padding: 15px;
             border-radius: 15px;
             border: 2px solid #FFD700;
             box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
         }
         
         #rocketProgress {
-            background: rgba(0,0,0,0.8);
-            padding: 20px;
-            border-radius: 15px;
-            border: 2px solid #FF6B6B;
+            border-color: #FF6B6B;
             box-shadow: 0 0 20px rgba(255, 107, 107, 0.2);
         }
         
         #stabilityPanel {
-            background: rgba(0,0,0,0.9);
-            padding: 15px;
-            border-radius: 15px;
-            border: 2px solid #FF4444;
+            border-color: #FF4444;
             box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
         }
         
         .stat-item {
-            margin: 12px 0;
-            font-size: 14px;
+            margin: 15px 0;
+            font-size: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -69,7 +69,7 @@
         .stat-value {
             color: #FFD700;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 18px;
         }
         
         .gold-value {
@@ -79,11 +79,12 @@
         
         #title {
             text-align: center;
-            font-size: 28px;
-            margin-bottom: 20px;
+            font-size: 24px;
+            margin-bottom: 15px;
             color: #FFD700;
             text-shadow: 0 0 20px #FFD700;
             animation: glow 2s ease-in-out infinite alternate;
+            padding: 0 10px;
         }
         
         @keyframes glow {
@@ -93,10 +94,10 @@
         
         .progress-container {
             width: 100%;
-            height: 15px;
+            height: 18px;
             background: #333;
             border-radius: 10px;
-            margin: 10px 0;
+            margin: 12px 0;
             overflow: hidden;
             border: 1px solid #555;
         }
@@ -110,11 +111,12 @@
         }
         
         .rocket-part {
-            padding: 8px;
-            margin: 5px 0;
+            padding: 12px;
+            margin: 8px 0;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             border-left: 4px solid #4ECDC4;
+            font-size: 14px;
         }
         
         .rocket-part.completed {
@@ -138,14 +140,14 @@
             padding: 15px;
             border-radius: 10px;
             border: 1px solid #333;
-            height: 150px;
+            height: 120px;
             overflow-y: auto;
-            font-size: 12px;
-            line-height: 1.4;
+            font-size: 14px;
+            line-height: 1.5;
         }
         
         .log-entry {
-            margin: 3px 0;
+            margin: 5px 0;
             opacity: 0.8;
         }
         
@@ -163,11 +165,11 @@
         
         .stability-meter {
             width: 100%;
-            height: 20px;
+            height: 24px;
             background: #333;
             border-radius: 10px;
             overflow: hidden;
-            margin: 10px 0;
+            margin: 12px 0;
         }
         
         .stability-bar {
@@ -187,28 +189,65 @@
             75% { transform: translateX(2px); }
         }
         
-        .permission-btn {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
+        .panel-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .motion-status {
+            margin-top: 15px;
             font-size: 14px;
-            border-radius: 15px;
-            cursor: pointer;
-            margin: 10px 0;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.1);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
         }
         
-        .permission-btn:hover {
-            background: #45a049;
-            transform: translateY(-2px);
+        .motion-status.active {
+            background: rgba(76, 205, 196, 0.2);
+            border: 1px solid #4ECDC4;
         }
         
-        .permission-btn:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-            transform: none;
+        .motion-status.inactive {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid #FF6B6B;
+        }
+        
+        .stability-tip {
+            font-size: 13px;
+            color: #888;
+            line-height: 1.4;
+            margin-top: 12px;
+            text-align: center;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+        }
+
+        /* Responsive canvas sizing */
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+            
+            #title {
+                font-size: 20px;
+            }
+            
+            .stat-item {
+                font-size: 15px;
+            }
+            
+            .stat-value {
+                font-size: 17px;
+            }
+            
+            #gameCanvas {
+                width: calc(100vw - 16px);
+                height: 75vh;
+            }
         }
     </style>
 </head>
@@ -216,16 +255,16 @@
     <div id="title">🚀 Fragile Dworf Colony 🚀</div>
     
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="700" height="500"></canvas>
+        <canvas id="gameCanvas" width="700" height="900"></canvas>
         
         <div id="rightPanel">
             <div id="stats">
-                <div style="color: #FFD700; font-size: 18px; margin-bottom: 15px; text-align: center;">
+                <div class="panel-title" style="color: #FFD700;">
                     ⚡ Colony Resources ⚡
                 </div>
                 
                 <div class="stat-item">
-                    <span>🏅 Forbidden Gold:</span>
+                    <span>🥇 Forbidden Gold:</span>
                     <span class="stat-value gold-value" id="goldCount">0</span>
                 </div>
                 <div class="stat-item">
@@ -233,11 +272,35 @@
                     <span class="stat-value" id="dworfsCount">3</span>
                 </div>
                 <div class="stat-item">
-                    <span>⚙️ Suction Machines:</span>
+                    <span>🍞 Avg Hunger:</span>
+                    <span class="stat-value" id="avgHunger">100</span>
+                </div>
+                <div class="stat-item">
+                    <span>💧 Avg Thirst:</span>
+                    <span class="stat-value" id="avgThirst">100</span>
+                </div>
+                <div class="stat-item">
+                    <span>😴 Avg Rest:</span>
+                    <span class="stat-value" id="avgRest">80</span>
+                </div>
+                <div class="stat-item">
+                    <span>😊 Avg Joy:</span>
+                    <span class="stat-value" id="avgJoy">70</span>
+                </div>
+                <div class="stat-item">
+                    <span>☕ Avg Coffee:</span>
+                    <span class="stat-value" id="avgCoffee">60</span>
+                </div>
+                <div class="stat-item">
+                    <span>🧼 Avg Clean:</span>
+                    <span class="stat-value" id="avgClean">80</span>
+                </div>
+                <div class="stat-item">
+                    <span>🏠 Amenity Buildings:</span>
                     <span class="stat-value" id="machinesCount">0</span>
                 </div>
                 <div class="stat-item">
-                    <span>🏠 City Buildings:</span>
+                    <span>🏢 City Buildings:</span>
                     <span class="stat-value" id="buildingsCount">0</span>
                 </div>
                 <div class="stat-item">
@@ -247,49 +310,36 @@
             </div>
             
             <div id="stabilityPanel">
-                <div style="color: #FF4444; font-size: 16px; margin-bottom: 10px; text-align: center;">
+                <div class="panel-title" style="color: #FF4444;">
                     ⚠️ Colony Stability ⚠️
                 </div>
                 
                 <div class="stability-meter">
                     <div class="stability-bar stability-high" id="stabilityBar" style="width: 100%"></div>
                 </div>
-                <div style="text-align: center; font-size: 12px; color: #aaa;" id="stabilityText">
+                <div style="text-align: center; font-size: 14px; color: #aaa;" id="stabilityText">
                     Stable
                 </div>
                 
-                <button id="enableMotion" class="permission-btn">Enable Motion Detection</button>
-                <button id="testMotion" class="permission-btn" style="background: #2196F3;">Test Motion System</button>
-                <button id="testBall" class="permission-btn" style="background: #9C27B0;">Test Ball Movement</button>
-                
-                <div style="margin-top: 15px; font-size: 12px; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px;">
-                    <div style="color: #4ECDC4; margin-bottom: 5px;">📊 Accelerometer Debug:</div>
-                    <div>X: <span id="debugX">0.0</span> m/s²</div>
-                    <div>Y: <span id="debugY">0.0</span> m/s²</div>
-                    <div>Z: <span id="debugZ">0.0</span> m/s²</div>
-                    <div>Intensity: <span id="debugIntensity">0.0</span></div>
-                    <div>Status: <span id="debugQueue">Inactive</span></div>
-                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2);">
-                        <div style="color: #FF6B6B;">🎯 Visual Test:</div>
-                        <div>Look for red "ACCEL" ball moving on screen</div>
-                        <div>Ball should move when you tilt device</div>
-                    </div>
+                <div id="motionStatus" class="motion-status inactive">
+                    📱 Initializing motion detection...
                 </div>
                 
-                <div style="font-size: 11px; color: #888; line-height: 1.3; margin-top: 10px;">
-                    💡 Keep your device steady to maintain colony stability!
+                <div class="stability-tip">
+                    💡 Keep your device steady to maintain colony stability!<br>
+                    Movement will damage your colony and destroy buildings.
                 </div>
             </div>
             
             <div id="rocketProgress">
-                <div style="color: #FF6B6B; font-size: 18px; margin-bottom: 15px; text-align: center;">
+                <div class="panel-title" style="color: #FF6B6B;">
                     🚀 Rocket Progress 🚀
                 </div>
                 
                 <div class="progress-container">
                     <div class="progress-bar" id="overallProgress" style="width: 0%"></div>
                 </div>
-                <div style="text-align: center; font-size: 12px; color: #aaa;" id="progressText">
+                <div style="text-align: center; font-size: 14px; color: #aaa;" id="progressText">
                     Planning phase...
                 </div>
                 
@@ -298,12 +348,12 @@
                     <div class="rocket-part" id="fuel">⛽ Fuel Tank: Not started</div>
                     <div class="rocket-part" id="hull">🛡️ Hull: Not started</div>
                     <div class="rocket-part" id="navigation">📡 Navigation: Not started</div>
-                    <div class="rocket-part" id="launchpad">🏗️ Launch Pad: Not started</div>
+                    <div class="rocket-part" id="launchpad">🗏️ Launch Pad: Not started</div>
                 </div>
             </div>
             
             <div id="log">
-                <div style="color: #4ECDC4; margin-bottom: 10px;">📜 Colony Log:</div>
+                <div style="color: #4ECDC4; margin-bottom: 10px; font-size: 16px; font-weight: bold;">📜 Colony Log:</div>
                 <div class="log-entry">Colony established. Dworfs ready to work!</div>
                 <div class="log-entry">Scanning for Forbidden Gold deposits...</div>
                 <div class="log-entry important">⚠️ Keep device steady for optimal stability!</div>
@@ -315,21 +365,31 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // Motion detection variables - using the working approach
+        // Auto-resize canvas for mobile
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            const containerWidth = container.clientWidth;
+            
+            // Make it twice as wide and three times taller as requested
+            canvas.width = Math.min(containerWidth - 6, 800);  // Twice as wide (was ~400)
+            canvas.height = Math.min(window.innerHeight * 0.75, 1200);  // Much taller (was ~300)
+            
+            canvas.style.width = canvas.width + 'px';
+            canvas.style.height = canvas.height + 'px';
+        }
+        
+        // Motion detection variables
         let isTracking = false;
         let stabilityLevel = 100;
         let motionFlash = 0;
         let lastMotionIntensity = 0;
         let lastMotionDetected = 0;
         
-        // Working accelerometer variables (from your example)
+        // Accelerometer variables
         let isAccelerometerEnabled = false;
         let currentAccelX = 0;
         let currentAccelY = 0;
-        let currentAccelZ = 9.8; // Start with gravity
-        let currentAlpha = 0;
-        let currentBeta = 0;
-        let currentGamma = 0;
+        let currentAccelZ = 9.8;
         
         // Game state
         const game = {
@@ -338,7 +398,10 @@
             dworfs: [],
             machines: [],
             buildings: [],
+            negativeBuildings: [], // ✅ New: negative personality-driven buildings
             goldDeposits: [],
+            foodSources: [],  // New: food sources
+            waterSources: [], // New: water sources
             time: 0,
             rocketParts: {
                 engine: { cost: 1000, built: false, building: false, progress: 0 },
@@ -348,7 +411,7 @@
                 launchpad: { cost: 15000, built: false, building: false, progress: 0 }
             },
             milestones: {
-                firstMachine: false,
+                firstAmenity: false, // Changed from firstMachine
                 firstBuilding: false,
                 hundredGold: false,
                 thousandGold: false,
@@ -356,97 +419,48 @@
             }
         };
         
-        // Simple motion detection system - based on working code
         function handleMotionDamage(intensity) {
             lastMotionIntensity = intensity;
             lastMotionDetected = Date.now();
             
-            // Simple damage system - any motion above threshold causes damage
             if (intensity > 10.0) {
                 motionFlash = 20;
                 stabilityLevel = Math.max(0, stabilityLevel - (intensity * 3));
                 
-                // Log motion detection
                 addLog('📳 Motion detected! Intensity: ' + intensity.toFixed(2), true, 'disaster');
                 
-                // Random damage to colony
                 if (Math.random() < 0.1) {
                     destroyRandomThing();
                 }
             }
         }
         
-        // Working accelerometer event handlers (from your example)
         function handleAccelerometerMotion(event) {
-            console.log('Accelerometer motion event received!', event);
-            
-            // Get acceleration data (including gravity)
             const accel = event.accelerationIncludingGravity;
             if (accel) {
                 const x = accel.x || 0;
                 const y = accel.y || 0;
                 const z = accel.z || 0;
                 
-                // Store current values
                 currentAccelX = x;
                 currentAccelY = y;
                 currentAccelZ = z;
                 
-                // Update debug display
-                document.getElementById('debugX').textContent = x.toFixed(2);
-                document.getElementById('debugY').textContent = y.toFixed(2);
-                document.getElementById('debugZ').textContent = z.toFixed(2);
-                
-                // Calculate motion intensity
                 const intensity = Math.sqrt(x * x + y * y + z * z);
-                document.getElementById('debugIntensity').textContent = intensity.toFixed(2);
-                
-                // Update status
-                document.getElementById('debugQueue').textContent = 'Active';
-                
-                // Log motion data
-                console.log('Accelerometer Motion: X:' + x.toFixed(2) + ' Y:' + y.toFixed(2) + ' Z:' + z.toFixed(2) + ' Intensity:' + intensity.toFixed(2));
-                
-                // Process motion damage
                 handleMotionDamage(intensity);
             }
         }
         
-        // Keep old handler for compatibility
-        function handleDeviceMotion(event) {
-            handleAccelerometerMotion(event);
-        }
-        
         function handleAccelerometerOrientation(event) {
-            console.log('Accelerometer orientation event received!', event);
+            const alpha = event.alpha || 0;
+            const beta = event.beta || 0;
+            const gamma = event.gamma || 0;
             
-            const alpha = event.alpha || 0; // Z-axis rotation
-            const beta = event.beta || 0;   // X-axis rotation  
-            const gamma = event.gamma || 0; // Y-axis rotation
-            
-            // Store current values
-            currentAlpha = alpha;
-            currentBeta = beta;
-            currentGamma = gamma;
-            
-            // Update debug display for orientation
-            document.getElementById('debugX').textContent = 'α:' + alpha.toFixed(1);
-            document.getElementById('debugY').textContent = 'β:' + beta.toFixed(1);
-            document.getElementById('debugZ').textContent = 'γ:' + gamma.toFixed(2);
-            
-            // Calculate motion intensity from orientation changes
             const orientationIntensity = Math.sqrt(alpha * alpha + beta * beta + gamma * gamma) * 0.01;
-            document.getElementById('debugIntensity').textContent = orientationIntensity.toFixed(2);
             
             if (orientationIntensity > 0.1) {
-                console.log('Accelerometer Orientation: Alpha:' + alpha.toFixed(2) + ' Beta:' + beta.toFixed(2) + ' Gamma:' + orientationIntensity.toFixed(2));
                 handleMotionDamage(orientationIntensity);
             }
-        }
-        
-        // Keep old handler for compatibility
-        function handleDeviceOrientation(event) {
-            handleAccelerometerOrientation(event);
         }
         
         function destroyRandomThing() {
@@ -455,7 +469,10 @@
             if (game.dworfs.length > 1) targets.push('dwarf');
             if (game.machines.length > 0) targets.push('machine');
             if (game.buildings.length > 0) targets.push('building');
+            if (game.negativeBuildings.length > 0) targets.push('negative_building'); // ✅ Can destroy negative buildings too
             if (game.goldDeposits.length > 0) targets.push('deposit');
+            if (game.foodSources.length > 1) targets.push('food'); // Keep at least 1 food source
+            if (game.waterSources.length > 1) targets.push('water'); // Keep at least 1 water source
             
             if (targets.length === 0) return false;
             
@@ -464,25 +481,74 @@
             switch (target) {
                 case 'dwarf':
                     if (game.dworfs.length > 1) {
-                        game.dworfs.pop();
-                        return true;
+                        // Neurotic dwarfs are more likely to be affected by motion stress
+                        let mostVulnerable = game.dworfs[0];
+                        let highestVulnerability = 0;
+                        
+                        game.dworfs.forEach(dwarf => {
+                            // Higher neuroticism + lower health = more vulnerable
+                            const vulnerability = dwarf.personality.neuroticism + 
+                                                 (100 - Math.min(dwarf.hunger, dwarf.thirst));
+                            if (vulnerability > highestVulnerability) {
+                                highestVulnerability = vulnerability;
+                                mostVulnerable = dwarf;
+                            }
+                        });
+                        
+                        const index = game.dworfs.indexOf(mostVulnerable);
+                        if (index > 0) { // Don't remove the first dwarf
+                            const removedDwarf = game.dworfs.splice(index, 1)[0];
+                            addLog('💀 ' + removedDwarf.name + ' was overwhelmed by the chaos!', true, 'disaster');
+                            return true;
+                        }
                     }
                     break;
                 case 'machine':
                     if (game.machines.length > 0) {
                         game.machines.pop();
+                        addLog('⚙️ A machine was destroyed by instability!', false, 'disaster');
                         return true;
                     }
                     break;
                 case 'building':
                     if (game.buildings.length > 0) {
                         game.buildings.pop();
+                        addLog('🏠 A building collapsed from instability!', false, 'disaster');
+                        return true;
+                    }
+                    break;
+                case 'negative_building':
+                    if (game.negativeBuildings.length > 0) {
+                        const destroyed = game.negativeBuildings.pop();
+                        const buildingNames = {
+                            'gold_mutation_chamber': 'Gold Mutation Chamber',
+                            'motion_alarm_tower': 'Motion Alarm Tower',
+                            'party_pavilion': 'Party Pavilion',
+                            'unsafe_mining_rig': 'Unsafe Mining Rig',
+                            'personal_gold_vault': 'Personal Gold Vault'
+                        };
+                        addLog('💥 ' + buildingNames[destroyed.type] + ' was destroyed by instability!', true);
                         return true;
                     }
                     break;
                 case 'deposit':
                     if (game.goldDeposits.length > 0) {
                         game.goldDeposits.pop();
+                        addLog('✨ A gold deposit was scattered by motion!', false, 'disaster');
+                        return true;
+                    }
+                    break;
+                case 'food':
+                    if (game.foodSources.length > 1) {
+                        game.foodSources.pop();
+                        addLog('🍓 Berry bush destroyed by instability!', false, 'disaster');
+                        return true;
+                    }
+                    break;
+                case 'water':
+                    if (game.waterSources.length > 1) {
+                        game.waterSources.pop();
+                        addLog('💧 Water spring dried up from the chaos!', false, 'disaster');
                         return true;
                     }
                     break;
@@ -490,55 +556,7 @@
             return false;
         }
         
-        function applyQueuedDamage() {
-            if (motionDamageQueue.length === 0) return;
-            
-            const damage = motionDamageQueue.shift();
-            const disasters = [
-                '💥 Seismic activity detected!',
-                '🌪️ Mysterious tremor strikes!',
-                '⚡ Unstable energy field!',
-                '🔮 Cosmic interference!',
-                '👻 Strange phenomena!',
-                '🌊 Reality fluctuation!'
-            ];
-            
-            if (damage.type === 'catastrophic') {
-                const destroyed = game.dworfs.length + game.machines.length + game.buildings.length;
-                game.dworfs = game.dworfs.slice(0, 1);
-                game.machines = [];
-                game.buildings = [];
-                game.goldDeposits = [];
-                game.gold = Math.floor(game.gold * 0.1);
-                
-                addLog('☢️ CATASTROPHIC ' + disasters[Math.floor(Math.random() * disasters.length)], true, 'disaster');
-                addLog('💀 Colony devastated! Lost ' + destroyed + ' structures!', true, 'disaster');
-                
-            } else if (damage.type === 'major') {
-                let destroyed = 0;
-                for (let i = 0; i < damage.amount; i++) {
-                    if (destroyRandomThing()) destroyed++;
-                }
-                addLog('⚠️ ' + disasters[Math.floor(Math.random() * disasters.length)], true, 'disaster');
-                if (destroyed > 0) {
-                    addLog('💥 Lost ' + destroyed + ' colony assets!', true, 'disaster');
-                }
-                
-            } else {
-                let destroyed = 0;
-                for (let i = 0; i < damage.amount; i++) {
-                    if (destroyRandomThing()) destroyed++;
-                }
-                if (destroyed > 0) {
-                    addLog('⚡ ' + disasters[Math.floor(Math.random() * disasters.length)], false, 'disaster');
-                    addLog('💔 Lost ' + destroyed + ' assets to instability', false, 'disaster');
-                }
-            }
-        }
-        
-        // Working accelerometer functions (from your example)
         async function requestPermissioniOS() {
-            // iOS 13+ requires explicit permission request
             if (typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
                     const permission = await DeviceOrientationEvent.requestPermission();
@@ -548,108 +566,53 @@
                     return false;
                 }
             }
-            return true; // Not iOS or older iOS
+            return true;
         }
         
         async function enableAccelerometer() {
-            addLog('Requesting permissions...', true);
+            const statusDiv = document.getElementById('motionStatus');
+            statusDiv.textContent = '🔄 Requesting permissions...';
             
             try {
-                // Check for iOS permission requirement
                 const hasPermission = await requestPermissioniOS();
                 
                 if (!hasPermission) {
-                    addLog('❌ Permission denied. Please enable in Safari settings.', true, 'disaster');
+                    statusDiv.textContent = '❌ Permission denied. Enable in Safari settings.';
+                    statusDiv.className = 'motion-status inactive';
                     return;
                 }
                 
-                // Check if events are supported
                 if (!window.DeviceMotionEvent && !window.DeviceOrientationEvent) {
-                    addLog('❌ Device motion/orientation not supported on this device.', true, 'disaster');
+                    statusDiv.textContent = '❌ Motion sensors not supported on this device.';
+                    statusDiv.className = 'motion-status inactive';
                     return;
                 }
                 
-                // Add event listeners
                 if (window.DeviceMotionEvent) {
                     window.addEventListener('devicemotion', handleAccelerometerMotion);
-                    addLog('✓ DeviceMotionEvent listener added', false);
                 }
                 
                 if (window.DeviceOrientationEvent) {
                     window.addEventListener('deviceorientation', handleAccelerometerOrientation);
-                    addLog('✓ DeviceOrientationEvent listener added', false);
                 }
                 
                 isAccelerometerEnabled = true;
                 isTracking = true;
-                addLog('✅ Accelerometer enabled! Tilt your device.', true);
-                addLog('⚠️ Keep device steady for stability!', true);
-                addLog('🧪 Try tapping or moving your device!', true);
+                statusDiv.textContent = '✅ Motion detection active - Keep device steady!';
+                statusDiv.className = 'motion-status active';
                 
-                document.getElementById('enableMotion').textContent = 'Test Motion Damage';
-                document.getElementById('enableMotion').disabled = false;
-                document.getElementById('enableMotion').style.background = '#FF6B6B';
+                addLog('✅ Motion detection enabled automatically!', true);
+                addLog('⚠️ Keep device steady to protect your colony!', true);
                 
             } catch (error) {
                 console.error('Error enabling accelerometer:', error);
-                addLog('❌ Failed to enable accelerometer. Try refreshing.', true, 'disaster');
-            }
-        }
-        
-        // Keep the old function for compatibility
-        async function enableMotionDetection() {
-            await enableAccelerometer();
-        }
-        
-        function simulateMotionDamage() {
-            if (!isTracking) return;
-            
-            // Simple test motion
-            const testIntensity = 2.0;
-            
-            // Simulate accelerometer data
-            currentAccelX = 5.0;
-            currentAccelY = -3.0;
-            currentAccelZ = 9.8;
-            
-            document.getElementById('debugX').textContent = currentAccelX.toFixed(2);
-            document.getElementById('debugY').textContent = currentAccelY.toFixed(2);
-            document.getElementById('debugZ').textContent = currentAccelZ.toFixed(2);
-            document.getElementById('debugIntensity').textContent = testIntensity.toFixed(2);
-            document.getElementById('debugQueue').textContent = 'Active';
-            
-            addLog('🧪 Simulating motion damage (' + testIntensity.toFixed(1) + ')', true, 'disaster');
-            addLog('🎯 Ball should now move! Check screen for red ACCEL ball', true);
-            handleMotionDamage(testIntensity);
-        }
-        
-        function testMotionDetection() {
-            addLog('🧪 Testing motion detection system...', true);
-            
-            // Check if events are supported
-            if (window.DeviceMotionEvent) {
-                addLog('✅ DeviceMotionEvent supported', false);
-            } else {
-                addLog('❌ DeviceMotionEvent NOT supported', true, 'disaster');
-            }
-            
-            if (window.DeviceOrientationEvent) {
-                addLog('✅ DeviceOrientationEvent supported', false);
-            } else {
-                addLog('❌ DeviceOrientationEvent NOT supported', true, 'disaster');
-            }
-            
-            // Check if we're on HTTPS/localhost
-            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-                addLog('⚠️ HTTPS required for device sensors in production', true, 'disaster');
-            } else {
-                addLog('✅ HTTPS/localhost detected', false);
+                statusDiv.textContent = '❌ Failed to enable motion detection. Try refreshing.';
+                statusDiv.className = 'motion-status inactive';
             }
         }
         
         function updateStability() {
             if (isTracking) {
-                // Slower stability recovery to make motion damage more impactful
                 stabilityLevel = Math.min(100, stabilityLevel + 0.05);
             }
             
@@ -677,6 +640,31 @@
             }
         }
         
+        // 🔧 TASK PRIORITY SYSTEM - Clear hierarchy for dwarf decision-making
+        const TASK_PRIORITIES = {
+            // SURVIVAL (highest priority)
+            'CRITICAL_SURVIVAL': 100,    // Hunger/thirst below critical thresholds
+            'BASIC_SURVIVAL': 90,        // Hunger/thirst getting low
+            
+            // RECOVERY & SPECIAL STATES
+            'RECOVERY_STATES': 80,       // Recovering, panicking, confused, etc.
+            
+            // ROCKET CONSTRUCTION (main objective)
+            'ROCKET_BUILDING': 70,       // Building rocket parts when affordable
+            
+            // INFRASTRUCTURE (colony development)
+            'INFRASTRUCTURE': 60,        // Building houses, amenities, etc.
+            
+            // AMENITY SEEKING (comfort)
+            'AMENITY_SEEKING': 50,       // Seeking rest, joy, coffee, etc.
+            
+            // MINING (resource gathering)
+            'MINING': 40,               // Mining gold deposits
+            
+            // IDLE (default)
+            'IDLE': 0                   // Wandering around
+        };
+        
         // Dworf class
         class Dworf {
             constructor(x, y) {
@@ -690,26 +678,628 @@
                 this.target = null;
                 this.color = 'hsl(' + (Math.random() * 60 + 20) + ', 70%, 60%)';
                 this.goldCarried = 0;
-                this.efficiency = 0.8 + Math.random() * 0.4;
+                this.baseEfficiency = 0.8 + Math.random() * 0.4; // ✅ Store base efficiency
+                this.efficiency = this.baseEfficiency; // ✅ Start with base efficiency
                 this.sparkles = [];
+                
+                // Big Five personality traits (0-100 scale)
+                this.personality = {
+                    openness: Math.random() * 100,        // Exploration, innovation
+                    conscientiousness: Math.random() * 100, // Work efficiency, persistence  
+                    extraversion: Math.random() * 100,    // Group work bonuses
+                    agreeableness: Math.random() * 100,   // Resource sharing, cooperation
+                    neuroticism: Math.random() * 100      // Stress susceptibility
+                };
+                
+                // Survival needs (0-100 scale, start well-fed)
+                this.hunger = 80 + Math.random() * 20;   // Start 80-100
+                this.thirst = 80 + Math.random() * 20;   // Start 80-100
+                
+                // ✅ New comprehensive need system
+                this.rest = 70 + Math.random() * 30;     // Sleep/energy
+                this.joy = 60 + Math.random() * 40;      // Happiness/fun
+                this.art = 50 + Math.random() * 50;      // Culture/beauty
+                this.coffee = 40 + Math.random() * 60;   // Caffeine/alertness
+                this.wisdom = 30 + Math.random() * 70;   // Knowledge/learning
+                this.exercise = 60 + Math.random() * 40; // Physical fitness
+                this.social = 50 + Math.random() * 50;   // Community/friendship
+                this.cleanliness = 70 + Math.random() * 30; // Hygiene
+                
+                // 🔧 MUCH SLOWER CONSUMPTION RATES - Needs last much longer
+                this.hungerRate = 0.0015 + (this.personality.neuroticism / 50000); // Reduced by 75% from previous
+                this.thirstRate = 0.002 + (this.personality.extraversion / 80000); // Reduced by 70% from previous
+                this.restRate = 0.003 + (this.personality.conscientiousness / 40000); // Reduced by 65% from previous
+                
+                // 🔧 LUXURY NEEDS: Much, much slower consumption
+                this.joyRate = 0.0008 + (this.personality.neuroticism / 40000); // Reduced by 60% from previous
+                this.artRate = 0.0004 + (this.personality.openness / 80000); // Reduced by 60% from previous
+                this.coffeeRate = 0.002 + (this.personality.conscientiousness / 60000); // Reduced by 60% from previous
+                this.wisdomRate = 0.0003 + (this.personality.openness / 100000); // Reduced by 65% from previous
+                this.exerciseRate = 0.0006 + ((100 - this.personality.conscientiousness) / 80000); // Reduced by 60% from previous
+                this.socialRate = 0.0006 + (this.personality.extraversion / 60000); // Reduced by 60% from previous
+                this.cleanlinessRate = 0.0008 + (this.personality.conscientiousness / 80000); // Reduced by 60% from previous
+                
+                // Generate a unique name for personality display
+                const names = ['Gimli', 'Thorin', 'Balin', 'Dwalin', 'Fili', 'Kili', 'Gloin', 'Oin', 'Ori', 'Nori', 'Dori', 'Bifur', 'Bofur', 'Bombur'];
+                this.name = names[Math.floor(Math.random() * names.length)] + '_' + Math.floor(Math.random() * 100);
             }
             
             update() {
                 this.updateSparkles();
+                this.updateSurvivalNeeds();
+                this.applyPersonalityBehavior(); // ✅ Now properly recalculates efficiency
                 
                 const dx = this.targetX - this.x;
                 const dy = this.targetY - this.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
                 if (distance > 3) {
-                    this.x += (dx / distance) * this.speed;
-                    this.y += (dy / distance) * this.speed;
+                    // Speed affected by hunger/thirst
+                    const healthModifier = this.getHealthModifier();
+                    this.x += (dx / distance) * this.speed * healthModifier;
+                    this.y += (dy / distance) * this.speed * healthModifier;
                 } else {
                     this.handleTask();
                 }
                 
-                if (this.task === 'idle' || (this.task === 'exploring' && Math.random() < 0.01)) {
-                    this.findNewTask();
+                // Keep dwarfs within canvas bounds
+                this.x = Math.max(20, Math.min(canvas.width - 20, this.x));
+                this.y = Math.max(20, Math.min(canvas.height - 20, this.y));
+                
+                // Also ensure targets are within bounds
+                this.targetX = Math.max(20, Math.min(canvas.width - 20, this.targetX));
+                this.targetY = Math.max(20, Math.min(canvas.height - 20, this.targetY));
+                
+                // 🔧 NEW: Use priority system to decide when to find new tasks
+                if ((this.task === 'idle' || (this.task === 'exploring' && Math.random() < 0.01)) && 
+                    !this.isInSpecialState()) {
+                    this.evaluateTaskPriorities();
+                }
+            }
+            
+            // 🔧 NEW: Check if dwarf is in a special state that shouldn't be interrupted
+            isInSpecialState() {
+                const specialStates = [
+                    'lazy_break', 'panicking', 'confused', 'recovering', 
+                    'avoiding_conflict', 'nervous_breakdown', 'work_refusal', 'forced_party'
+                ];
+                return specialStates.includes(this.task);
+            }
+            
+            // 🔧 NEW: Evaluate all possible tasks by priority and choose the most important
+            evaluateTaskPriorities() {
+                const taskOptions = [];
+                
+                // 1. CRITICAL SURVIVAL CHECK
+                if (this.hunger < 5 || this.thirst < 5) {
+                    taskOptions.push({
+                        task: 'seeking_sustenance',
+                        priority: TASK_PRIORITIES.CRITICAL_SURVIVAL,
+                        reason: 'Critical hunger/thirst'
+                    });
+                }
+                
+                // 2. BASIC SURVIVAL CHECK
+                else if (this.hunger < 15 || this.thirst < 15) {
+                    taskOptions.push({
+                        task: 'seeking_sustenance',
+                        priority: TASK_PRIORITIES.BASIC_SURVIVAL,
+                        reason: 'Low hunger/thirst'
+                    });
+                }
+                
+                // 3. ROCKET BUILDING CHECK (if survival needs are met)
+                if (this.hunger > 20 && this.thirst > 20) {
+                    const rocketPart = this.shouldBuildRocket(game.gold);
+                    if (rocketPart) {
+                        taskOptions.push({
+                            task: 'build_rocket',
+                            priority: TASK_PRIORITIES.ROCKET_BUILDING,
+                            reason: 'Rocket part available: ' + rocketPart,
+                            data: rocketPart
+                        });
+                    }
+                    
+                    // 4. INFRASTRUCTURE BUILDING CHECK
+                    const infraType = this.shouldBuildInfrastructure(game.gold);
+                    if (infraType) {
+                        taskOptions.push({
+                            task: 'build_infrastructure',
+                            priority: TASK_PRIORITIES.INFRASTRUCTURE,
+                            reason: 'Infrastructure needed: ' + infraType,
+                            data: infraType
+                        });
+                    }
+                    
+                    // 5. AMENITY SEEKING CHECK
+                    const criticalAmenityNeed = this.evaluateAmenityNeeds();
+                    if (criticalAmenityNeed) {
+                        taskOptions.push({
+                            task: 'seeking_amenities',
+                            priority: TASK_PRIORITIES.AMENITY_SEEKING,
+                            reason: 'Need amenity: ' + criticalAmenityNeed
+                        });
+                    }
+                    
+                    // 6. MINING CHECK (default productive task)
+                    taskOptions.push({
+                        task: 'mining',
+                        priority: TASK_PRIORITIES.MINING,
+                        reason: 'Mine for gold'
+                    });
+                }
+                
+                // 7. IDLE (fallback)
+                taskOptions.push({
+                    task: 'idle',
+                    priority: TASK_PRIORITIES.IDLE,
+                    reason: 'Nothing urgent to do'
+                });
+                
+                // Choose the highest priority task
+                taskOptions.sort((a, b) => b.priority - a.priority);
+                const chosenTask = taskOptions[0];
+                
+                // Debug: occasionally log task decisions
+                if (Math.random() < 0.02) {
+                    addLog(this.name + ' chose: ' + chosenTask.reason, false);
+                }
+                
+                // Execute the chosen task
+                this.executeChosenTask(chosenTask);
+            }
+            
+            // 🔧 NEW: Execute the task chosen by the priority system
+            executeChosenTask(chosenTask) {
+                switch (chosenTask.task) {
+                    case 'seeking_sustenance':
+                        this.task = 'seeking_sustenance';
+                        // Don't set random target - let the seeking logic find the best source
+                        break;
+                        
+                    case 'build_rocket':
+                        this.startRocketConstruction(chosenTask.data);
+                        break;
+                        
+                    case 'build_infrastructure':
+                        this.startInfrastructureConstruction(chosenTask.data);
+                        break;
+                        
+                    case 'seeking_amenities':
+                        this.task = 'seeking_amenities';
+                        // Let the amenity seeking logic find the best building
+                        break;
+                        
+                    case 'mining':
+                        this.findGoldDeposit();
+                        break;
+                        
+                    case 'idle':
+                    default:
+                        this.task = 'idle';
+                        this.targetX = Math.random() * (canvas.width - 100) + 50;
+                        this.targetY = Math.random() * (canvas.height - 100) + 50;
+                        break;
+                }
+            }
+            
+            // 🔧 NEW: Evaluate which amenity needs are critical
+            evaluateAmenityNeeds() {
+                const needs = [
+                    { name: 'rest', value: this.rest, threshold: 20 },
+                    { name: 'joy', value: this.joy, threshold: 15 },
+                    { name: 'coffee', value: this.coffee, threshold: 10 },
+                    { name: 'cleanliness', value: this.cleanliness, threshold: 15 },
+                    { name: 'social', value: this.social, threshold: 15 },
+                    { name: 'exercise', value: this.exercise, threshold: 15 },
+                    { name: 'art', value: this.art, threshold: 10 },
+                    { name: 'wisdom', value: this.wisdom, threshold: 10 }
+                ];
+                
+                // Find the most critical need
+                const criticalNeeds = needs.filter(need => need.value < need.threshold);
+                if (criticalNeeds.length > 0) {
+                    criticalNeeds.sort((a, b) => a.value - b.value); // Lowest value first
+                    return criticalNeeds[0].name;
+                }
+                
+                return null;
+            }
+            
+            updateSurvivalNeeds() {
+                // Decrease all needs over time
+                this.hunger = Math.max(0, this.hunger - this.hungerRate);
+                this.thirst = Math.max(0, this.thirst - this.thirstRate);
+                this.rest = Math.max(0, this.rest - this.restRate);
+                this.joy = Math.max(0, this.joy - this.joyRate);
+                this.art = Math.max(0, this.art - this.artRate);
+                this.coffee = Math.max(0, this.coffee - this.coffeeRate);
+                this.wisdom = Math.max(0, this.wisdom - this.wisdomRate);
+                this.exercise = Math.max(0, this.exercise - this.exerciseRate);
+                this.social = Math.max(0, this.social - this.socialRate);
+                this.cleanliness = Math.max(0, this.cleanliness - this.cleanlinessRate);
+                
+                // Warning messages for critically low needs (reduced frequency even more)
+                if (this.hunger < 10 && Math.random() < 0.002) { // Reduced from 0.005
+                    addLog(this.name + ' is getting very hungry!', false, 'disaster');
+                }
+                if (this.thirst < 10 && Math.random() < 0.002) { // Reduced from 0.005
+                    addLog(this.name + ' needs water urgently!', false, 'disaster');
+                }
+                if (this.rest < 5 && Math.random() < 0.002) { // Reduced from 0.004
+                    addLog(this.name + ' is exhausted and needs sleep!', false, 'disaster');
+                }
+                
+                // Handle seeking sustenance task with improved decision-making
+                if (this.task === 'seeking_sustenance') {
+                    let nearestSource = null;
+                    let minDist = Infinity;
+                    let sourceType = null;
+                    
+                    // 🔧 IMPROVED: More decisive priority system to prevent getting stuck
+                    // Calculate urgency scores for each need
+                    const hungerUrgency = Math.max(0, 100 - this.hunger) * 1.2; // Hunger slightly more urgent
+                    const thirstUrgency = Math.max(0, 100 - this.thirst);
+                    
+                    // 🔧 KEY FIX: Decide which need to prioritize (with some randomness to avoid getting stuck)
+                    let priorityNeed = 'hunger';
+                    if (thirstUrgency > hungerUrgency * 1.1) {
+                        priorityNeed = 'thirst';
+                    } else if (Math.abs(thirstUrgency - hungerUrgency) < 10) {
+                        // If needs are similar, add some randomness to prevent getting stuck
+                        priorityNeed = Math.random() < 0.6 ? 'hunger' : 'thirst';
+                    }
+                    
+                    // Look for the priority source first
+                    if (priorityNeed === 'food' || priorityNeed === 'hunger') {
+                        // Look for food sources
+                        game.foodSources.forEach(source => {
+                            const dist = Math.sqrt((this.x - source.x) ** 2 + (this.y - source.y) ** 2);
+                            if (dist < minDist) {
+                                minDist = dist;
+                                nearestSource = source;
+                                sourceType = 'food';
+                            }
+                        });
+                    } else {
+                        // Look for water sources
+                        game.waterSources.forEach(source => {
+                            const dist = Math.sqrt((this.x - source.x) ** 2 + (this.y - source.y) ** 2);
+                            if (dist < minDist) {
+                                minDist = dist;
+                                nearestSource = source;
+                                sourceType = 'water';
+                            }
+                        });
+                    }
+                    
+                    // If no priority source found, check the other type
+                    if (!nearestSource) {
+                        if (priorityNeed === 'food' || priorityNeed === 'hunger') {
+                            // Look for water as backup
+                            game.waterSources.forEach(source => {
+                                const dist = Math.sqrt((this.x - source.x) ** 2 + (this.y - source.y) ** 2);
+                                if (dist < minDist) {
+                                    minDist = dist;
+                                    nearestSource = source;
+                                    sourceType = 'water';
+                                }
+                            });
+                        } else {
+                            // Look for food as backup
+                            game.foodSources.forEach(source => {
+                                const dist = Math.sqrt((this.x - source.x) ** 2 + (this.y - source.y) ** 2);
+                                if (dist < minDist) {
+                                    minDist = dist;
+                                    nearestSource = source;
+                                    sourceType = 'food';
+                                }
+                            });
+                        }
+                    }
+                    
+                    // Also check buildings as final backup
+                    if (!nearestSource) {
+                        game.buildings.forEach(building => {
+                            const dist = Math.sqrt((this.x - building.x) ** 2 + (this.y - building.y) ** 2);
+                            if (dist < minDist) {
+                                minDist = dist;
+                                nearestSource = building;
+                                sourceType = 'building';
+                            }
+                        });
+                    }
+                    
+                    if (nearestSource) {
+                        this.targetX = nearestSource.x;
+                        this.targetY = nearestSource.y;
+                        
+                        if (minDist < 30) {
+                            // 🔧 MUCH MORE FILLING: Food and water now restore much more
+                            if (sourceType === 'food') {
+                                this.hunger = Math.min(100, this.hunger + 25); // Increased from +8 to +25 (3x more filling!)
+                                if (nearestSource.amount) {
+                                    nearestSource.amount--;
+                                    if (nearestSource.amount <= 0) {
+                                        const index = game.foodSources.indexOf(nearestSource);
+                                        if (index > -1) game.foodSources.splice(index, 1);
+                                    }
+                                }
+                            } else if (sourceType === 'water') {
+                                this.thirst = Math.min(100, this.thirst + 35); // Increased from +12 to +35 (3x more filling!)
+                                if (nearestSource.amount) {
+                                    nearestSource.amount--;
+                                    if (nearestSource.amount <= 0) {
+                                        const index = game.waterSources.indexOf(nearestSource);
+                                        if (index > -1) game.waterSources.splice(index, 1);
+                                    }
+                                }
+                            } else if (sourceType === 'building') {
+                                this.hunger = Math.min(100, this.hunger + 10); // Increased from +3 to +10
+                                this.thirst = Math.min(100, this.thirst + 10); // Increased from +3 to +10
+                            }
+                            
+                            // 🔧 MORE FLEXIBLE: Stop seeking when reasonably satisfied
+                            if (this.hunger > 40 && this.thirst > 40) { // Reduced from 50 to 40 (even more flexible)
+                                this.task = 'idle';
+                                if (Math.random() < 0.1) {
+                                    addLog(this.name + ' feels refreshed and ready to work!', false);
+                                }
+                            }
+                        }
+                    } else {
+                        // ✅ NEW: If no sources found, go back to idle to prevent getting stuck
+                        this.task = 'idle';
+                        if (Math.random() < 0.05) {
+                            addLog(this.name + ' couldn\'t find any sustenance sources!', false, 'disaster');
+                        }
+                    }
+                }
+                
+                // Handle seeking amenities task
+                if (this.task === 'seeking_amenities') {
+                    // Double-check that survival needs aren't critical
+                    if (this.hunger < 5 || this.thirst < 5) { // Reduced from 8
+                        this.task = 'seeking_sustenance'; // Switch to survival mode
+                    } else {
+                        this.seekNearestAmenity();
+                    }
+                }
+                
+                // COMPOUND EFFECTS - Multiple poor traits create worse outcomes
+                if (this.personality.conscientiousness < 30 && this.personality.neuroticism > 70) {
+                    // Anxious + careless = disasters during stress
+                    if (stabilityLevel < 50 && Math.random() < 0.002) {
+                        // Destroys something while panicking
+                        if (game.machines.length > 0 && Math.random() < 0.5) {
+                            game.machines.pop();
+                            addLog(this.name + ' accidentally destroyed a machine while panicking!', true, 'disaster');
+                        } else if (game.buildings.length > 0) {
+                            game.buildings.pop();
+                            addLog(this.name + ' clumsily damaged a building during stress!', true, 'disaster');
+                        }
+                    }
+                }
+                
+                if (this.personality.agreeableness < 25 && this.personality.neuroticism > 75) {
+                    // Selfish + anxious = sabotage during stress
+                    if (stabilityLevel < 40 && Math.random() < 0.001) {
+                        const otherDwarfs = game.dworfs.filter(d => d !== this);
+                        if (otherDwarfs.length > 0) {
+                            const target = otherDwarfs[Math.floor(Math.random() * otherDwarfs.length)];
+                            target.efficiency *= 0.3;
+                            target.workTimer += 200; // Sabotages their work
+                            addLog(this.name + ' lashed out and sabotaged ' + target.name + '\'s work!', true, 'disaster');
+                        }
+                    }
+                }
+            }
+            
+            applyPersonalityBehavior() {
+                // ✅ FIX: Reset efficiency to base value first, then apply modifiers
+                this.efficiency = this.baseEfficiency;
+                
+                // Apply conscientiousness modifier
+                this.efficiency *= (0.5 + this.personality.conscientiousness / 200);
+                
+                // Neurotic dwarfs are more affected by colony instability
+                if (stabilityLevel < 50 && this.personality.neuroticism > 70) {
+                    this.efficiency *= 0.7; // Temporary efficiency penalty
+                    
+                    if (Math.random() < 0.05) {
+                        addLog(this.name + ' is stressed by the instability!', false, 'disaster');
+                    }
+                }
+                
+                // Extraverted dwarfs work better near others
+                const nearbyDwarfs = game.dworfs.filter(d => 
+                    d !== this && Math.sqrt((d.x - this.x) ** 2 + (d.y - this.y) ** 2) < 100
+                ).length;
+                
+                if (this.personality.extraversion > 60) {
+                    this.efficiency *= (1 + nearbyDwarfs * 0.1); // Bonus for each nearby dwarf
+                } else if (this.personality.extraversion < 40) {
+                    this.efficiency *= (1 - nearbyDwarfs * 0.05); // Penalty for crowding
+                }
+                
+                // Open dwarfs discover new deposits more often
+                if (this.personality.openness > 70 && Math.random() < 0.02) {
+                    if (game.goldDeposits.length < 3) {
+                        game.goldDeposits.push({
+                            x: Math.random() * (canvas.width - 100) + 50,
+                            y: Math.random() * (canvas.height - 100) + 50,
+                            gold: 30 + Math.random() * 70
+                        });
+                        addLog(this.name + ' discovered a new gold deposit!', true);
+                    }
+                }
+            }
+            
+            getHealthModifier() {
+                // ✅ Separate essential vs luxury needs for more balanced penalties
+                const essentialNeeds = [this.hunger, this.thirst, this.rest];
+                const luxuryNeeds = [this.art, this.coffee, this.wisdom, this.exercise, this.social, this.cleanliness, this.joy];
+                
+                // Count critical essential needs (these really matter)
+                const criticalEssential = essentialNeeds.filter(need => need < 10).length; // Reduced from 15 to 10
+                const criticalLuxury = luxuryNeeds.filter(need => need < 5).length; // Reduced from 10 to 5
+                
+                let modifier = 1.0;
+                
+                // ESSENTIAL NEEDS: Severe penalties for survival needs
+                if (criticalEssential >= 2) modifier *= 0.4; // Multiple essential needs critical
+                else if (criticalEssential >= 1) modifier *= 0.7; // One essential need critical
+                
+                // LUXURY NEEDS: Even milder penalties (reduced further)
+                if (criticalLuxury >= 5) modifier *= 0.95; // Many luxury needs low (was 0.92)
+                else if (criticalLuxury >= 7) modifier *= 0.90; // Most luxury needs low (was 0.85)
+                
+                // Specific penalties for the most important needs
+                if (this.hunger < 5) modifier *= 0.6; // Starvation (reduced from 10)
+                if (this.thirst < 5) modifier *= 0.5;  // Dehydration (reduced from 8)
+                if (this.rest < 3) modifier *= 0.7;   // Exhaustion (reduced from 5)
+                
+                // Luxury needs have even smaller individual impact
+                if (this.coffee < 3 && this.personality.conscientiousness > 70) modifier *= 0.97; // Reduced from 5
+                if (this.joy < 3) modifier *= 0.98; // Reduced from 5
+                if (this.cleanliness < 3) modifier *= 0.99; // Reduced from 5
+                
+                return Math.max(0.3, modifier); // Never go below 30% speed (was 20%)
+            }
+            
+            seekNearestAmenity() {
+                // ✅ Find the most needed amenity building (improved logic)
+                let bestBuilding = null;
+                let bestUrgency = 0;
+                let minDistance = Infinity;
+                
+                // First check if we have any amenity buildings
+                const amenityBuildings = game.buildings.filter(b => b.type === 'amenity');
+                
+                if (amenityBuildings.length === 0) {
+                    // No amenity buildings, go back to idle
+                    this.task = 'idle';
+                    return;
+                }
+                
+                amenityBuildings.forEach(building => {
+                    const dist = Math.sqrt((this.x - building.x) ** 2 + (this.y - building.y) ** 2);
+                    let urgency = 0;
+                    
+                    // Calculate urgency based on building type and dwarf needs (higher urgency for lower needs)
+                    switch (building.amenityType) {
+                        case 'house': urgency = Math.max(0, 30 - this.rest); break; // Reduced from 50 to 30
+                        case 'inn': urgency = Math.max(0, 25 - this.joy); break; // Reduced from 40 to 25
+                        case 'museum': urgency = Math.max(0, 20 - this.art); break; // Reduced from 35 to 20
+                        case 'coffee_shop': urgency = Math.max(0, 25 - this.coffee); break; // Reduced from 40 to 25
+                        case 'library': urgency = Math.max(0, 20 - this.wisdom); break; // Reduced from 35 to 20
+                        case 'gym': urgency = Math.max(0, 25 - this.exercise); break; // Reduced from 40 to 25
+                        case 'community_center': urgency = Math.max(0, 25 - this.social); break; // Reduced from 40 to 25
+                        case 'spa': urgency = Math.max(0, 30 - this.cleanliness); break; // Reduced from 50 to 30
+                        default: urgency = 0;
+                    }
+                    
+                    // Prefer closer buildings with high urgency
+                    const score = urgency * 100 / (dist + 1);
+                    if (score > bestUrgency) {
+                        bestUrgency = score;
+                        bestBuilding = building;
+                        minDistance = dist;
+                    }
+                });
+                
+                if (bestBuilding) {
+                    this.targetX = bestBuilding.x;
+                    this.targetY = bestBuilding.y;
+                    
+                    if (minDistance < 30) {
+                        // Restore the appropriate need
+                        this.useAmenity(bestBuilding);
+                    }
+                } else {
+                    // No amenity buildings available, just wander
+                    this.task = 'idle';
+                }
+            }
+            
+            useAmenity(building) {
+                // 🔧 MUCH MORE EFFECTIVE: Amenities now restore much more per use
+                switch (building.amenityType) {
+                    case 'house':
+                        this.rest = Math.min(100, this.rest + 40); // Increased from +15 to +40
+                        if (Math.random() < 0.1) addLog(this.name + ' feels well-rested after sleeping!', false);
+                        break;
+                        
+                    case 'building_amenity':
+                        this.workTimer--;
+                        if (this.personality.conscientiousness > 60) {
+                            this.workTimer -= 0.5;
+                        }
+                        
+                        if (this.workTimer <= 0) {
+                            game.buildings.push({
+                                x: this.targetX,
+                                y: this.targetY,
+                                type: 'amenity',
+                                amenityType: this.amenityType
+                            });
+                            this.task = 'idle';
+                            
+                            const names = {
+                                'house': 'Rest House', 'spa': 'Spa & Bathhouse', 'coffee_shop': 'Coffee Shop', 
+                                'inn': 'Joy Inn', 'community_center': 'Community Center', 'gym': 'Fitness Gym',
+                                'museum': 'Art Museum', 'library': 'Wisdom Library'
+                            };
+                            
+                            addLog('✅ ' + names[this.amenityType] + ' completed by ' + this.name + '!', true);
+                        }
+                        break;
+                    case 'inn':
+                        this.joy = Math.min(100, this.joy + 30); // Increased from +12 to +30
+                        this.social = Math.min(100, this.social + 20); // Increased from +8 to +20
+                        if (Math.random() < 0.1) addLog(this.name + ' had a great time at the inn!', false);
+                        break;
+                    case 'museum':
+                        this.art = Math.min(100, this.art + 25); // Increased from +10 to +25
+                        this.wisdom = Math.min(100, this.wisdom + 15); // Increased from +5 to +15
+                        if (Math.random() < 0.1) addLog(this.name + ' was inspired by beautiful art!', false);
+                        break;
+                    case 'coffee_shop':
+                        this.coffee = Math.min(100, this.coffee + 50); // Increased from +20 to +50
+                        this.joy = Math.min(100, this.joy + 15); // Increased from +5 to +15
+                        if (Math.random() < 0.1) addLog(this.name + ' feels energized after coffee!', false);
+                        break;
+                    case 'library':
+                        this.wisdom = Math.min(100, this.wisdom + 35); // Increased from +15 to +35
+                        this.rest = Math.min(100, this.rest + 10); // Increased from +3 to +10
+                        if (Math.random() < 0.1) addLog(this.name + ' learned something new!', false);
+                        break;
+                    case 'gym':
+                        this.exercise = Math.min(100, this.exercise + 45); // Increased from +18 to +45
+                        this.rest = Math.max(0, this.rest - 8); // Slightly more tiring but still reasonable
+                        if (Math.random() < 0.1) addLog(this.name + ' had a good workout!', false);
+                        break;
+                    case 'community_center':
+                        this.social = Math.min(100, this.social + 40); // Increased from +15 to +40
+                        this.joy = Math.min(100, this.joy + 20); // Increased from +8 to +20
+                        if (Math.random() < 0.1) addLog(this.name + ' made new friends!', false);
+                        break;
+                    case 'spa':
+                        this.cleanliness = Math.min(100, this.cleanliness + 60); // Increased from +25 to +60
+                        this.rest = Math.min(100, this.rest + 20); // Increased from +8 to +20
+                        this.joy = Math.min(100, this.joy + 15); // Increased from +6 to +15
+                        if (Math.random() < 0.1) addLog(this.name + ' feels squeaky clean and relaxed!', false);
+                        break;
+                }
+                
+                // 🔧 MORE FLEXIBLE: Check if needs are satisfied enough to return to work
+                const criticalNeeds = [
+                    this.hunger < 8, this.thirst < 8, this.rest < 8, 
+                    this.joy < 8, this.coffee < 5, this.cleanliness < 8
+                ].filter(Boolean).length;
+                
+                if (criticalNeeds <= 0) { // More forgiving - return to work when no critical needs
+                    this.task = 'idle';
                 }
             }
             
@@ -729,18 +1319,6 @@
                 }
             }
             
-            findNewTask() {
-                const totalGold = game.gold;
-                
-                if (this.shouldBuildRocket(totalGold)) {
-                    this.startRocketConstruction();
-                } else if (this.shouldBuildInfrastructure(totalGold)) {
-                    this.startInfrastructureConstruction();
-                } else {
-                    this.findGoldDeposit();
-                }
-            }
-            
             shouldBuildRocket(gold) {
                 for (let part in game.rocketParts) {
                     const data = game.rocketParts[part];
@@ -752,25 +1330,101 @@
             }
             
             shouldBuildInfrastructure(gold) {
-    const machineRatio = game.machines.length / game.dworfs.length;
-    const buildingRatio = game.buildings.length / game.dworfs.length;
-    
-    // Prioritize buildings when we need population growth (buildings <= dwarfs)
-    if (game.buildings.length <= game.dworfs.length && gold >= 100) return 'building';
-    
-    // Otherwise, normal expansion logic
-    if (machineRatio < 0.5 && gold >= 50) return 'machine';
-    if (buildingRatio < 0.3 && gold >= 100) return 'building';
-    return false;
+                // ✅ SIMPLIFIED: Focus on useful buildings, not stupid machines
+                // NEW BUILDING PRIORITY: Houses → Coffee Shops → Other Amenities → Basic Buildings
+                const buildingRatio = game.buildings.length / game.dworfs.length;
+                
+                // ✅ PRIORITY 1: Houses for rest (most important)
+                if (gold >= 100 && buildingRatio < 0.8) {
+                    const restHouses = game.buildings.filter(b => b.type === 'amenity' && b.amenityType === 'house').length;
+                    const neededHouses = Math.ceil(game.dworfs.length / 2); // 1 house per 2 dwarfs
+                    if (restHouses < neededHouses) {
+                        return 'house';
+                    }
+                }
+                
+                // ✅ PRIORITY 2: Coffee shops (dwarfs need caffeine!)
+                if (gold >= 120 && buildingRatio < 1.0) {
+                    const coffeeShops = game.buildings.filter(b => b.type === 'amenity' && b.amenityType === 'coffee_shop').length;
+                    const neededCoffee = Math.ceil(game.dworfs.length / 3); // 1 coffee shop per 3 dwarfs
+                    if (coffeeShops < neededCoffee) {
+                        return 'coffee_shop';
+                    }
+                }
+                
+                // ✅ PRIORITY 3: Other amenities based on colony needs
+                if (gold >= 100 && game.dworfs.length > 0) {
+                    const colonyAverages = this.calculateColonyAverages();
+                    const demandThreshold = 40; // Reduced from 50 - build when needs are getting low
+                    
+                    // Check what's most needed
+                    if (colonyAverages.joy < demandThreshold && gold >= 140) {
+                        const inns = game.buildings.filter(b => b.type === 'amenity' && b.amenityType === 'inn').length;
+                        if (inns < Math.ceil(game.dworfs.length / 4)) return 'inn';
+                    }
+                    
+                    if (colonyAverages.cleanliness < demandThreshold && gold >= 150) {
+                        const spas = game.buildings.filter(b => b.type === 'amenity' && b.amenityType === 'spa').length;
+                        if (spas < Math.ceil(game.dworfs.length / 4)) return 'spa';
+                    }
+                    
+                    if (colonyAverages.social < demandThreshold && gold >= 160) {
+                        const centers = game.buildings.filter(b => b.type === 'amenity' && b.amenityType === 'community_center').length;
+                        if (centers < Math.ceil(game.dworfs.length / 4)) return 'community_center';
+                    }
+                }
+                
+                // ✅ PRIORITY 4: Basic buildings only if we have enough amenities
+                if (gold >= 80 && buildingRatio < 0.6 && game.buildings.filter(b => b.type === 'amenity').length >= 2) {
+                    return 'building';
+                }
+                
+                return false;
             }
             
-            startRocketConstruction() {
-                const part = this.shouldBuildRocket(game.gold);
+            calculateColonyAverages() {
+                // ✅ Calculate average needs across all dwarfs
+                if (game.dworfs.length === 0) return {};
+                
+                const totals = {
+                    hunger: 0, thirst: 0, rest: 0, joy: 0, art: 0, 
+                    coffee: 0, wisdom: 0, exercise: 0, social: 0, cleanliness: 0
+                };
+                
+                game.dworfs.forEach(dwarf => {
+                    totals.hunger += dwarf.hunger;
+                    totals.thirst += dwarf.thirst;
+                    totals.rest += dwarf.rest;
+                    totals.joy += dwarf.joy;
+                    totals.art += dwarf.art;
+                    totals.coffee += dwarf.coffee;
+                    totals.wisdom += dwarf.wisdom;
+                    totals.exercise += dwarf.exercise;
+                    totals.social += dwarf.social;
+                    totals.cleanliness += dwarf.cleanliness;
+                });
+                
+                const count = game.dworfs.length;
+                return {
+                    hunger: totals.hunger / count,
+                    thirst: totals.thirst / count,
+                    rest: totals.rest / count,
+                    joy: totals.joy / count,
+                    art: totals.art / count,
+                    coffee: totals.coffee / count,
+                    wisdom: totals.wisdom / count,
+                    exercise: totals.exercise / count,
+                    social: totals.social / count,
+                    cleanliness: totals.cleanliness / count
+                };
+            }
+            
+            startRocketConstruction(part) {
                 if (part) {
                     this.task = 'building_rocket';
                     this.workTimer = 600;
                     this.rocketPart = part;
-                    this.targetX = 350;
+                    this.targetX = canvas.width / 2;
                     this.targetY = 100;
                     
                     game.rocketParts[part].building = true;
@@ -780,28 +1434,42 @@
                 }
             }
             
-            startInfrastructureConstruction() {
-                const type = this.shouldBuildInfrastructure(game.gold);
-                if (type === 'machine') {
-                    this.task = 'building_machine';
-                    this.workTimer = 300;
-                    this.targetX = Math.random() * 600 + 50;
-                    this.targetY = Math.random() * 400 + 50;
-                    game.gold -= 50;
-                } else if (type === 'building') {
+            startInfrastructureConstruction(type) {
+                if (type === 'building') {
                     this.task = 'building_structure';
                     this.workTimer = 400;
-                    this.targetX = Math.random() * 600 + 50;
-                    this.targetY = Math.random() * 400 + 50;
+                    this.targetX = Math.random() * (canvas.width - 100) + 50;
+                    this.targetY = Math.random() * (canvas.height - 100) + 50;
                     game.gold -= 100;
+                } else if (type && ['house', 'inn', 'museum', 'coffee_shop', 'library', 'gym', 'community_center', 'spa'].includes(type)) {
+                    // ✅ Handle amenity buildings (the good stuff!)
+                    this.task = 'building_amenity';
+                    this.amenityType = type;
+                    this.workTimer = 450; // Amenities take longer to build
+                    this.targetX = Math.random() * (canvas.width - 100) + 50;
+                    this.targetY = Math.random() * (canvas.height - 100) + 50;
+                    
+                    const costs = {
+                        'house': 120, 'spa': 150, 'coffee_shop': 130, 'inn': 140,
+                        'community_center': 160, 'gym': 180, 'museum': 200, 'library': 170
+                    };
+                    
+                    const names = {
+                        'house': 'Rest House', 'spa': 'Spa & Bathhouse', 'coffee_shop': 'Coffee Shop', 
+                        'inn': 'Joy Inn', 'community_center': 'Community Center', 'gym': 'Fitness Gym',
+                        'museum': 'Art Museum', 'library': 'Wisdom Library'
+                    };
+                    
+                    game.gold -= costs[type];
+                    addLog('🗏️ ' + this.name + ' is building a ' + names[type] + ' for the colony!', true);
                 }
             }
             
             findGoldDeposit() {
                 if (game.goldDeposits.length === 0) {
                     game.goldDeposits.push({
-                        x: Math.random() * 600 + 50,
-                        y: Math.random() * 400 + 50,
+                        x: Math.random() * (canvas.width - 100) + 50,
+                        y: Math.random() * (canvas.height - 100) + 50,
                         gold: 50 + Math.random() * 100
                     });
                 }
@@ -822,17 +1490,24 @@
                 this.target = nearest;
                 this.targetX = nearest.x;
                 this.targetY = nearest.y;
+                this.workTimer = 60; // ✅ FIX: Set mining work timer!
             }
             
             handleTask() {
+                const healthModifier = this.getHealthModifier();
+                const personalityWorkModifier = this.getPersonalityWorkModifier();
+                
                 switch (this.task) {
                     case 'mining':
                         this.workTimer--;
                         if (this.workTimer <= 0) {
                             if (this.target && this.target.gold > 0) {
-                                const mined = Math.min(5, this.target.gold);
-                                this.target.gold -= mined;
-                                this.goldCarried += mined;
+                                // Conscientiousness affects mining efficiency
+                                let mineAmount = Math.min(5, this.target.gold);
+                                mineAmount *= healthModifier * personalityWorkModifier;
+                                
+                                this.target.gold -= mineAmount;
+                                this.goldCarried += mineAmount;
                                 
                                 if (this.target.gold <= 0) {
                                     const index = game.goldDeposits.indexOf(this.target);
@@ -841,38 +1516,122 @@
                             }
                             
                             this.task = 'returning';
-                            this.targetX = 350;
-                            this.targetY = 250;
+                            this.targetX = canvas.width / 2;
+                            this.targetY = canvas.height / 2;
                             this.workTimer = 60;
                         }
                         break;
                         
                     case 'returning':
                         if (this.goldCarried > 0) {
-                            game.gold += this.goldCarried * this.efficiency;
+                            let goldToAdd = this.goldCarried * this.efficiency;
+                            
+                            if (this.personality.agreeableness > 70) {
+                                goldToAdd *= 1.2; // Sharing bonus
+                                if (Math.random() < 0.05) {
+                                    addLog(this.name + ' generously shared extra resources!', false);
+                                }
+                            } else if (this.personality.agreeableness < 30) {
+                                // Selfish dwarfs keep some gold for themselves
+                                const stolenAmount = goldToAdd * 0.3;
+                                goldToAdd *= 0.7;
+                                
+                                if (Math.random() < 0.1) {
+                                    addLog(this.name + ' secretly kept ' + Math.floor(stolenAmount) + ' gold!', false, 'disaster');
+                                }
+                            }
+                            
+                            // ✅ Personal Gold Vault steals from other dwarfs
+                            const personalVaults = game.negativeBuildings.filter(b => b.type === 'personal_gold_vault');
+                            if (personalVaults.length > 0) {
+                                personalVaults.forEach(vault => {
+                                    if (vault.owner !== this.name) { // Don't steal from yourself
+                                        const stolen = goldToAdd * 0.2;
+                                        goldToAdd *= 0.8;
+                                        if (Math.random() < 0.1) {
+                                            addLog('💰 ' + vault.owner + '\'s vault stole ' + Math.floor(stolen) + ' gold from ' + this.name + '!', false, 'disaster');
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            game.gold += goldToAdd;
                             this.goldCarried = 0;
                         }
                         this.task = 'idle';
                         break;
                         
-                    case 'building_machine':
+                    case 'lazy_break':
                         this.workTimer--;
                         if (this.workTimer <= 0) {
-                            game.machines.push({
-                                x: this.targetX,
-                                y: this.targetY,
-                                efficiency: 1 + Math.random()
-                            });
                             this.task = 'idle';
-                            if (!game.milestones.firstMachine) {
-                                game.milestones.firstMachine = true;
-                                addLog('🎉 First Suction Machine built!', true);
-                            }
                         }
                         break;
                         
+                    case 'panicking':
+                        this.workTimer--;
+                        if (this.workTimer <= 0) {
+                            this.task = 'idle';
+                        }
+                        break;
+                        
+                    case 'confused':
+                        this.workTimer--;
+                        // Confused dwarfs just stand there looking around
+                        if (this.workTimer <= 0) {
+                            this.task = 'idle';
+                        }
+                        break;
+                        
+                    case 'recovering':
+                        this.workTimer--;
+                        // Recovering from accidents or attacks
+                        if (this.workTimer <= 0) {
+                            this.task = 'idle';
+                        }
+                        break;
+                        
+                    case 'avoiding_conflict':
+                        this.workTimer--;
+                        // Avoiding hostile dwarfs
+                        if (this.workTimer <= 0) {
+                            this.task = 'idle';
+                        }
+                        break;
+                        
+                    case 'nervous_breakdown':
+                        this.workTimer--;
+                        // Complete breakdown, affects nearby dwarfs
+                        if (this.workTimer <= 0) {
+                            this.task = 'idle';
+                        }
+                        break;
+                        
+                    case 'work_refusal':
+                        this.workTimer--;
+                        // Completely refuses to work
+                        if (this.workTimer <= 0) {
+                            this.task = 'idle';
+                        }
+                        break;
+                        
+                    case 'forced_party':
+                        this.workTimer--;
+                        // Forced to party by the Party Pavilion
+                        if (this.workTimer <= 0) {
+                            this.task = 'idle';
+                        }
+                        break;
+                        
+                    // ✅ REMOVED: Stupid machine building - no more gold generators!
+                    // Dwarfs now focus on useful buildings like houses and coffee shops
+                        
                     case 'building_structure':
                         this.workTimer--;
+                        if (this.personality.conscientiousness > 60) {
+                            this.workTimer -= 0.5;
+                        }
+                        
                         if (this.workTimer <= 0) {
                             game.buildings.push({
                                 x: this.targetX,
@@ -882,14 +1641,49 @@
                             this.task = 'idle';
                             if (!game.milestones.firstBuilding) {
                                 game.milestones.firstBuilding = true;
-                                addLog('🏠 First city building completed!', true);
+                                addLog('🏠 First city building completed by ' + this.name + '!', true);
                             }
+                        }
+                        break;
+                        
+                    case 'building_negative':
+                        this.workTimer--;
+                        if (this.personality.conscientiousness > 60) {
+                            this.workTimer -= 0.5; // Even negative buildings are built faster by conscientious dwarfs
+                        }
+                        
+                        if (this.workTimer <= 0) {
+                            game.negativeBuildings.push({
+                                x: this.targetX,
+                                y: this.targetY,
+                                type: this.negativeType,
+                                owner: this.name,
+                                timer: 0 // For timed effects
+                            });
+                            this.task = 'idle';
+                            
+                            const messages = {
+                                'gold_mutation_chamber': this.name + ' completed their "research facility"!',
+                                'motion_alarm_tower': this.name + ' finished their "safety system"!',
+                                'party_pavilion': this.name + ' built a place for "team building"!',
+                                'unsafe_mining_rig': this.name + ' rushed their mining equipment!',
+                                'personal_gold_vault': this.name + ' secured their "savings account"!'
+                            };
+                            
+                            addLog('💀 ' + messages[this.negativeType], true, 'disaster');
                         }
                         break;
                         
                     case 'building_rocket':
                         this.workTimer--;
                         const part = game.rocketParts[this.rocketPart];
+                        
+                        // Conscientiousness and openness affect rocket building
+                        let workSpeed = 1;
+                        if (this.personality.conscientiousness > 70) workSpeed += 0.5;
+                        if (this.personality.openness > 70) workSpeed += 0.3; // Innovation bonus
+                        
+                        this.workTimer -= (workSpeed - 1);
                         part.progress = 1 - (this.workTimer / 600);
                         
                         if (this.workTimer <= 0) {
@@ -897,7 +1691,7 @@
                             part.building = false;
                             part.progress = 1;
                             this.task = 'idle';
-                            addLog('✅ ' + this.rocketPart + ' completed!', true);
+                            addLog('✅ ' + this.rocketPart + ' completed by ' + this.name + '!', true);
                             
                             let allComplete = true;
                             for (let p in game.rocketParts) {
@@ -915,7 +1709,44 @@
                             }
                         }
                         break;
+                        
+                    case 'building_amenity':
+                        this.workTimer--;
+                        if (this.personality.conscientiousness > 60) {
+                            this.workTimer -= 0.5;
+                        }
+                        
+                        if (this.workTimer <= 0) {
+                            game.buildings.push({
+                                x: this.targetX,
+                                y: this.targetY,
+                                type: 'amenity',
+                                amenityType: this.amenityType
+                            });
+                            this.task = 'idle';
+                            
+                            const names = {
+                                'house': 'Rest House', 'spa': 'Spa & Bathhouse', 'coffee_shop': 'Coffee Shop', 
+                                'inn': 'Joy Inn', 'community_center': 'Community Center', 'gym': 'Fitness Gym',
+                                'museum': 'Art Museum', 'library': 'Wisdom Library'
+                            };
+                            
+                            addLog('✅ ' + names[this.amenityType] + ' completed by ' + this.name + '!', true);
+                        }
+                        break;
                 }
+            }
+            
+            getPersonalityWorkModifier() {
+                // Conscientiousness is the main work trait
+                let modifier = 0.7 + (this.personality.conscientiousness / 200);
+                
+                // Neuroticism reduces performance under stress
+                if (stabilityLevel < 50) {
+                    modifier *= (1 - this.personality.neuroticism / 300);
+                }
+                
+                return modifier;
             }
             
             draw() {
@@ -929,7 +1760,16 @@
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
                 ctx.fillRect(self.x - 6, self.y + 8, 12, 4);
                 
-                ctx.fillStyle = self.color;
+                // Change dwarf color based on health
+                let dwarfColor = self.color;
+                if (self.hunger < 20 || self.thirst < 20) { // Increased from 30 to 20
+                    dwarfColor = '#8B4513'; // Brown when hungry/thirsty
+                }
+                if (self.hunger < 5 || self.thirst < 5) { // Increased from 10 to 5
+                    dwarfColor = '#696969'; // Gray when critical
+                }
+                
+                ctx.fillStyle = dwarfColor;
                 ctx.fillRect(self.x - 6, self.y - 8, 12, 16);
                 
                 ctx.fillStyle = '#FFDBAC';
@@ -941,8 +1781,36 @@
                 ctx.fillRect(self.x - 2, self.y - 12, 1, 1);
                 ctx.fillRect(self.x + 1, self.y - 12, 1, 1);
                 
-                ctx.fillStyle = '#8B0000';
+                // Hat color reflects personality (dominant trait)
+                let hatColor = '#8B0000'; // Default red
+                const personality = self.personality;
+                const maxTrait = Math.max(personality.openness, personality.conscientiousness, 
+                                         personality.extraversion, personality.agreeableness, personality.neuroticism);
+                
+                if (maxTrait === personality.openness) hatColor = '#9370DB'; // Purple for creative
+                else if (maxTrait === personality.conscientiousness) hatColor = '#008B8B'; // Teal for organized
+                else if (maxTrait === personality.extraversion) hatColor = '#FFD700'; // Gold for social
+                else if (maxTrait === personality.agreeableness) hatColor = '#32CD32'; // Green for kind
+                else if (maxTrait === personality.neuroticism) hatColor = '#FF4500'; // Orange for anxious
+                
+                ctx.fillStyle = hatColor;
                 ctx.fillRect(self.x - 7, self.y - 17, 14, 5);
+                
+                // Draw hunger bar (red) - only show when getting low
+                if (self.hunger < 30) { // Increased from 50 to 30
+                    ctx.fillStyle = '#FF0000';
+                    ctx.fillRect(self.x - 8, self.y - 22, (self.hunger / 100) * 16, 2);
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.strokeRect(self.x - 8, self.y - 22, 16, 2);
+                }
+                
+                // Draw thirst bar (blue) - only show when getting low
+                if (self.thirst < 30) { // Increased from 50 to 30
+                    ctx.fillStyle = '#0066FF';
+                    ctx.fillRect(self.x - 8, self.y - 25, (self.thirst / 100) * 16, 2);
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.strokeRect(self.x - 8, self.y - 25, 16, 2);
+                }
                 
                 switch (self.task) {
                     case 'mining':
@@ -955,6 +1823,8 @@
                     case 'building_machine':
                     case 'building_structure':
                     case 'building_rocket':
+                    case 'building_negative':
+                    case 'building_amenity':
                         ctx.fillStyle = '#8B4513';
                         ctx.fillRect(self.x + 6, self.y - 6, 6, 2);
                         ctx.fillStyle = '#696969';
@@ -962,18 +1832,139 @@
                         
                         if (self.workTimer > 0) {
                             const maxTimer = self.task === 'building_rocket' ? 600 : 
-                                           self.task === 'building_machine' ? 300 : 400;
+                                           self.task === 'building_machine' ? 300 : 
+                                           self.task === 'building_negative' ? 350 : 
+                                           self.task === 'building_amenity' ? 450 : 400;
                             const progress = 1 - (self.workTimer / maxTimer);
-                            ctx.fillStyle = '#FFD700';
-                            ctx.fillRect(self.x - 10, self.y - 25, 20 * progress, 3);
+                            let progressColor = '#FFD700';
+                            if (self.task === 'building_negative') progressColor = '#FF4444';
+                            if (self.task === 'building_amenity') progressColor = '#4ECDC4';
+                            
+                            ctx.fillStyle = progressColor;
+                            ctx.fillRect(self.x - 10, self.y - 30, 20 * progress, 3);
                         }
+                        break;
+                        
+                    case 'seeking_sustenance':
+                        // Show food/water seeking icon
+                        ctx.fillStyle = '#FF6B6B';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🍞💧', self.x, self.y - 30);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'lazy_break':
+                        // Show lazy/sleeping icon
+                        ctx.fillStyle = '#8B4513';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('😴', self.x, self.y - 30);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'panicking':
+                        // Show panic/stress icon with shaking
+                        const shakeX = (Math.random() - 0.5) * 4;
+                        const shakeY = (Math.random() - 0.5) * 4;
+                        ctx.fillStyle = '#FF4444';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('😰', self.x + shakeX, self.y - 30 + shakeY);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'confused':
+                        // Show confusion icon
+                        ctx.fillStyle = '#FFB347';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('❓', self.x, self.y - 30);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'recovering':
+                        // Show injury/recovery icon
+                        ctx.fillStyle = '#FF6B6B';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🤕', self.x, self.y - 30);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'avoiding_conflict':
+                        // Show fleeing icon
+                        ctx.fillStyle = '#FFA500';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🏃', self.x, self.y - 30);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'nervous_breakdown':
+                        // Show breakdown with extreme shaking
+                        const bigShakeX = (Math.random() - 0.5) * 8;
+                        const bigShakeY = (Math.random() - 0.5) * 8;
+                        ctx.fillStyle = '#8B0000';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('💀', self.x + bigShakeX, self.y - 30 + bigShakeY);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'work_refusal':
+                        // Show refusal/protest icon
+                        ctx.fillStyle = '#8B0000';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🚫', self.x, self.y - 30);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'forced_party':
+                        // Show party/dancing icon
+                        ctx.fillStyle = '#FF69B4';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🕺', self.x, self.y - 30);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'seeking_amenities':
+                        // Show amenity seeking icon
+                        ctx.fillStyle = '#4ECDC4';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🏠', self.x, self.y - 30);
+                        ctx.textAlign = 'left';
                         break;
                 }
                 
                 if (self.goldCarried > 0) {
                     ctx.fillStyle = '#FFD700';
                     ctx.font = '10px Arial';
-                    ctx.fillText('+' + Math.floor(self.goldCarried), self.x - 8, self.y - 20);
+                    ctx.fillText('+' + Math.floor(self.goldCarried), self.x - 8, self.y - 35);
+                }
+                
+                // Show personality indicator on hover (simplified for mobile)
+                if (self.personality.neuroticism > 80 && stabilityLevel < 50) {
+                    ctx.fillStyle = '#FF4444';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('😰', self.x, self.y - 40);
+                    ctx.textAlign = 'left';
+                } else if (self.personality.agreeableness < 25 && Math.random() < 0.1) {
+                    ctx.fillStyle = '#FF6B6B';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('😠', self.x, self.y - 40);
+                    ctx.textAlign = 'left';
+                } else if (self.personality.conscientiousness < 25 && self.task !== 'lazy_break' && Math.random() < 0.05) {
+                    ctx.fillStyle = '#FFA500';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('🤷', self.x, self.y - 40);
+                    ctx.textAlign = 'left';
                 }
             }
         }
@@ -981,10 +1972,143 @@
         function initDworfs() {
             for (let i = 0; i < 3; i++) {
                 game.dworfs.push(new Dworf(
-                    350 + (i - 1) * 40,
-                    250
+                    canvas.width / 2 + (i - 1) * 40,
+                    canvas.height / 2
                 ));
             }
+        }
+        
+        function initFoodAndWaterSources() {
+            // 🔧 MORE INITIAL RESOURCES: Prevent early scarcity
+            // Create initial food sources (berry bushes)
+            for (let i = 0; i < 5; i++) { // Increased from 4 to 5
+                game.foodSources.push({
+                    x: Math.random() * (canvas.width - 100) + 50,
+                    y: Math.random() * (canvas.height - 100) + 50,
+                    amount: 60 + Math.random() * 60, // Increased from 40-80 to 60-120
+                    maxAmount: 120, // Increased from 80 to 120
+                    regrowTimer: 0,
+                    type: 'berries'
+                });
+            }
+            
+            // Create initial water sources (springs)
+            for (let i = 0; i < 4; i++) { // Increased from 3 to 4
+                game.waterSources.push({
+                    x: Math.random() * (canvas.width - 100) + 50,
+                    y: Math.random() * (canvas.height - 100) + 50,
+                    amount: 100 + Math.random() * 80, // Increased from 80-140 to 100-180
+                    maxAmount: 200, // Increased from 150 to 200
+                    regrowTimer: 0,
+                    type: 'spring'
+                });
+            }
+        }
+        
+        function updateFoodAndWaterSources() {
+            // 🔧 EVEN FASTER REGENERATION: Resources regenerate very quickly
+            // Regrow food sources over time
+            game.foodSources.forEach(source => {
+                if (source.amount < source.maxAmount) {
+                    source.regrowTimer++;
+                    if (source.regrowTimer > 90) { // Regrow every 1.5 seconds (was 2 seconds)
+                        source.amount = Math.min(source.maxAmount, source.amount + 3); // +3 instead of +2
+                        source.regrowTimer = 0;
+                    }
+                }
+            });
+            
+            // Refill water sources over time
+            game.waterSources.forEach(source => {
+                if (source.amount < source.maxAmount) {
+                    source.regrowTimer++;
+                    if (source.regrowTimer > 60) { // Refill every 1 second (was 1.5 seconds)
+                        source.amount = Math.min(source.maxAmount, source.amount + 4); // +4 instead of +3
+                        source.regrowTimer = 0;
+                    }
+                }
+            });
+            
+            // Occasionally spawn new sources if there are too few
+            if (game.time % 1800 === 0) { // Every 30 seconds
+                if (game.foodSources.length < 3) { // Increased from 2 to 3
+                    game.foodSources.push({
+                        x: Math.random() * (canvas.width - 100) + 50,
+                        y: Math.random() * (canvas.height - 100) + 50,
+                        amount: 25, // Increased from 15 to 25
+                        maxAmount: 50, // Increased from 30 to 50
+                        regrowTimer: 0,
+                        type: 'berries'
+                    });
+                    addLog('🍓 New berry bush has grown!', false);
+                }
+                
+                if (game.waterSources.length < 2) { // Increased from 1 to 2
+                    game.waterSources.push({
+                        x: Math.random() * (canvas.width - 100) + 50,
+                        y: Math.random() * (canvas.height - 100) + 50,
+                        amount: 40, // Increased from 30 to 40
+                        maxAmount: 80, // Increased from 60 to 80
+                        regrowTimer: 0,
+                        type: 'spring'
+                    });
+                    addLog('💧 New water spring has appeared!', false);
+                }
+            }
+        }
+        
+        function drawFoodSource(source) {
+            // Draw berry bush
+            ctx.fillStyle = source.amount > 15 ? '#228B22' : '#8B4513'; // Green when full, brown when depleted
+            ctx.beginPath();
+            ctx.arc(source.x, source.y, 12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            if (source.amount > 8) { // Reduced from 5 to 8
+                // Draw berries
+                for (let i = 0; i < Math.min(8, Math.floor(source.amount / 4)); i++) { // More berries visible
+                    const angle = (i / 8) * Math.PI * 2;
+                    const berryX = source.x + Math.cos(angle) * 8;
+                    const berryY = source.y + Math.sin(angle) * 8;
+                    
+                    ctx.fillStyle = '#DC143C';
+                    ctx.beginPath();
+                    ctx.arc(berryX, berryY, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            // Amount indicator
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🍓' + Math.floor(source.amount), source.x, source.y - 18);
+            ctx.textAlign = 'left';
+        }
+        
+        function drawWaterSource(source) {
+            // Draw spring/water
+            ctx.fillStyle = source.amount > 30 ? '#1E90FF' : '#4682B4'; // Bright blue when full, darker when low
+            ctx.beginPath();
+            ctx.arc(source.x, source.y, 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add sparkle effect for water
+            for (let i = 0; i < 4; i++) {
+                const angle = game.time * 0.05 + i * (Math.PI / 2);
+                const sparkleX = source.x + Math.cos(angle) * 12;
+                const sparkleY = source.y + Math.sin(angle) * 12;
+                
+                ctx.fillStyle = 'rgba(173, 216, 230, 0.8)';
+                ctx.fillRect(sparkleX, sparkleY, 2, 2);
+            }
+            
+            // Amount indicator
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('💧' + Math.floor(source.amount), source.x, source.y - 20);
+            ctx.textAlign = 'left';
         }
         
         function drawGoldDeposit(deposit) {
@@ -1037,7 +2161,148 @@
         }
         
         function drawBuilding(building) {
-            if (building.type === 'house') {
+            if (building.type === 'amenity') {
+                // ✅ Draw amenity buildings based on their specific type
+                switch (building.amenityType) {
+                    case 'house':
+                        // Cozy house for rest
+                        ctx.fillStyle = '#8B4513';
+                        ctx.fillRect(building.x - 15, building.y - 12, 30, 20);
+                        ctx.fillStyle = '#CD853F';
+                        ctx.beginPath();
+                        ctx.moveTo(building.x - 18, building.y - 12);
+                        ctx.lineTo(building.x, building.y - 25);
+                        ctx.lineTo(building.x + 18, building.y - 12);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.fillStyle = '#FFFF00';
+                        ctx.fillRect(building.x - 8, building.y - 8, 6, 6); // Warm window
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.font = '8px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🛏️', building.x, building.y - 15);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'inn':
+                        // Cheerful inn for joy
+                        ctx.fillStyle = '#FF6347';
+                        ctx.fillRect(building.x - 18, building.y - 15, 36, 25);
+                        ctx.fillStyle = '#32CD32';
+                        ctx.beginPath();
+                        ctx.moveTo(building.x - 20, building.y - 15);
+                        ctx.lineTo(building.x, building.y - 30);
+                        ctx.lineTo(building.x + 20, building.y - 15);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.font = '8px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🍺', building.x, building.y - 20);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'museum':
+                        // Elegant museum for art
+                        ctx.fillStyle = '#F5F5DC';
+                        ctx.fillRect(building.x - 20, building.y - 18, 40, 28);
+                        ctx.fillStyle = '#696969';
+                        for (let i = 0; i < 4; i++) {
+                            ctx.fillRect(building.x - 15 + i * 8, building.y - 18, 2, 28);
+                        }
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.font = '8px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🎨', building.x, building.y - 25);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'coffee_shop':
+                        // Cozy coffee shop
+                        ctx.fillStyle = '#8B4513';
+                        ctx.fillRect(building.x - 16, building.y - 14, 32, 24);
+                        ctx.fillStyle = '#FFE4B5';
+                        ctx.fillRect(building.x - 8, building.y - 10, 6, 6);
+                        ctx.fillRect(building.x + 2, building.y - 10, 6, 6);
+                        // Steam effect
+                        if (Math.random() < 0.3) {
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                            ctx.fillRect(building.x + Math.random() * 6 - 3, building.y - 25, 1, 5);
+                        }
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.font = '8px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('☕', building.x, building.y - 20);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'library':
+                        // Scholarly library
+                        ctx.fillStyle = '#800080';
+                        ctx.fillRect(building.x - 18, building.y - 16, 36, 26);
+                        ctx.fillStyle = '#FFD700';
+                        ctx.fillRect(building.x - 12, building.y - 12, 4, 12);
+                        ctx.fillRect(building.x - 4, building.y - 12, 4, 12);
+                        ctx.fillRect(building.x + 4, building.y - 12, 4, 12);
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.font = '8px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('📚', building.x, building.y - 22);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'gym':
+                        // Athletic gym
+                        ctx.fillStyle = '#2F4F4F';
+                        ctx.fillRect(building.x - 18, building.y - 16, 36, 26);
+                        ctx.fillStyle = '#C0C0C0';
+                        ctx.fillRect(building.x - 8, building.y - 8, 16, 4);
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.font = '8px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('💪', building.x, building.y - 22);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'community_center':
+                        // Social community center
+                        ctx.fillStyle = '#20B2AA';
+                        ctx.fillRect(building.x - 20, building.y - 18, 40, 28);
+                        ctx.fillStyle = '#FFFF00';
+                        ctx.beginPath();
+                        ctx.arc(building.x, building.y - 25, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.font = '8px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('👥', building.x, building.y - 30);
+                        ctx.textAlign = 'left';
+                        break;
+                        
+                    case 'spa':
+                        // Relaxing spa
+                        ctx.fillStyle = '#E6E6FA';
+                        ctx.fillRect(building.x - 18, building.y - 16, 36, 26);
+                        ctx.fillStyle = '#87CEEB';
+                        ctx.beginPath();
+                        ctx.arc(building.x, building.y - 8, 8, 0, Math.PI * 2);
+                        ctx.fill();
+                        // Bubble effects
+                        for (let i = 0; i < 3; i++) {
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                            ctx.beginPath();
+                            ctx.arc(building.x + (i - 1) * 6, building.y - 8, 2, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.font = '8px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🛁', building.x, building.y - 22);
+                        ctx.textAlign = 'left';
+                        break;
+                }
+            } else if (building.type === 'house') {
+                // Original house type
                 ctx.fillStyle = '#8B4513';
                 ctx.fillRect(building.x - 15, building.y - 12, 30, 20);
                 
@@ -1054,6 +2319,7 @@
                 ctx.fillRect(building.x + 2, building.y - 8, 6, 6);
                 
             } else {
+                // Original lab type
                 ctx.fillStyle = '#4682B4';
                 ctx.fillRect(building.x - 15, building.y - 15, 30, 25);
                 
@@ -1067,6 +2333,169 @@
                     ctx.fill();
                 }
             }
+        }
+        
+        function drawNegativeBuilding(building) {
+            switch (building.type) {
+                case 'gold_mutation_chamber':
+                    // Purple experimental lab
+                    ctx.fillStyle = '#8B008B';
+                    ctx.fillRect(building.x - 15, building.y - 15, 30, 25);
+                    
+                    // Sparkly effects
+                    for (let i = 0; i < 3; i++) {
+                        const sparkleX = building.x + (Math.random() - 0.5) * 30;
+                        const sparkleY = building.y + (Math.random() - 0.5) * 25;
+                        ctx.fillStyle = 'rgba(255, 215, 0, 0.8)';
+                        ctx.fillRect(sparkleX, sparkleY, 2, 2);
+                    }
+                    
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('🧪', building.x, building.y - 20);
+                    ctx.textAlign = 'left';
+                    break;
+                    
+                case 'motion_alarm_tower':
+                    // Red alarm tower
+                    ctx.fillStyle = '#8B0000';
+                    ctx.fillRect(building.x - 8, building.y - 25, 16, 35);
+                    
+                    // Flashing effect during motion
+                    if (lastMotionDetected > 0 && (Date.now() - lastMotionDetected) < 2000) {
+                        ctx.fillStyle = '#FF0000';
+                        ctx.beginPath();
+                        ctx.arc(building.x, building.y - 30, 8, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('🚨', building.x, building.y - 35);
+                    ctx.textAlign = 'left';
+                    break;
+                    
+                case 'party_pavilion':
+                    // Disco building
+                    ctx.fillStyle = '#FFD700';
+                    ctx.fillRect(building.x - 20, building.y - 15, 40, 25);
+                    
+                    // Disco ball effect
+                    const discoPhase = Math.sin(game.time * 0.2) * 0.5 + 0.5;
+                    ctx.fillStyle = `rgba(255, 0, 255, ${discoPhase})`;
+                    ctx.beginPath();
+                    ctx.arc(building.x, building.y - 20, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('🕺', building.x, building.y - 25);
+                    ctx.textAlign = 'left';
+                    break;
+                    
+                case 'unsafe_mining_rig':
+                    // Rickety, smoking building
+                    ctx.fillStyle = '#654321';
+                    ctx.fillRect(building.x - 18, building.y - 12, 36, 20);
+                    
+                    // Smoke effect
+                    if (Math.random() < 0.3) {
+                        ctx.fillStyle = 'rgba(128, 128, 128, 0.6)';
+                        ctx.fillRect(building.x + Math.random() * 10 - 5, building.y - 30, 2, 8);
+                    }
+                    
+                    // Warning signs
+                    ctx.fillStyle = '#FF0000';
+                    ctx.fillRect(building.x - 10, building.y - 8, 8, 6);
+                    
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('⚠️', building.x, building.y - 25);
+                    ctx.textAlign = 'left';
+                    break;
+                    
+                case 'personal_gold_vault':
+                    // Heavily fortified selfish vault
+                    ctx.fillStyle = '#2F4F4F';
+                    ctx.fillRect(building.x - 18, building.y - 18, 36, 28);
+                    
+                    // Gold glow
+                    ctx.shadowColor = '#FFD700';
+                    ctx.shadowBlur = 10;
+                    ctx.fillStyle = '#FFD700';
+                    ctx.fillRect(building.x - 8, building.y - 8, 16, 8);
+                    ctx.shadowBlur = 0;
+                    
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = '8px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('MINE', building.x, building.y - 25);
+                    ctx.fillText('💰', building.x, building.y - 15);
+                    ctx.textAlign = 'left';
+                    break;
+            }
+        }
+        
+        function updateNegativeBuildings() {
+            game.negativeBuildings.forEach(building => {
+                building.timer++;
+                
+                switch (building.type) {
+                    case 'gold_mutation_chamber':
+                        // Drains 2-5 gold every 3 seconds
+                        if (building.timer % 180 === 0) {
+                            const goldLoss = 2 + Math.random() * 3;
+                            game.gold = Math.max(0, game.gold - goldLoss);
+                            if (Math.random() < 0.3) {
+                                addLog('🧪 Gold Mutation Chamber consumed ' + Math.floor(goldLoss) + ' gold for "research"!', false, 'disaster');
+                            }
+                        }
+                        break;
+                        
+                    case 'motion_alarm_tower':
+                        // Makes all dwarfs panic when motion detected
+                        if (lastMotionDetected > 0 && (Date.now() - lastMotionDetected) < 1000) {
+                            game.dworfs.forEach(dwarf => {
+                                if (dwarf.task !== 'panicking' && Math.random() < 0.7) {
+                                    dwarf.task = 'panicking';
+                                    dwarf.workTimer = 120; // 2 seconds of panic
+                                }
+                            });
+                        }
+                        break;
+                        
+                    case 'party_pavilion':
+                        // Forces all dwarfs to party every 2 minutes for 30 seconds
+                        if (building.timer % 7200 === 0) { // Every 2 minutes
+                            game.dworfs.forEach(dwarf => {
+                                dwarf.task = 'forced_party';
+                                dwarf.workTimer = 1800; // 30 seconds
+                            });
+                            addLog('🕺 MANDATORY PARTY TIME! All dwarfs must dance!', true, 'disaster');
+                        }
+                        break;
+                        
+                    case 'unsafe_mining_rig':
+                        // 10% chance per minute to injure a random dwarf
+                        if (building.timer % 3600 === 0 && Math.random() < 0.1) {
+                            const victim = game.dworfs[Math.floor(Math.random() * game.dworfs.length)];
+                            victim.efficiency *= 0.5; // Reduce efficiency by 50%
+                            victim.task = 'recovering';
+                            victim.workTimer = 3600; // 1 minute recovery
+                            addLog('🤕 ' + victim.name + ' was injured by the unsafe mining rig!', true, 'disaster');
+                        }
+                        break;
+                        
+                    case 'personal_gold_vault':
+                        // Steals 20% of all gold earned (handled in returning task)
+                        // This building's effect is passive and handled when dwarfs return gold
+                        break;
+                }
+            });
         }
         
         function addLog(message, important, type) {
@@ -1091,14 +2520,23 @@
         }
         
         function updateGame() {
-            game.goldPerSecond = 1 + (game.machines.length * 2) + (game.buildings.length * 0.5);
+            // ✅ SIMPLIFIED: No more stupid machines, just basic gold generation
+            game.goldPerSecond = 1 + (game.buildings.length * 0.8); // Buildings give more gold, no machines
             
             if (game.time % 60 === 0) {
                 game.gold += game.goldPerSecond;
             }
             
+            // Update food and water sources
+            updateFoodAndWaterSources();
+            
+            // ✅ Update negative buildings
+            updateNegativeBuildings();
+            
             if (game.buildings.length > game.dworfs.length && game.time % 900 === 0) {
-                game.dworfs.push(new Dworf(350 + Math.random() * 100 - 50, 250));
+                const newX = Math.max(50, Math.min(canvas.width - 50, canvas.width / 2 + Math.random() * 100 - 50));
+                const newY = Math.max(50, Math.min(canvas.height - 50, canvas.height / 2));
+                game.dworfs.push(new Dworf(newX, newY));
                 addLog('👤 New Dworf joined the colony!');
             }
             
@@ -1119,8 +2557,65 @@
         function updateUI() {
             document.getElementById('goldCount').textContent = Math.floor(game.gold);
             document.getElementById('dworfsCount').textContent = game.dworfs.length;
-            document.getElementById('machinesCount').textContent = game.machines.length;
-            document.getElementById('buildingsCount').textContent = game.buildings.length;
+            
+            // Calculate average needs across all dwarfs
+            if (game.dworfs.length > 0) {
+                const totals = {
+                    hunger: 0, thirst: 0, rest: 0, joy: 0, coffee: 0, cleanliness: 0
+                };
+                
+                game.dworfs.forEach(dwarf => {
+                    totals.hunger += dwarf.hunger;
+                    totals.thirst += dwarf.thirst;
+                    totals.rest += dwarf.rest;
+                    totals.joy += dwarf.joy;
+                    totals.coffee += dwarf.coffee;
+                    totals.cleanliness += dwarf.cleanliness;
+                });
+                
+                const count = game.dworfs.length;
+                const averages = {
+                    hunger: totals.hunger / count,
+                    thirst: totals.thirst / count,
+                    rest: totals.rest / count,
+                    joy: totals.joy / count,
+                    coffee: totals.coffee / count,
+                    cleanliness: totals.cleanliness / count
+                };
+                
+                // Update UI elements with color coding
+                function updateNeedDisplay(elementId, value, criticalThreshold = 15, lowThreshold = 30) { // Reduced thresholds
+                    const element = document.getElementById(elementId);
+                    element.textContent = Math.floor(value);
+                    
+                    if (value < criticalThreshold) {
+                        element.style.color = '#FF4444';
+                    } else if (value < lowThreshold) {
+                        element.style.color = '#FF9800';
+                    } else {
+                        element.style.color = '#4CAF50';
+                    }
+                }
+                
+                updateNeedDisplay('avgHunger', averages.hunger, 15, 35); // Reduced from 20,40 to 15,35
+                updateNeedDisplay('avgThirst', averages.thirst, 10, 30); // Reduced from 15,35 to 10,30
+                updateNeedDisplay('avgRest', averages.rest, 10, 30); // Reduced from 15,35 to 10,30
+                updateNeedDisplay('avgJoy', averages.joy, 10, 30); // Reduced from 15,35 to 10,30
+                updateNeedDisplay('avgCoffee', averages.coffee, 5, 25); // Reduced from 10,30 to 5,25
+                updateNeedDisplay('avgClean', averages.cleanliness, 15, 35); // Reduced from 20,40 to 15,35
+            }
+            
+            // Count different types of buildings
+            const regularBuildings = game.buildings.filter(b => b.type !== 'amenity').length;
+            const amenityBuildings = game.buildings.filter(b => b.type === 'amenity').length;
+            const negativeBuildings = game.negativeBuildings.length;
+            
+            let buildingText = regularBuildings.toString();
+            if (amenityBuildings > 0) buildingText += ` (+${amenityBuildings} 🏠)`;
+            if (negativeBuildings > 0) buildingText += ` (+${negativeBuildings} ⚠️)`;
+            
+            document.getElementById('machinesCount').textContent = amenityBuildings; // Show amenity count instead of machines
+            document.getElementById('buildingsCount').textContent = buildingText;
             document.getElementById('goldPerSec').textContent = game.goldPerSecond.toFixed(1);
             
             const totalParts = Object.keys(game.rocketParts).length;
@@ -1143,7 +2638,7 @@
             document.getElementById('progressText').textContent = progressText;
             
             const partNames = ['engine', 'fuel', 'hull', 'navigation', 'launchpad'];
-            const partIcons = ['🔥', '⛽', '🛡️', '📡', '🏗️'];
+            const partIcons = ['🔥', '⛽', '🛡️', '📡', '🗏️'];
             
             for (let i = 0; i < partNames.length; i++) {
                 const partName = partNames[i];
@@ -1174,56 +2669,24 @@
             ctx.fillStyle = '#0f0f23';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Motion flash effect
             if (motionFlash > 0) {
                 ctx.fillStyle = 'rgba(255, 0, 0, ' + (motionFlash / 40) + ')';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
             
-            // Motion detection indicator
             if (isTracking && (Date.now() - lastMotionDetected) < 1000) {
                 ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
                 ctx.fillRect(0, 0, canvas.width, 5);
                 ctx.fillRect(0, canvas.height - 5, canvas.width, 5);
             }
             
-            // Add a pulsing motion indicator when motion is enabled
             if (isTracking) {
                 const pulseAlpha = Math.sin(game.time * 0.1) * 0.3 + 0.3;
                 ctx.fillStyle = 'rgba(0, 255, 0, ' + pulseAlpha + ')';
                 ctx.fillRect(canvas.width - 20, 10, 10, 10);
             }
             
-            // Add a moving ball indicator that responds to accelerometer (like your example)
-            // Always show the ball for debugging, but move it based on accelerometer data
-            const moveX = -currentAccelY * 2; // Invert Y for X movement
-            const moveY = currentAccelX * 2;  // Use X for Y movement
-            
-            // Draw the moving ball
-            ctx.fillStyle = 'rgba(255, 107, 107, 0.8)';
-            ctx.beginPath();
-            ctx.arc(350 + moveX, 250 + moveY, 15, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Add a label
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.font = '12px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('ACCEL', 350 + moveX, 250 + moveY + 25);
-            ctx.textAlign = 'left';
-            
-            // Add debug info on screen
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.font = '10px Arial';
-            ctx.textAlign = 'left';
-            ctx.fillText('X: ' + currentAccelX.toFixed(1), 10, 20);
-            ctx.fillText('Y: ' + currentAccelY.toFixed(1), 10, 35);
-            ctx.fillText('Z: ' + currentAccelZ.toFixed(1), 10, 50);
-            ctx.fillText('MoveX: ' + moveX.toFixed(1), 10, 65);
-            ctx.fillText('MoveY: ' + moveY.toFixed(1), 10, 80);
-            ctx.fillText('Enabled: ' + isAccelerometerEnabled, 10, 95);
-            
-            for (let i = 0; i < 50; i++) {
+            for (let i = 0; i < 30; i++) {
                 const x = (game.time * 0.01 + i * 123) % canvas.width;
                 const y = (game.time * 0.005 + i * 456) % canvas.height;
                 const brightness = Math.sin(game.time * 0.01 + i) * 0.5 + 0.5;
@@ -1233,12 +2696,15 @@
             
             ctx.fillStyle = 'rgba(255, 215, 0, 0.1)';
             ctx.beginPath();
-            ctx.arc(350, 250, 50, 0, Math.PI * 2);
+            ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, Math.PI * 2);
             ctx.fill();
             
             game.goldDeposits.forEach(drawGoldDeposit);
-            game.machines.forEach(drawMachine);
+            game.foodSources.forEach(drawFoodSource);
+            game.waterSources.forEach(drawWaterSource);
+            // ✅ REMOVED: No more stupid machines cluttering the screen
             game.buildings.forEach(drawBuilding);
+            game.negativeBuildings.forEach(drawNegativeBuilding); // ✅ Draw negative buildings
             
             game.dworfs.forEach(function(dworf) {
                 dworf.update();
@@ -1254,15 +2720,17 @@
             }
             
             if (anyBuilding) {
+                const rocketX = canvas.width / 2 - 30;
+                const rocketY = 70;
                 ctx.strokeStyle = '#FF6B6B';
                 ctx.setLineDash([5, 5]);
-                ctx.strokeRect(320, 70, 60, 60);
+                ctx.strokeRect(rocketX, rocketY, 60, 60);
                 ctx.setLineDash([]);
                 
                 ctx.fillStyle = '#FF6B6B';
                 ctx.font = '12px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText('🚀 ROCKET', 350, 60);
+                ctx.fillText('🚀 ROCKET', canvas.width / 2, 60);
                 ctx.textAlign = 'left';
             }
             
@@ -1273,49 +2741,76 @@
             requestAnimationFrame(gameLoop);
         }
         
-        document.getElementById('enableMotion').addEventListener('click', function() {
-            if (!isTracking) {
-                enableMotionDetection();
-            } else {
-                simulateMotionDamage();
-            }
-        });
-        
-        document.getElementById('testMotion').addEventListener('click', function() {
-            testMotionDetection();
-        });
-        
-        document.getElementById('testBall').addEventListener('click', function() {
-            // Test ball movement with different values
-            currentAccelX = Math.random() * 10 - 5;
-            currentAccelY = Math.random() * 10 - 5;
-            currentAccelZ = 9.8 + Math.random() * 2 - 1;
-            
-            addLog('🎯 Testing ball movement with random values', true);
-            addLog('X: ' + currentAccelX.toFixed(2) + ' Y: ' + currentAccelY.toFixed(2) + ' Z: ' + currentAccelZ.toFixed(2), false);
-        });
-        
-        // Initial motion system check
+        // Initialize everything
         window.addEventListener('load', function() {
+            resizeCanvas();
+            // Initialize dwarfs after canvas is properly sized
             setTimeout(() => {
-                addLog('🔍 Checking motion system support...', false);
-                if (window.DeviceMotionEvent || window.DeviceOrientationEvent) {
-                    addLog('✅ Device motion/orientation supported', false);
-                } else {
-                    addLog('❌ Device motion NOT supported on this device', true, 'disaster');
-                }
+                initDworfs();
+                initFoodAndWaterSources(); // Initialize food and water sources
+                addLog('🌟 Fragile Dworf colony started!');
+                addLog('🎯 Goal: Build a rocket to reach outer space!');
+                addLog('⚠️ Warning: This colony is sensitive to movement...');
+                addLog('🔧 MAJOR REBALANCE: Need consumption rates reduced by 75%!', true);
+                addLog('🍗 MUCH MORE FILLING: Food/water now restores 3x more!', true);
+                addLog('🏠 FASTER HEALING: Amenities now restore 2-3x more per use!', true);
+                addLog('⚡ PRIORITY SYSTEM: Dwarfs now make smart decisions about tasks!', true);
+                addLog('📋 Task Priority: 1.Survival → 2.Rocket → 3.Infrastructure → 4.Amenities → 5.Mining', false);
+                addLog('💧 More initial resources and faster regeneration!', false);
+                addLog('🍓💧 Dwarfs can gather food from berry bushes and water from springs!', false);
+                addLog('🏠 NEW: Dwarfs need rest, joy, coffee, cleanliness and more to function!', true);
+                addLog('⚖️ BALANCED: Survival needs (food/water) prioritized over luxury needs!', true);
+                addLog('🗏️ Build amenities when colony averages get low: Houses, Inns, Coffee Shops, Spas, etc.', false);
+                addLog('🎭 Watch for personality problems: 😴=Lazy 😰=Panic ❓=Confused 🤕=Injured 🏃=Fleeing 💀=Breakdown 🚫=Refusing 🕺=Forced Party 🏠=Seeking Amenities', false);
+                addLog('⚠️ Poor personalities can destroy buildings, steal gold, contaminate resources!', false);
+                addLog('🔧 FIXED: No more exponential gold bug!', true);
+                addLog('😈 NEW: Dwarfs with extreme personalities may build harmful buildings!', true);
+                addLog('✅ IMPROVED: Reduced negative effects from missing amenities!', true);
+                addLog('🗏️ Dwarfs are now more proactive about building needed facilities!', true);
+                addLog('🧭 FIXED: Dwarfs no longer get stuck when hungry/thirsty!', true);
+                addLog('🎯 They now make smart decisions about which need to address first!', false);
+                addLog('⚖️ BALANCED: Reduced hunger/thirst drain rates by 75%!', true);
+                addLog('🌱 Food/water sources now regenerate 3x faster!', false);
+                addLog('🍽️ Dwarfs get 3x more sustenance per use - much less seeking!', false);
+                addLog('🗏️ PROACTIVE: Dwarfs now build amenities when needs drop below 40!', true);
+                addLog('💰 PRIORITY: Houses → Coffee Shops → Other Amenities → Basic Buildings!', false);
+                addLog('❌ REMOVED: Stupid gold-generating machines - no more clutter!', true);
                 
-                if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-                    addLog('⚠️ HTTPS required for device sensors', true);
-                }
-            }, 1000);
+                // Show personality info for starting dwarfs
+                setTimeout(() => {
+                    game.dworfs.forEach((dwarf, i) => {
+                        const traits = [];
+                        if (dwarf.personality.openness > 70) traits.push('creative');
+                        if (dwarf.personality.conscientiousness > 70) traits.push('hardworking');
+                        if (dwarf.personality.extraversion > 70) traits.push('social');
+                        if (dwarf.personality.agreeableness > 70) traits.push('generous');
+                        if (dwarf.personality.neuroticism > 70) traits.push('anxious');
+                        
+                        if (traits.length > 0) {
+                            addLog(`👤 ${dwarf.name} is ${traits.join(' and ')}`, false);
+                        }
+                    });
+                    addLog('💡 Hat colors show personality: Purple=Creative, Teal=Organized, Gold=Social, Green=Kind, Orange=Anxious', false);
+                    addLog('🍞💧 Watch red/blue bars above dwarfs for hunger/thirst!', false);
+                }, 2000);
+            }, 100);
+            
+            // Auto-enable motion detection after a short delay
+            setTimeout(() => {
+                enableAccelerometer();
+            }, 1500);
+            
+            gameLoop();
         });
         
-        initDworfs();
-        addLog('🌟 Fragile Dworf colony started!');
-        addLog('🎯 Goal: Build a rocket to reach outer space!');
-        addLog('⚠️ Warning: This colony is sensitive to disturbances...');
-        gameLoop();
+        // Handle orientation changes
+        window.addEventListener('orientationchange', function() {
+            setTimeout(resizeCanvas, 100);
+        });
+        
+        window.addEventListener('resize', function() {
+            setTimeout(resizeCanvas, 100);
+        });
     </script>
 </body>
 </html>
