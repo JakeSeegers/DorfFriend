@@ -1,0 +1,23 @@
+/* Responsive design for mobile devices */
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+    
+    #title {
+        font-size: 20px;
+    }
+    
+    .stat-item {
+        font-size: 15px;
+    }
+    
+    .stat-value {
+        font-size: 17px;
+    }
+    
+    #gameCanvas {
+        width: calc(100vw - 16px);
+        height: 75vh;
+    }
+}

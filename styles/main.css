@@ -1,0 +1,50 @@
+/* Main layout and base styles */
+body {
+    margin: 0;
+    padding: 10px;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    font-family: 'Courier New', monospace;
+    color: #fff;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+#gameContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    max-width: 100vw;
+}
+
+#gameCanvas {
+    border: 3px solid #FFD700;
+    background: linear-gradient(180deg, #0f0f23, #16213e);
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+    border-radius: 10px;
+    width: calc(100vw - 26px);
+    height: 80vh;
+    max-height: none;
+}
+
+#rightPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+}
+
+#title {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 15px;
+    color: #FFD700;
+    text-shadow: 0 0 20px #FFD700;
+    animation: glow 2s ease-in-out infinite alternate;
+    padding: 0 10px;
+}
+
+@keyframes glow {
+    from { text-shadow: 0 0 20px #FFD700; }
+    to { text-shadow: 0 0 30px #FFD700, 0 0 40px #FFD700; }
+}

@@ -1,0 +1,175 @@
+/* UI panels and components */
+#stats, #rocketProgress, #stabilityPanel {
+    background: rgba(0,0,0,0.8);
+    padding: 15px;
+    border-radius: 15px;
+    border: 2px solid #FFD700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+}
+
+#rocketProgress {
+    border-color: #FF6B6B;
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.2);
+}
+
+#stabilityPanel {
+    border-color: #FF4444;
+    box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
+}
+
+.stat-item {
+    margin: 15px 0;
+    font-size: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-value {
+    color: #FFD700;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.gold-value {
+    color: #FFD700;
+    text-shadow: 0 0 10px #FFD700;
+}
+
+.panel-title {
+    font-size: 18px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* Progress bars */
+.progress-container {
+    width: 100%;
+    height: 18px;
+    background: #333;
+    border-radius: 10px;
+    margin: 12px 0;
+    overflow: hidden;
+    border: 1px solid #555;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #FFD700, #FF6B6B, #4ECDC4);
+    transition: width 0.5s ease;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* Rocket parts */
+.rocket-part {
+    padding: 12px;
+    margin: 8px 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    border-left: 4px solid #4ECDC4;
+    font-size: 14px;
+}
+
+.rocket-part.completed {
+    background: rgba(76, 205, 196, 0.2);
+    border-left-color: #4ECDC4;
+}
+
+.rocket-part.building {
+    background: rgba(255, 215, 0, 0.2);
+    border-left-color: #FFD700;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Stability meter */
+.stability-meter {
+    width: 100%;
+    height: 24px;
+    background: #333;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 12px 0;
+}
+
+.stability-bar {
+    height: 100%;
+    transition: width 0.3s ease, background-color 0.3s ease;
+    border-radius: 10px;
+}
+
+.stability-high { background: linear-gradient(90deg, #4CAF50, #8BC34A); }
+.stability-medium { background: linear-gradient(90deg, #FF9800, #FFC107); }
+.stability-low { background: linear-gradient(90deg, #FF5722, #F44336); }
+.stability-critical { background: linear-gradient(90deg, #B71C1C, #D32F2F); animation: shake 0.5s infinite; }
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+}
+
+.motion-status {
+    margin-top: 15px;
+    font-size: 14px;
+    background: rgba(255,255,255,0.1);
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.motion-status.active {
+    background: rgba(76, 205, 196, 0.2);
+    border: 1px solid #4ECDC4;
+}
+
+.motion-status.inactive {
+    background: rgba(255, 107, 107, 0.2);
+    border: 1px solid #FF6B6B;
+}
+
+.stability-tip {
+    font-size: 13px;
+    color: #888;
+    line-height: 1.4;
+    margin-top: 12px;
+    text-align: center;
+    padding: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
+}
+
+/* Log panel */
+#log {
+    background: rgba(0,0,0,0.9);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    height: 120px;
+    overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.log-entry {
+    margin: 5px 0;
+    opacity: 0.8;
+}
+
+.log-entry.important {
+    color: #FFD700;
+    opacity: 1;
+    font-weight: bold;
+}
+
+.log-entry.disaster {
+    color: #FF4444;
+    font-weight: bold;
+    text-shadow: 0 0 5px #FF4444;
+}
