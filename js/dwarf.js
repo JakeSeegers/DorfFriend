@@ -24,6 +24,11 @@ class Dworf {
             neuroticism: Math.random() * 100
         };
         
+        // Lizard reproductive strategies
+        const strategies = ['orange', 'blue', 'yellow'];
+        this.reproductionStrategy = strategies[Math.floor(Math.random() * strategies.length)];
+        this.reproductionTimer = 0; // Timer to control reproduction attempts
+
         // Survival needs (0-100 scale, start well-fed)
         this.hunger = 80 + Math.random() * 20;
         this.thirst = 80 + Math.random() * 20;
@@ -42,7 +47,6 @@ class Dworf {
         this.hungerRate = 0.0015 + (this.personality.neuroticism / 50000);
         this.thirstRate = 0.002 + (this.personality.extraversion / 80000);
         this.restRate = 0.003 + (this.personality.conscientiousness / 40000);
-        
         // Luxury needs: Much slower consumption
         this.joyRate = 0.0008 + (this.personality.neuroticism / 40000);
         this.artRate = 0.0004 + (this.personality.openness / 80000);
@@ -60,6 +64,7 @@ class Dworf {
         this.updateSparkles();
         this.updateSurvivalNeeds();
         this.applyPersonalityBehavior();
+        this.checkReproduction(); // New check for reproduction opportunities
         
         const dx = this.targetX - this.x;
         const dy = this.targetY - this.y;
@@ -91,15 +96,69 @@ class Dworf {
     isInSpecialState() {
         const specialStates = [
             'lazy_break', 'panicking', 'confused', 'recovering', 
-            'avoiding_conflict', 'nervous_breakdown', 'work_refusal', 'forced_party'
+            'avoiding_conflict', 'nervous_breakdown', 'work_refusal', 'forced_party',
+            'reproducing' // New special state for reproduction
         ];
         return specialStates.includes(this.task);
     }
     
+    // New method to check for reproduction conditions
+    checkReproduction() {
+        if (this.reproductionTimer > 0) {
+            this.reproductionTimer--;
+            return;
+        }
+
+        const nearbyDwarfs = game.dworfs.filter(d => 
+            d !== this && Math.sqrt((d.x - this.x) ** 2 + (d.y - this.y) ** 2) < 50
+        );
+
+        if (nearbyDwarfs.length > 0) {
+            const partner = nearbyDwarfs[Math.floor(Math.random() * nearbyDwarfs.length)];
+            const emptyHouses = game.buildings.filter(b => b.type === 'amenity' && b.amenityType === 'house' && !b.occupied);
+
+            if (emptyHouses.length > 0) {
+                const house = emptyHouses[0];
+                if (this.canReproduceWith(partner)) {
+                    this.task = 'reproducing';
+                    this.targetX = house.x;
+                    this.targetY = house.y;
+                    house.occupied = true; // Mark the house as occupied
+                    this.reproductionTimer = 1000; // Cooldown for attempts
+                    addLog(this.name + ' and ' + partner.name + ' are seeking a house for a new family!', false);
+                }
+            }
+        }
+    }
+
+    // New method to determine if a pairing can reproduce
+    canReproduceWith(partner) {
+        // Orange vs Yellow: A classic combo
+        if (this.reproductionStrategy === 'orange' && partner.reproductionStrategy === 'yellow') return true;
+        if (this.reproductionStrategy === 'yellow' && partner.reproductionStrategy === 'orange') return true;
+        
+        // Blue is a loner and guards his mate
+        if (this.reproductionStrategy === 'blue' && partner.reproductionStrategy === 'blue') {
+            return (Math.random() < 0.05); // Rare chance for blue to reproduce
+        }
+
+        return false;
+    }
+
+    // New method for creating a new dwarf
+    createNewDwarf() {
+        const newDwarf = new Dworf(this.x, this.y);
+        game.dworfs.push(newDwarf);
+        addLog('👶 A new dwarf, ' + newDwarf.name + ', has been born!', true, 'success');
+        
+        const house = game.buildings.find(b => b.x === this.targetX && b.y === this.targetY);
+        if (house) house.occupied = false;
+        this.task = 'idle';
+    }
+
     // Evaluate all possible tasks by priority and choose the most important
     evaluateTaskPriorities() {
         const taskOptions = [];
-        
         // 1. CRITICAL SURVIVAL CHECK
         if (this.hunger < 5 || this.thirst < 5) {
             taskOptions.push({
@@ -164,7 +223,6 @@ class Dworf {
             priority: TASK_PRIORITIES.IDLE,
             reason: 'Nothing urgent to do'
         });
-        
         // Choose the highest priority task
         taskOptions.sort((a, b) => b.priority - a.priority);
         const chosenTask = taskOptions[0];
@@ -188,11 +246,9 @@ class Dworf {
             case 'build_rocket':
                 this.startRocketConstruction(chosenTask.data);
                 break;
-                
             case 'build_infrastructure':
                 this.startInfrastructureConstruction(chosenTask.data);
                 break;
-                
             case 'seeking_amenities':
                 this.task = 'seeking_amenities';
                 break;
@@ -200,7 +256,6 @@ class Dworf {
             case 'mining':
                 this.findGoldDeposit();
                 break;
-                
             case 'idle':
             default:
                 this.task = 'idle';
@@ -222,7 +277,6 @@ class Dworf {
             { name: 'art', value: this.art, threshold: 10 },
             { name: 'wisdom', value: this.wisdom, threshold: 10 }
         ];
-        
         // Find the most critical need
         const criticalNeeds = needs.filter(need => need.value < need.threshold);
         if (criticalNeeds.length > 0) {
@@ -245,7 +299,6 @@ class Dworf {
         this.exercise = Math.max(0, this.exercise - this.exerciseRate);
         this.social = Math.max(0, this.social - this.socialRate);
         this.cleanliness = Math.max(0, this.cleanliness - this.cleanlinessRate);
-        
         // Warning messages for critically low needs
         if (this.hunger < 10 && Math.random() < 0.002) {
             addLog(this.name + ' is getting very hungry!', false, 'disaster');
@@ -426,14 +479,11 @@ class Dworf {
     applyPersonalityBehavior() {
         // Reset efficiency to base value first, then apply modifiers
         this.efficiency = this.baseEfficiency;
-        
         // Apply conscientiousness modifier
         this.efficiency *= (0.5 + this.personality.conscientiousness / 200);
-        
         // Neurotic dwarfs are more affected by colony instability
         if (stabilityLevel < 50 && this.personality.neuroticism > 70) {
             this.efficiency *= 0.7;
-            
             if (Math.random() < 0.05) {
                 addLog(this.name + ' is stressed by the instability!', false, 'disaster');
             }
@@ -443,7 +493,6 @@ class Dworf {
         const nearbyDwarfs = game.dworfs.filter(d => 
             d !== this && Math.sqrt((d.x - this.x) ** 2 + (d.y - this.y) ** 2) < 100
         ).length;
-        
         if (this.personality.extraversion > 60) {
             this.efficiency *= (1 + nearbyDwarfs * 0.1);
         } else if (this.personality.extraversion < 40) {
@@ -467,13 +516,11 @@ class Dworf {
         // Separate essential vs luxury needs for more balanced penalties
         const essentialNeeds = [this.hunger, this.thirst, this.rest];
         const luxuryNeeds = [this.art, this.coffee, this.wisdom, this.exercise, this.social, this.cleanliness, this.joy];
-        
         // Count critical essential needs
         const criticalEssential = essentialNeeds.filter(need => need < 10).length;
         const criticalLuxury = luxuryNeeds.filter(need => need < 5).length;
         
         let modifier = 1.0;
-        
         // ESSENTIAL NEEDS: Severe penalties for survival needs
         if (criticalEssential >= 2) modifier *= 0.4;
         else if (criticalEssential >= 1) modifier *= 0.7;
@@ -486,7 +533,6 @@ class Dworf {
         if (this.hunger < 5) modifier *= 0.6;
         if (this.thirst < 5) modifier *= 0.5;
         if (this.rest < 3) modifier *= 0.7;
-        
         // Luxury needs have smaller individual impact
         if (this.coffee < 3 && this.personality.conscientiousness > 70) modifier *= 0.97;
         if (this.joy < 3) modifier *= 0.98;
@@ -502,7 +548,6 @@ class Dworf {
         let minDistance = Infinity;
         
         const amenityBuildings = game.buildings.filter(b => b.type === 'amenity');
-        
         if (amenityBuildings.length === 0) {
             this.task = 'idle';
             return;
@@ -553,7 +598,6 @@ class Dworf {
                 this.rest = Math.min(100, this.rest + 40);
                 if (Math.random() < 0.1) addLog(this.name + ' feels well-rested after sleeping!', false);
                 break;
-                
             case 'inn':
                 this.joy = Math.min(100, this.joy + 30);
                 this.social = Math.min(100, this.social + 20);
@@ -565,31 +609,26 @@ class Dworf {
                 this.wisdom = Math.min(100, this.wisdom + 15);
                 if (Math.random() < 0.1) addLog(this.name + ' was inspired by beautiful art!', false);
                 break;
-                
             case 'coffee_shop':
                 this.coffee = Math.min(100, this.coffee + 50);
                 this.joy = Math.min(100, this.joy + 15);
                 if (Math.random() < 0.1) addLog(this.name + ' feels energized after coffee!', false);
                 break;
-                
             case 'library':
                 this.wisdom = Math.min(100, this.wisdom + 35);
                 this.rest = Math.min(100, this.rest + 10);
                 if (Math.random() < 0.1) addLog(this.name + ' learned something new!', false);
                 break;
-                
             case 'gym':
                 this.exercise = Math.min(100, this.exercise + 45);
                 this.rest = Math.max(0, this.rest - 8);
                 if (Math.random() < 0.1) addLog(this.name + ' had a good workout!', false);
                 break;
-                
             case 'community_center':
                 this.social = Math.min(100, this.social + 40);
                 this.joy = Math.min(100, this.joy + 20);
                 if (Math.random() < 0.1) addLog(this.name + ' made new friends!', false);
                 break;
-                
             case 'spa':
                 this.cleanliness = Math.min(100, this.cleanliness + 60);
                 this.rest = Math.min(100, this.rest + 20);
@@ -603,7 +642,6 @@ class Dworf {
             this.hunger < 8, this.thirst < 8, this.rest < 8, 
             this.joy < 8, this.coffee < 5, this.cleanliness < 8
         ].filter(Boolean).length;
-        
         if (criticalNeeds <= 0) {
             this.task = 'idle';
         }
@@ -615,7 +653,6 @@ class Dworf {
             sparkle.y -= 1;
             return sparkle.life > 0;
         });
-        
         if (this.goldCarried > 0 && Math.random() < 0.3) {
             this.sparkles.push({
                 x: this.x + (Math.random() - 0.5) * 20,
@@ -638,7 +675,6 @@ class Dworf {
     shouldBuildInfrastructure(gold) {
         // Focus on useful buildings, not machines
         const buildingRatio = game.buildings.length / game.dworfs.length;
-        
         // PRIORITY 1: Houses for rest (most important)
         if (gold >= 100 && buildingRatio < 0.8) {
             const restHouses = game.buildings.filter(b => b.type === 'amenity' && b.amenityType === 'house').length;
@@ -688,12 +724,10 @@ class Dworf {
     
     calculateColonyAverages() {
         if (game.dworfs.length === 0) return {};
-        
         const totals = {
             hunger: 0, thirst: 0, rest: 0, joy: 0, art: 0, 
             coffee: 0, wisdom: 0, exercise: 0, social: 0, cleanliness: 0
         };
-        
         game.dworfs.forEach(dwarf => {
             totals.hunger += dwarf.hunger;
             totals.thirst += dwarf.thirst;
@@ -706,7 +740,6 @@ class Dworf {
             totals.social += dwarf.social;
             totals.cleanliness += dwarf.cleanliness;
         });
-        
         const count = game.dworfs.length;
         return {
             hunger: totals.hunger / count,
@@ -732,7 +765,6 @@ class Dworf {
             
             game.rocketParts[part].building = true;
             game.gold -= game.rocketParts[part].cost;
-            
             addLog('🚀 Starting ' + part + ' construction!', true);
         }
     }
@@ -798,7 +830,6 @@ class Dworf {
                         
                         this.target.gold -= mineAmount;
                         this.goldCarried += mineAmount;
-                        
                         if (this.target.gold <= 0) {
                             const index = game.goldDeposits.indexOf(this.target);
                             if (index > -1) game.goldDeposits.splice(index, 1);
@@ -815,7 +846,6 @@ class Dworf {
             case 'returning':
                 if (this.goldCarried > 0) {
                     let goldToAdd = this.goldCarried * this.efficiency;
-                    
                     if (this.personality.agreeableness > 70) {
                         goldToAdd *= 1.2;
                         if (Math.random() < 0.05) {
@@ -858,9 +888,13 @@ class Dworf {
             case 'nervous_breakdown':
             case 'work_refusal':
             case 'forced_party':
+            case 'reproducing': // Handle the new reproducing state
                 this.workTimer--;
                 if (this.workTimer <= 0) {
                     this.task = 'idle';
+                }
+                if (this.task === 'reproducing' && this.workTimer === 0) {
+                    this.createNewDwarf();
                 }
                 break;
                 
@@ -922,14 +956,12 @@ class Dworf {
                 
                 this.workTimer -= (workSpeed - 1);
                 part.progress = 1 - (this.workTimer / 600);
-                
                 if (this.workTimer <= 0) {
                     part.built = true;
                     part.building = false;
                     part.progress = 1;
                     this.task = 'idle';
                     addLog('✅ ' + this.rocketPart + ' completed by ' + this.name + '!', true);
-                    
                     let allComplete = true;
                     for (let p in game.rocketParts) {
                         if (!game.rocketParts[p].built) {
@@ -970,7 +1002,6 @@ class Dworf {
     
     getPersonalityWorkModifier() {
         let modifier = 0.7 + (this.personality.conscientiousness / 200);
-        
         if (stabilityLevel < 50) {
             modifier *= (1 - this.personality.neuroticism / 300);
         }
@@ -980,15 +1011,12 @@ class Dworf {
     
     draw() {
         const self = this;
-        
         self.sparkles.forEach(function(sparkle) {
             ctx.fillStyle = 'rgba(255, 215, 0, ' + (sparkle.life / 20) + ')';
             ctx.fillRect(sparkle.x, sparkle.y, 2, 2);
         });
-        
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.fillRect(self.x - 6, self.y + 8, 12, 4);
-        
         // Change dwarf color based on health
         let dwarfColor = self.color;
         if (self.hunger < 20 || self.thirst < 20) {
@@ -1009,13 +1037,11 @@ class Dworf {
         ctx.fillStyle = '#000';
         ctx.fillRect(self.x - 2, self.y - 12, 1, 1);
         ctx.fillRect(self.x + 1, self.y - 12, 1, 1);
-        
         // Hat color reflects personality (dominant trait)
         let hatColor = '#8B0000';
         const personality = self.personality;
         const maxTrait = Math.max(personality.openness, personality.conscientiousness, 
                                  personality.extraversion, personality.agreeableness, personality.neuroticism);
-        
         if (maxTrait === personality.openness) hatColor = '#9370DB';
         else if (maxTrait === personality.conscientiousness) hatColor = '#008B8B';
         else if (maxTrait === personality.extraversion) hatColor = '#FFD700';
@@ -1024,7 +1050,6 @@ class Dworf {
         
         ctx.fillStyle = hatColor;
         ctx.fillRect(self.x - 7, self.y - 17, 14, 5);
-        
         // Draw hunger bar (red) - only show when getting low
         if (self.hunger < 30) {
             ctx.fillStyle = '#FF0000';
@@ -1042,7 +1067,6 @@ class Dworf {
         }
         
         this.drawTaskIndicators();
-        
         if (self.goldCarried > 0) {
             ctx.fillStyle = '#FFD700';
             ctx.font = '10px Arial';
@@ -1054,7 +1078,6 @@ class Dworf {
     
     drawTaskIndicators() {
         const self = this;
-        
         switch (self.task) {
             case 'mining':
                 ctx.fillStyle = '#8B4513';
@@ -1062,7 +1085,6 @@ class Dworf {
                 ctx.fillStyle = '#C0C0C0';
                 ctx.fillRect(self.x + 14, self.y - 8, 3, 8);
                 break;
-                
             case 'building_machine':
             case 'building_structure':
             case 'building_rocket':
@@ -1072,7 +1094,6 @@ class Dworf {
                 ctx.fillRect(self.x + 6, self.y - 6, 6, 2);
                 ctx.fillStyle = '#696969';
                 ctx.fillRect(self.x + 10, self.y - 8, 4, 6);
-                
                 if (self.workTimer > 0) {
                     const maxTimer = self.task === 'building_rocket' ? 600 : 
                                    self.task === 'building_machine' ? 300 : 
@@ -1087,7 +1108,6 @@ class Dworf {
                     ctx.fillRect(self.x - 10, self.y - 30, 20 * progress, 3);
                 }
                 break;
-                
             case 'seeking_sustenance':
                 ctx.fillStyle = '#FF6B6B';
                 ctx.font = '12px Arial';
@@ -1095,7 +1115,6 @@ class Dworf {
                 ctx.fillText('🍞💧', self.x, self.y - 30);
                 ctx.textAlign = 'left';
                 break;
-                
             case 'lazy_break':
                 ctx.fillStyle = '#8B4513';
                 ctx.font = '12px Arial';
@@ -1103,7 +1122,6 @@ class Dworf {
                 ctx.fillText('😴', self.x, self.y - 30);
                 ctx.textAlign = 'left';
                 break;
-                
             case 'panicking':
                 const shakeX = (Math.random() - 0.5) * 4;
                 const shakeY = (Math.random() - 0.5) * 4;
@@ -1113,7 +1131,6 @@ class Dworf {
                 ctx.fillText('😰', self.x + shakeX, self.y - 30 + shakeY);
                 ctx.textAlign = 'left';
                 break;
-                
             case 'confused':
                 ctx.fillStyle = '#FFB347';
                 ctx.font = '12px Arial';
@@ -1121,7 +1138,6 @@ class Dworf {
                 ctx.fillText('❓', self.x, self.y - 30);
                 ctx.textAlign = 'left';
                 break;
-                
             case 'recovering':
                 ctx.fillStyle = '#FF6B6B';
                 ctx.font = '12px Arial';
@@ -1129,7 +1145,6 @@ class Dworf {
                 ctx.fillText('🤕', self.x, self.y - 30);
                 ctx.textAlign = 'left';
                 break;
-                
             case 'avoiding_conflict':
                 ctx.fillStyle = '#FFA500';
                 ctx.font = '12px Arial';
@@ -1137,7 +1152,6 @@ class Dworf {
                 ctx.fillText('🏃', self.x, self.y - 30);
                 ctx.textAlign = 'left';
                 break;
-                
             case 'nervous_breakdown':
                 const bigShakeX = (Math.random() - 0.5) * 8;
                 const bigShakeY = (Math.random() - 0.5) * 8;
@@ -1147,7 +1161,6 @@ class Dworf {
                 ctx.fillText('💀', self.x + bigShakeX, self.y - 30 + bigShakeY);
                 ctx.textAlign = 'left';
                 break;
-                
             case 'work_refusal':
                 ctx.fillStyle = '#8B0000';
                 ctx.font = '12px Arial';
@@ -1155,7 +1168,6 @@ class Dworf {
                 ctx.fillText('🚫', self.x, self.y - 30);
                 ctx.textAlign = 'left';
                 break;
-                
             case 'forced_party':
                 ctx.fillStyle = '#FF69B4';
                 ctx.font = '12px Arial';
@@ -1163,7 +1175,6 @@ class Dworf {
                 ctx.fillText('🕺', self.x, self.y - 30);
                 ctx.textAlign = 'left';
                 break;
-                
             case 'seeking_amenities':
                 ctx.fillStyle = '#4ECDC4';
                 ctx.font = '12px Arial';
@@ -1176,7 +1187,6 @@ class Dworf {
     
     drawPersonalityIndicators() {
         const self = this;
-        
         if (self.personality.neuroticism > 80 && stabilityLevel < 50) {
             ctx.fillStyle = '#FF4444';
             ctx.font = '12px Arial';
