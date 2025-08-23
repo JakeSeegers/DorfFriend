@@ -1,26 +1,144 @@
-// UI management and logging system
+// Enhanced UI management with spam reduction system
+
+// Message tracking for spam reduction
+const messageTracker = {
+    recentMessages: new Map(), // Map of message -> {count, element, timestamp, type}
+    duplicateWindow: 5000, // 5 seconds window for duplicate detection
+    
+    // Clean old messages from tracker
+    cleanup() {
+        const now = Date.now();
+        for (let [message, data] of this.recentMessages) {
+            if (now - data.timestamp > this.duplicateWindow) {
+                this.recentMessages.delete(message);
+            }
+        }
+    },
+    
+    // Check if message is a duplicate and should be grouped
+    isDuplicate(message) {
+        this.cleanup();
+        return this.recentMessages.has(message);
+    },
+    
+    // Update existing message counter
+    updateCounter(message) {
+        const data = this.recentMessages.get(message);
+        if (data) {
+            data.count++;
+            data.timestamp = Date.now(); // Reset timer
+            
+            // Update the display
+            const timeStr = '[' + Math.floor(game.time / 60) + 's]';
+            data.element.textContent = `${timeStr} ${message} (x${data.count})`;
+            
+            // Add pulsing effect for active spam
+            data.element.classList.add('spam-counter');
+            setTimeout(() => {
+                if (data.element) data.element.classList.remove('spam-counter');
+            }, 300);
+            
+            return true;
+        }
+        return false;
+    },
+    
+    // Add new message to tracker
+    addMessage(message, element, type) {
+        this.recentMessages.set(message, {
+            count: 1,
+            element: element,
+            timestamp: Date.now(),
+            type: type || 'normal'
+        });
+    },
+    
+    // Check if a message should be suppressed (for very frequent messages)
+    shouldSuppress(message) {
+        // Suppress very frequent low-importance messages
+        const suppressPatterns = [
+            /chose: Need amenity:/,
+            /chose: Mine for gold/,
+            /chose: Nothing urgent/,
+            /feels refreshed and ready to work/,
+            /couldn't find any sustenance/
+        ];
+        
+        return suppressPatterns.some(pattern => pattern.test(message));
+    }
+};
 
 function addLog(message, important, type) {
     const logDiv = document.getElementById('log');
+    
+    // Clean the message for duplicate detection (remove timestamp and dwarf names for better grouping)
+    const cleanMessage = message.replace(/^[A-Za-z_0-9]+\s+(chose:|is|feels|couldn't|needs|had|learned|made|was)/, 'Dwarf $1');
+    
+    // Check if this is a duplicate message within the time window
+    if (!important && messageTracker.isDuplicate(cleanMessage)) {
+        // Update existing counter instead of adding new message
+        if (messageTracker.updateCounter(cleanMessage)) {
+            return; // Successfully updated counter, don't add new message
+        }
+    }
+    
+    // Check if message should be suppressed for being too spammy
+    if (!important && messageTracker.shouldSuppress(message)) {
+        // Only log every 5th occurrence of these messages
+        const suppressKey = cleanMessage + '_suppress';
+        if (!window.suppressCounts) window.suppressCounts = {};
+        window.suppressCounts[suppressKey] = (window.suppressCounts[suppressKey] || 0) + 1;
+        
+        if (window.suppressCounts[suppressKey] % 5 !== 0) {
+            return; // Skip this message
+        }
+        
+        // Modify message to show it's been suppressed
+        message += ` (${window.suppressCounts[suppressKey]} total)`;
+    }
+    
+    // Create new log entry
     const entry = document.createElement('div');
     
     if (important) {
         entry.className = 'log-entry important';
     } else if (type === 'disaster') {
         entry.className = 'log-entry disaster';
+    } else if (type === 'success') {
+        entry.className = 'log-entry success';
     } else {
         entry.className = 'log-entry';
     }
     
-    entry.textContent = '[' + Math.floor(game.time / 60) + 's] ' + message;
+    const timeStr = '[' + Math.floor(game.time / 60) + 's]';
+    entry.textContent = timeStr + ' ' + message;
+    
+    // Add to DOM
     logDiv.appendChild(entry);
     logDiv.scrollTop = logDiv.scrollHeight;
     
-    while (logDiv.children.length > 22) {
-        logDiv.removeChild(logDiv.children[1]);
+    // Track this message for future duplicate detection (only for non-important messages)
+    if (!important) {
+        messageTracker.addMessage(cleanMessage, entry, type);
+    }
+    
+    // Clean up old entries (keep last 25)
+    while (logDiv.children.length > 25) {
+        const removedElement = logDiv.children[1];
+        
+        // Remove from message tracker if it's being deleted
+        for (let [msg, data] of messageTracker.recentMessages) {
+            if (data.element === removedElement) {
+                messageTracker.recentMessages.delete(msg);
+                break;
+            }
+        }
+        
+        logDiv.removeChild(removedElement);
     }
 }
 
+// Enhanced updateUI function with better need status indicators
 function updateUI() {
     document.getElementById('goldCount').textContent = Math.floor(game.gold);
     document.getElementById('dworfsCount').textContent = game.dworfs.length;
@@ -31,6 +149,11 @@ function updateUI() {
             hunger: 0, thirst: 0, rest: 0, joy: 0, coffee: 0, cleanliness: 0
         };
         
+        // Also track how many dwarfs have critical needs
+        const criticalCounts = {
+            hunger: 0, thirst: 0, rest: 0, joy: 0, coffee: 0, cleanliness: 0
+        };
+        
         game.dworfs.forEach(dwarf => {
             totals.hunger += dwarf.hunger;
             totals.thirst += dwarf.thirst;
@@ -38,6 +161,14 @@ function updateUI() {
             totals.joy += dwarf.joy;
             totals.coffee += dwarf.coffee;
             totals.cleanliness += dwarf.cleanliness;
+            
+            // Count critical needs
+            if (dwarf.hunger < 15) criticalCounts.hunger++;
+            if (dwarf.thirst < 15) criticalCounts.thirst++;
+            if (dwarf.rest < 15) criticalCounts.rest++;
+            if (dwarf.joy < 15) criticalCounts.joy++;
+            if (dwarf.coffee < 10) criticalCounts.coffee++;
+            if (dwarf.cleanliness < 15) criticalCounts.cleanliness++;
         });
         
         const count = game.dworfs.length;
@@ -50,12 +181,19 @@ function updateUI() {
             cleanliness: totals.cleanliness / count
         };
         
-        // Update UI elements with color coding
-        function updateNeedDisplay(elementId, value, criticalThreshold = 15, lowThreshold = 30) {
+        // Enhanced UI display with critical counts
+        function updateNeedDisplay(elementId, value, criticalCount, criticalThreshold = 15, lowThreshold = 30) {
             const element = document.getElementById(elementId);
-            element.textContent = Math.floor(value);
+            let displayText = Math.floor(value).toString();
             
-            if (value < criticalThreshold) {
+            // Add critical count if there are dwarfs with critical needs
+            if (criticalCount > 0) {
+                displayText += ` (${criticalCount}⚠️)`;
+            }
+            
+            element.textContent = displayText;
+            
+            if (value < criticalThreshold || criticalCount > 0) {
                 element.style.color = '#FF4444';
             } else if (value < lowThreshold) {
                 element.style.color = '#FF9800';
@@ -64,12 +202,12 @@ function updateUI() {
             }
         }
         
-        updateNeedDisplay('avgHunger', averages.hunger, 15, 35);
-        updateNeedDisplay('avgThirst', averages.thirst, 10, 30);
-        updateNeedDisplay('avgRest', averages.rest, 10, 30);
-        updateNeedDisplay('avgJoy', averages.joy, 10, 30);
-        updateNeedDisplay('avgCoffee', averages.coffee, 5, 25);
-        updateNeedDisplay('avgClean', averages.cleanliness, 15, 35);
+        updateNeedDisplay('avgHunger', averages.hunger, criticalCounts.hunger, 15, 35);
+        updateNeedDisplay('avgThirst', averages.thirst, criticalCounts.thirst, 10, 30);
+        updateNeedDisplay('avgRest', averages.rest, criticalCounts.rest, 10, 30);
+        updateNeedDisplay('avgJoy', averages.joy, criticalCounts.joy, 10, 30);
+        updateNeedDisplay('avgCoffee', averages.coffee, criticalCounts.coffee, 5, 25);
+        updateNeedDisplay('avgClean', averages.cleanliness, criticalCounts.cleanliness, 15, 35);
     }
     
     // Count different types of buildings
