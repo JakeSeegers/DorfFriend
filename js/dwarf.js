@@ -1,4 +1,4 @@
-// Dwarf class and behavior system with proper reproduction
+// Fixed dwarf.js - Complete corrected version
 class Dworf {
     constructor(x, y) {
         this.x = x;
@@ -15,13 +15,13 @@ class Dworf {
         this.efficiency = this.baseEfficiency;
         this.sparkles = [];
         
-        // FIXED: Proper gender and age system
+        // Gender and age system
         this.gender = Math.random() < 0.5 ? 'male' : 'female';
-        this.age = 0; // Age in game ticks
-        this.maturityAge = 1800 + Math.random() * 1200; // 30-50 seconds to mature
+        this.age = 0;
+        this.maturityAge = 1800 + Math.random() * 1200;
         this.isAdult = false;
         
-        // FIXED: Reproduction strategy only for males
+        // Reproduction strategy
         if (this.gender === 'male') {
             const strategies = ['orange', 'blue', 'yellow'];
             this.reproductionStrategy = strategies[Math.floor(Math.random() * strategies.length)];
@@ -29,19 +29,18 @@ class Dworf {
             this.reproductionStrategy = 'female';
         }
         
-        // FIXED: Proper reproduction timers and state
-        this.reproductionTimer = 0; // Cooldown between attempts
-        this.reproductionCooldown = 7200; // 2 minutes minimum between pregnancies
+        // Reproduction state
+        this.reproductionTimer = 0;
+        this.reproductionCooldown = 7200;
         this.isPregnant = false;
         this.pregnancyTimer = 0;
-        this.pregnancyDuration = 1800; // 30 seconds pregnancy
+        this.pregnancyDuration = 1800;
         this.partner = null;
-        this.territory = null; // For orange males
-        this.guardedMate = null; // For blue males
-        this.guardedBy = null; // For females being guarded
-        this.lastReproductionAttempt = 0;
+        this.territory = null;
+        this.guardedMate = null;
+        this.guardedBy = null;
         
-        // Big Five personality traits (0-100 scale)
+        // Personality traits
         this.personality = {
             openness: Math.random() * 100,
             conscientiousness: Math.random() * 100,
@@ -50,11 +49,9 @@ class Dworf {
             neuroticism: Math.random() * 100
         };
 
-        // Survival needs (0-100 scale, start well-fed)
+        // Survival needs
         this.hunger = 80 + Math.random() * 20;
         this.thirst = 80 + Math.random() * 20;
-        
-        // Comprehensive need system
         this.rest = 70 + Math.random() * 30;
         this.joy = 60 + Math.random() * 40;
         this.art = 50 + Math.random() * 50;
@@ -64,11 +61,10 @@ class Dworf {
         this.social = 50 + Math.random() * 50;
         this.cleanliness = 70 + Math.random() * 30;
         
-        // Much slower consumption rates
+        // Need consumption rates
         this.hungerRate = 0.0015 + (this.personality.neuroticism / 50000);
         this.thirstRate = 0.002 + (this.personality.extraversion / 80000);
         this.restRate = 0.003 + (this.personality.conscientiousness / 40000);
-        // Luxury needs: Much slower consumption
         this.joyRate = 0.0008 + (this.personality.neuroticism / 40000);
         this.artRate = 0.0004 + (this.personality.openness / 80000);
         this.coffeeRate = 0.002 + (this.personality.conscientiousness / 60000);
@@ -77,7 +73,7 @@ class Dworf {
         this.socialRate = 0.0006 + (this.personality.extraversion / 60000);
         this.cleanlinessRate = 0.0008 + (this.personality.conscientiousness / 80000);
         
-        // Generate a unique name
+        // Generate unique name
         this.name = DWARF_NAMES[Math.floor(Math.random() * DWARF_NAMES.length)] + '_' + Math.floor(Math.random() * 100);
     }
     
@@ -89,7 +85,7 @@ class Dworf {
             addLog(this.name + ' has reached maturity! (' + this.gender + (this.gender === 'male' ? ', ' + this.reproductionStrategy : '') + ')', false, 'success');
         }
         
-        // Handle pregnancy for females
+        // Handle pregnancy
         if (this.isPregnant) {
             this.pregnancyTimer--;
             if (this.pregnancyTimer <= 0) {
@@ -106,11 +102,12 @@ class Dworf {
         this.updateSurvivalNeeds();
         this.applyPersonalityBehavior();
         
-        // FIXED: Proper behavioral conflicts based on strategy
-        if (this.isAdult) {
+        // Reproductive behavior
+        if (this.isAdult && Math.random() < 0.001) {
             this.updateReproductiveBehavior();
         }
         
+        // Movement
         const dx = this.targetX - this.x;
         const dy = this.targetY - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -123,38 +120,31 @@ class Dworf {
             this.handleTask();
         }
         
-        // Keep dwarfs within canvas bounds
+        // Keep within bounds
         this.x = Math.max(20, Math.min(canvas.width - 20, this.x));
         this.y = Math.max(20, Math.min(canvas.height - 20, this.y));
-        
         this.targetX = Math.max(20, Math.min(canvas.width - 20, this.targetX));
         this.targetY = Math.max(20, Math.min(canvas.height - 20, this.targetY));
         
-        // Use priority system to decide when to find new tasks
+        // Task evaluation
         if ((this.task === 'idle' || (this.task === 'exploring' && Math.random() < 0.01)) && 
             !this.isInSpecialState()) {
             this.evaluateTaskPriorities();
         }
     }
     
-    // FIXED: Proper reproductive behavior with conflicts
     updateReproductiveBehavior() {
         if (!this.isAdult || this.isPregnant) return;
         
-        // Only check reproduction occasionally (much less frequent)
-        if (Math.random() < 0.001) { // 0.1% chance per frame instead of every frame
-            if (this.gender === 'male') {
-                this.updateMaleBehavior();
-            } else {
-                this.updateFemaleBehavior();
-            }
+        if (this.gender === 'male') {
+            this.updateMaleBehavior();
+        } else {
+            this.updateFemaleBehavior();
         }
         
-        // Handle territorial and social conflicts
         this.handleSocialConflicts();
     }
     
-    // FIXED: Male behavior based on strategy
     updateMaleBehavior() {
         const nearbyDwarfs = game.dworfs.filter(d => 
             d !== this && 
@@ -175,9 +165,7 @@ class Dworf {
         }
     }
     
-    // Orange males: Aggressive and territorial
     orangeMaleBehavior(nearbyDwarfs) {
-        // Establish territory if don't have one
         if (!this.territory) {
             this.territory = {
                 x: this.x,
@@ -189,7 +177,6 @@ class Dworf {
             }
         }
         
-        // Chase away other males from territory
         const malesInTerritory = nearbyDwarfs.filter(d => 
             d.gender === 'male' && 
             d !== this &&
@@ -202,7 +189,6 @@ class Dworf {
             return;
         }
         
-        // Look for females in territory
         const femalesInTerritory = nearbyDwarfs.filter(d => 
             d.gender === 'female' && 
             !d.isPregnant &&
@@ -216,9 +202,7 @@ class Dworf {
         }
     }
     
-    // Blue males: Cooperative and mate-guarding
     blueMaleBehavior(nearbyDwarfs) {
-        // Look for a mate to guard
         if (!this.guardedMate || !this.guardedMate.isAdult || this.guardedMate.isPregnant) {
             const availableFemales = nearbyDwarfs.filter(d => 
                 d.gender === 'female' && 
@@ -228,7 +212,6 @@ class Dworf {
             );
             
             if (availableFemales.length > 0) {
-                // Release previous mate if any
                 if (this.guardedMate) {
                     this.guardedMate.guardedBy = null;
                 }
@@ -241,7 +224,6 @@ class Dworf {
             }
         }
         
-        // Guard mate from other males
         if (this.guardedMate) {
             const threateningMales = nearbyDwarfs.filter(d => 
                 d.gender === 'male' && 
@@ -250,26 +232,21 @@ class Dworf {
             );
             
             if (threateningMales.length > 0) {
-                // Move towards mate to guard her
                 this.targetX = this.guardedMate.x;
                 this.targetY = this.guardedMate.y;
                 
-                // Chase away threats
                 const threat = threateningMales[0];
                 this.chaseMale(threat);
                 return;
             }
             
-            // Attempt mating with guarded mate
             if (this.reproductionTimer <= 0) {
                 this.attemptMating(this.guardedMate);
             }
         }
     }
     
-    // Yellow males: Sneaky and opportunistic
     yellowMaleBehavior(nearbyDwarfs) {
-        // Look for unguarded females or sneak around territories
         const potentialMates = nearbyDwarfs.filter(d => 
             d.gender === 'female' && 
             !d.isPregnant &&
@@ -279,12 +256,10 @@ class Dworf {
         const guardedFemales = potentialMates.filter(f => f.guardedBy);
         const unguardedFemales = potentialMates.filter(f => !f.guardedBy);
         
-        // Try to sneak mate with guarded females (risky but rewarding)
         if (guardedFemales.length > 0 && Math.random() < 0.3 && this.reproductionTimer <= 0) {
             const target = guardedFemales[0];
             const guard = target.guardedBy;
             
-            // Check if guard is distracted or far away
             const guardDistance = Math.sqrt((guard.x - target.x) ** 2 + (guard.y - target.y) ** 2);
             if (guardDistance > 40) {
                 this.attemptSneakyMating(target);
@@ -292,14 +267,12 @@ class Dworf {
             }
         }
         
-        // Mate with unguarded females
         if (unguardedFemales.length > 0 && this.reproductionTimer <= 0) {
             const female = unguardedFemales[0];
             this.attemptMating(female);
         }
     }
     
-    // Female behavior - choose mates based on strategy and circumstances
     updateFemaleBehavior() {
         if (this.reproductionTimer > 0 || this.isPregnant) return;
         
@@ -312,7 +285,6 @@ class Dworf {
         
         if (nearbyMales.length === 0) return;
         
-        // Female choice based on male strategies and local conditions
         let preferredMale = null;
         let maxScore = 0;
         
@@ -321,25 +293,21 @@ class Dworf {
             
             switch (male.reproductionStrategy) {
                 case 'orange':
-                    // Prefer territorial males when resources are scarce
                     if (game.goldDeposits.length < 2) score += 30;
                     if (male.territory) score += 20;
-                    score += 10; // Base attractiveness
+                    score += 10;
                     break;
                 case 'blue':
-                    // Prefer cooperative males when stability is low
                     if (stabilityLevel < 50) score += 25;
                     if (male.guardedMate === this) score += 15;
-                    score += 15; // Base attractiveness
+                    score += 15;
                     break;
                 case 'yellow':
-                    // Prefer sneaky males when population is dense
                     if (game.dworfs.length > 5) score += 20;
-                    score += 5; // Lower base attractiveness
+                    score += 5;
                     break;
             }
             
-            // Personality compatibility
             if (Math.abs(this.personality.agreeableness - male.personality.agreeableness) < 30) score += 10;
             
             if (score > maxScore) {
@@ -348,13 +316,11 @@ class Dworf {
             }
         });
         
-        // Sometimes accept mating attempts
         if (preferredMale && Math.random() < 0.1) {
             this.acceptMating(preferredMale);
         }
     }
     
-    // Handle social conflicts between males
     handleSocialConflicts() {
         if (this.gender !== 'male' || !this.isAdult) return;
         
@@ -366,21 +332,18 @@ class Dworf {
         );
         
         nearbyMales.forEach(otherMale => {
-            // Orange vs Blue conflict
             if (this.reproductionStrategy === 'orange' && otherMale.reproductionStrategy === 'blue') {
                 if (Math.random() < 0.02) {
                     this.dominateMale(otherMale);
                 }
             }
             
-            // Blue vs Yellow conflict  
             if (this.reproductionStrategy === 'blue' && otherMale.reproductionStrategy === 'yellow') {
                 if (Math.random() < 0.02) {
                     this.dominateMale(otherMale);
                 }
             }
             
-            // Yellow vs Orange conflict
             if (this.reproductionStrategy === 'yellow' && otherMale.reproductionStrategy === 'orange') {
                 if (Math.random() < 0.02) {
                     this.avoidMale(otherMale);
@@ -389,12 +352,10 @@ class Dworf {
         });
     }
     
-    // Mating attempt methods
     attemptMating(female) {
         if (!female || female.isPregnant || female.reproductionTimer > 0) return;
         
-        // Success rates based on strategy interactions
-        let successRate = 0.1; // Base rate
+        let successRate = 0.1;
         
         if (this.reproductionStrategy === 'orange') successRate = 0.3;
         else if (this.reproductionStrategy === 'blue') successRate = 0.25;
@@ -403,18 +364,17 @@ class Dworf {
         if (Math.random() < successRate) {
             this.successfulMating(female);
         } else {
-            this.reproductionTimer = 600; // Short cooldown after failure
+            this.reproductionTimer = 600;
         }
     }
     
     attemptSneakyMating(guardedFemale) {
         const guard = guardedFemale.guardedBy;
         
-        if (Math.random() < 0.2) { // Lower success but possible
+        if (Math.random() < 0.2) {
             this.successfulMating(guardedFemale);
             addLog('🟡 ' + this.name + ' successfully sneaked past ' + guard.name + '!', false);
         } else {
-            // Get caught!
             this.reproductionTimer = 1200;
             this.task = 'fleeing';
             this.workTimer = 300;
@@ -441,22 +401,17 @@ class Dworf {
     giveBirth() {
         const baby = new Dworf(this.x + (Math.random() - 0.5) * 30, this.y + (Math.random() - 0.5) * 30);
         
-        // Inherit traits from parents
         if (this.partner) {
-            // Mix personality traits
             Object.keys(baby.personality).forEach(trait => {
                 baby.personality[trait] = (this.personality[trait] + this.partner.personality[trait]) / 2 + (Math.random() - 0.5) * 40;
                 baby.personality[trait] = Math.max(0, Math.min(100, baby.personality[trait]));
             });
             
-            // Inherit reproduction strategy (males only)
             if (baby.gender === 'male') {
                 if (Math.random() < 0.1) {
-                    // 10% mutation rate
                     const strategies = ['orange', 'blue', 'yellow'];
                     baby.reproductionStrategy = strategies[Math.floor(Math.random() * strategies.length)];
                 } else {
-                    // Inherit from male parent
                     baby.reproductionStrategy = this.partner.reproductionStrategy;
                 }
             }
@@ -466,7 +421,6 @@ class Dworf {
         this.isPregnant = false;
         this.partner = null;
         
-        // Release from guarding if being guarded
         if (this.guardedBy) {
             this.guardedBy.guardedMate = null;
             this.guardedBy = null;
@@ -475,7 +429,6 @@ class Dworf {
         addLog('👶 ' + baby.name + ' was born! (' + baby.gender + (baby.gender === 'male' ? ', ' + baby.reproductionStrategy : '') + ')', true, 'success');
     }
     
-    // Combat and social dominance methods
     chaseMale(target) {
         this.task = 'chasing';
         this.target = target;
@@ -483,7 +436,6 @@ class Dworf {
         this.targetY = target.y;
         this.workTimer = 200;
         
-        // Make target flee
         target.task = 'fleeing';
         target.workTimer = 300;
         target.targetX = target.x + (target.x - this.x) * 2;
@@ -498,7 +450,6 @@ class Dworf {
         target.efficiency *= 0.8;
         target.workTimer += 200;
         
-        // Territory takeover for orange males
         if (this.reproductionStrategy === 'orange' && target.territory) {
             this.territory = target.territory;
             target.territory = null;
@@ -519,7 +470,6 @@ class Dworf {
         }
     }
     
-    // Check if dwarf is in a special state that shouldn't be interrupted
     isInSpecialState() {
         const specialStates = [
             'lazy_break', 'panicking', 'confused', 'recovering', 
@@ -529,19 +479,16 @@ class Dworf {
         return specialStates.includes(this.task);
     }
 
-    // Evaluate all possible tasks by priority and choose the most important
     evaluateTaskPriorities() {
         const taskOptions = [];
-        // 1. CRITICAL SURVIVAL CHECK
+        
         if (this.hunger < 5 || this.thirst < 5) {
             taskOptions.push({
                 task: 'seeking_sustenance',
                 priority: TASK_PRIORITIES.CRITICAL_SURVIVAL,
                 reason: 'Critical hunger/thirst'
             });
-        }
-        // 2. BASIC SURVIVAL CHECK
-        else if (this.hunger < 15 || this.thirst < 15) {
+        } else if (this.hunger < 15 || this.thirst < 15) {
             taskOptions.push({
                 task: 'seeking_sustenance',
                 priority: TASK_PRIORITIES.BASIC_SURVIVAL,
@@ -549,7 +496,6 @@ class Dworf {
             });
         }
         
-        // 3. ROCKET BUILDING CHECK (if survival needs are met)
         if (this.hunger > 20 && this.thirst > 20) {
             const rocketPart = this.shouldBuildRocket(game.gold);
             if (rocketPart) {
@@ -561,7 +507,6 @@ class Dworf {
                 });
             }
             
-            // 4. INFRASTRUCTURE BUILDING CHECK
             const infraType = this.shouldBuildInfrastructure(game.gold);
             if (infraType) {
                 taskOptions.push({
@@ -572,7 +517,6 @@ class Dworf {
                 });
             }
             
-            // 5. AMENITY SEEKING CHECK
             const criticalAmenityNeed = this.evaluateAmenityNeeds();
             if (criticalAmenityNeed) {
                 taskOptions.push({
@@ -582,7 +526,6 @@ class Dworf {
                 });
             }
             
-            // 6. MINING CHECK (default productive task)
             taskOptions.push({
                 task: 'mining',
                 priority: TASK_PRIORITIES.MINING,
@@ -590,21 +533,18 @@ class Dworf {
             });
         }
         
-        // 7. IDLE (fallback)
         taskOptions.push({
             task: 'idle',
             priority: TASK_PRIORITIES.IDLE,
             reason: 'Nothing urgent to do'
         });
-        // Choose the highest priority task
+        
         taskOptions.sort((a, b) => b.priority - a.priority);
         const chosenTask = taskOptions[0];
         
-        // Execute the chosen task
         this.executeChosenTask(chosenTask);
     }
     
-    // Execute the task chosen by the priority system - SPAM REDUCED
     executeChosenTask(chosenTask) {
         switch (chosenTask.task) {
             case 'seeking_sustenance':
@@ -614,9 +554,11 @@ class Dworf {
             case 'build_rocket':
                 this.startRocketConstruction(chosenTask.data);
                 break;
+                
             case 'build_infrastructure':
                 this.startInfrastructureConstruction(chosenTask.data);
                 break;
+                
             case 'seeking_amenities':
                 this.task = 'seeking_amenities';
                 break;
@@ -624,6 +566,7 @@ class Dworf {
             case 'mining':
                 this.findGoldDeposit();
                 break;
+                
             case 'idle':
             default:
                 this.task = 'idle';
@@ -632,13 +575,11 @@ class Dworf {
                 break;
         }
         
-        // REDUCED: Debug logging only occasionally and for important decisions
         if (Math.random() < 0.005 && chosenTask.task !== 'idle' && chosenTask.task !== 'mining') {
             addLog(this.name + ' chose: ' + chosenTask.reason, false);
         }
     }
     
-    // Evaluate which amenity needs are critical
     evaluateAmenityNeeds() {
         const needs = [
             { name: 'rest', value: this.rest, threshold: 20 },
@@ -650,7 +591,7 @@ class Dworf {
             { name: 'art', value: this.art, threshold: 10 },
             { name: 'wisdom', value: this.wisdom, threshold: 10 }
         ];
-        // Find the most critical need
+        
         const criticalNeeds = needs.filter(need => need.value < need.threshold);
         if (criticalNeeds.length > 0) {
             criticalNeeds.sort((a, b) => a.value - b.value);
@@ -661,7 +602,6 @@ class Dworf {
     }
     
     updateSurvivalNeeds() {
-        // Decrease all needs over time
         this.hunger = Math.max(0, this.hunger - this.hungerRate);
         this.thirst = Math.max(0, this.thirst - this.thirstRate);
         this.rest = Math.max(0, this.rest - this.restRate);
@@ -672,7 +612,7 @@ class Dworf {
         this.exercise = Math.max(0, this.exercise - this.exerciseRate);
         this.social = Math.max(0, this.social - this.socialRate);
         this.cleanliness = Math.max(0, this.cleanliness - this.cleanlinessRate);
-        // Warning messages for critically low needs
+        
         if (this.hunger < 10 && Math.random() < 0.002) {
             addLog(this.name + ' is getting very hungry!', false, 'disaster');
         }
@@ -683,14 +623,11 @@ class Dworf {
             addLog(this.name + ' is exhausted and needs sleep!', false, 'disaster');
         }
         
-        // Handle seeking sustenance task with improved decision-making
         if (this.task === 'seeking_sustenance') {
             this.handleSustenanceSeeking();
         }
         
-        // Handle seeking amenities task
         if (this.task === 'seeking_amenities') {
-            // Double-check that survival needs aren't critical
             if (this.hunger < 5 || this.thirst < 5) {
                 this.task = 'seeking_sustenance';
             } else {
@@ -701,17 +638,14 @@ class Dworf {
         this.handlePersonalityEffects();
     }
     
-    // SPAM REDUCED: Less frequent "couldn't find" messages
     handleSustenanceSeeking() {
         let nearestSource = null;
         let minDist = Infinity;
         let sourceType = null;
         
-        // Calculate urgency scores for each need
         const hungerUrgency = Math.max(0, 100 - this.hunger) * 1.2;
         const thirstUrgency = Math.max(0, 100 - this.thirst);
         
-        // Decide which need to prioritize
         let priorityNeed = 'hunger';
         if (thirstUrgency > hungerUrgency * 1.1) {
             priorityNeed = 'thirst';
@@ -719,7 +653,6 @@ class Dworf {
             priorityNeed = Math.random() < 0.6 ? 'hunger' : 'thirst';
         }
         
-        // Look for the priority source first
         if (priorityNeed === 'food' || priorityNeed === 'hunger') {
             game.foodSources.forEach(source => {
                 const dist = Math.sqrt((this.x - source.x) ** 2 + (this.y - source.y) ** 2);
@@ -740,7 +673,6 @@ class Dworf {
             });
         }
         
-        // If no priority source found, check the other type
         if (!nearestSource) {
             if (priorityNeed === 'food' || priorityNeed === 'hunger') {
                 game.waterSources.forEach(source => {
@@ -763,7 +695,6 @@ class Dworf {
             }
         }
         
-        // Also check buildings as final backup
         if (!nearestSource) {
             game.buildings.forEach(building => {
                 const dist = Math.sqrt((this.x - building.x) ** 2 + (this.y - building.y) ** 2);
@@ -784,14 +715,12 @@ class Dworf {
             }
         } else {
             this.task = 'idle';
-            // REDUCED: Only occasionally log when can't find food
             if (Math.random() < 0.01) {
                 addLog(this.name + ' couldn\'t find any sustenance sources!', false, 'disaster');
             }
         }
     }
     
-    // SPAM REDUCED: Less frequent "feels refreshed" messages
     consumeResource(source, sourceType) {
         if (sourceType === 'food') {
             this.hunger = Math.min(100, this.hunger + 25);
@@ -816,19 +745,15 @@ class Dworf {
             this.thirst = Math.min(100, this.thirst + 10);
         }
         
-        // Stop seeking when reasonably satisfied
         if (this.hunger > 40 && this.thirst > 40) {
             this.task = 'idle';
-            // REDUCED: Only log satisfaction message rarely
             if (Math.random() < 0.02) {
                 addLog(this.name + ' feels refreshed and ready to work!', false);
             }
         }
     }
-}
     
     handlePersonalityEffects() {
-        // COMPOUND EFFECTS - Multiple poor traits create worse outcomes
         if (this.personality.conscientiousness < 30 && this.personality.neuroticism > 70) {
             if (stabilityLevel < 50 && Math.random() < 0.002) {
                 if (game.machines.length > 0 && Math.random() < 0.5) {
@@ -855,11 +780,9 @@ class Dworf {
     }
     
     applyPersonalityBehavior() {
-        // Reset efficiency to base value first, then apply modifiers
         this.efficiency = this.baseEfficiency;
-        // Apply conscientiousness modifier
         this.efficiency *= (0.5 + this.personality.conscientiousness / 200);
-        // Neurotic dwarfs are more affected by colony instability
+        
         if (stabilityLevel < 50 && this.personality.neuroticism > 70) {
             this.efficiency *= 0.7;
             if (Math.random() < 0.05) {
@@ -867,17 +790,16 @@ class Dworf {
             }
         }
         
-        // Extraverted dwarfs work better near others
         const nearbyDwarfs = game.dworfs.filter(d => 
             d !== this && Math.sqrt((d.x - this.x) ** 2 + (d.y - this.y) ** 2) < 100
         ).length;
+        
         if (this.personality.extraversion > 60) {
             this.efficiency *= (1 + nearbyDwarfs * 0.1);
         } else if (this.personality.extraversion < 40) {
             this.efficiency *= (1 - nearbyDwarfs * 0.05);
         }
         
-        // Open dwarfs discover new deposits more often
         if (this.personality.openness > 70 && Math.random() < 0.02) {
             if (game.goldDeposits.length < 3) {
                 game.goldDeposits.push({
@@ -891,27 +813,23 @@ class Dworf {
     }
     
     getHealthModifier() {
-        // Separate essential vs luxury needs for more balanced penalties
         const essentialNeeds = [this.hunger, this.thirst, this.rest];
         const luxuryNeeds = [this.art, this.coffee, this.wisdom, this.exercise, this.social, this.cleanliness, this.joy];
-        // Count critical essential needs
+        
         const criticalEssential = essentialNeeds.filter(need => need < 10).length;
         const criticalLuxury = luxuryNeeds.filter(need => need < 5).length;
         
         let modifier = 1.0;
-        // ESSENTIAL NEEDS: Severe penalties for survival needs
+        
         if (criticalEssential >= 2) modifier *= 0.4;
         else if (criticalEssential >= 1) modifier *= 0.7;
         
-        // LUXURY NEEDS: Milder penalties
         if (criticalLuxury >= 5) modifier *= 0.95;
         else if (criticalLuxury >= 7) modifier *= 0.90;
         
-        // Specific penalties for the most important needs
         if (this.hunger < 5) modifier *= 0.6;
         if (this.thirst < 5) modifier *= 0.5;
         if (this.rest < 3) modifier *= 0.7;
-        // Luxury needs have smaller individual impact
         if (this.coffee < 3 && this.personality.conscientiousness > 70) modifier *= 0.97;
         if (this.joy < 3) modifier *= 0.98;
         if (this.cleanliness < 3) modifier *= 0.99;
@@ -920,7 +838,6 @@ class Dworf {
     }
     
     seekNearestAmenity() {
-        // Find the most needed amenity building
         let bestBuilding = null;
         let bestUrgency = 0;
         let minDistance = Infinity;
@@ -935,7 +852,6 @@ class Dworf {
             const dist = Math.sqrt((this.x - building.x) ** 2 + (this.y - building.y) ** 2);
             let urgency = 0;
             
-            // Calculate urgency based on building type and dwarf needs
             switch (building.amenityType) {
                 case 'house': urgency = Math.max(0, 30 - this.rest); break;
                 case 'inn': urgency = Math.max(0, 25 - this.joy); break;
@@ -948,7 +864,6 @@ class Dworf {
                 default: urgency = 5;
             }
             
-            // Prefer closer buildings with high urgency
             const score = urgency * 100 / (dist + 1);
             if (score > bestUrgency) {
                 bestUrgency = score;
@@ -969,9 +884,7 @@ class Dworf {
         }
     }
     
-    // SPAM REDUCED: Much less frequent amenity satisfaction messages
     useAmenity(building) {
-        // Much more effective amenities
         switch (building.amenityType) {
             case 'house':
                 this.rest = Math.min(100, this.rest + 40);
@@ -982,7 +895,6 @@ class Dworf {
                 this.social = Math.min(100, this.social + 20);
                 if (Math.random() < 0.05) addLog(this.name + ' had a great time at the inn!', false);
                 break;
-                
             case 'museum':
                 this.art = Math.min(100, this.art + 25);
                 this.wisdom = Math.min(100, this.wisdom + 15);
@@ -1016,11 +928,11 @@ class Dworf {
                 break;
         }
         
-        // Check if needs are satisfied enough to return to work
         const criticalNeeds = [
             this.hunger < 8, this.thirst < 8, this.rest < 8, 
             this.joy < 8, this.coffee < 5, this.cleanliness < 8
         ].filter(Boolean).length;
+        
         if (criticalNeeds <= 0) {
             this.task = 'idle';
         }
@@ -1032,6 +944,7 @@ class Dworf {
             sparkle.y -= 1;
             return sparkle.life > 0;
         });
+        
         if (this.goldCarried > 0 && Math.random() < 0.3) {
             this.sparkles.push({
                 x: this.x + (Math.random() - 0.5) * 20,
@@ -1042,7 +955,6 @@ class Dworf {
     }
     
     shouldBuildRocket(gold) {
-        // Only adults should build rockets
         if (!this.isAdult) return false;
         
         for (let part in game.rocketParts) {
@@ -1055,12 +967,10 @@ class Dworf {
     }
     
     shouldBuildInfrastructure(gold) {
-        // Only adults should build infrastructure
         if (!this.isAdult) return false;
         
-        // Focus on useful buildings, not machines
         const buildingRatio = game.buildings.length / game.dworfs.length;
-        // PRIORITY 1: Houses for rest (most important)
+        
         if (gold >= 100 && buildingRatio < 0.8) {
             const restHouses = game.buildings.filter(b => b.type === 'amenity' && b.amenityType === 'house').length;
             const neededHouses = Math.ceil(game.dworfs.length / 2);
@@ -1069,7 +979,6 @@ class Dworf {
             }
         }
         
-        // PRIORITY 2: Coffee shops
         if (gold >= 120 && buildingRatio < 1.0) {
             const coffeeShops = game.buildings.filter(b => b.type === 'amenity' && b.amenityType === 'coffee_shop').length;
             const neededCoffee = Math.ceil(game.dworfs.length / 3);
@@ -1078,7 +987,6 @@ class Dworf {
             }
         }
         
-        // PRIORITY 3: Other amenities based on colony needs
         if (gold >= 100 && game.dworfs.length > 0) {
             const colonyAverages = this.calculateColonyAverages();
             const demandThreshold = 40;
@@ -1099,7 +1007,6 @@ class Dworf {
             }
         }
         
-        // PRIORITY 4: Basic buildings only if we have enough amenities
         if (gold >= 80 && buildingRatio < 0.6 && game.buildings.filter(b => b.type === 'amenity').length >= 2) {
             return 'building';
         }
@@ -1109,10 +1016,12 @@ class Dworf {
     
     calculateColonyAverages() {
         if (game.dworfs.length === 0) return {};
+        
         const totals = {
             hunger: 0, thirst: 0, rest: 0, joy: 0, art: 0, 
             coffee: 0, wisdom: 0, exercise: 0, social: 0, cleanliness: 0
         };
+        
         game.dworfs.forEach(dwarf => {
             totals.hunger += dwarf.hunger;
             totals.thirst += dwarf.thirst;
@@ -1125,6 +1034,7 @@ class Dworf {
             totals.social += dwarf.social;
             totals.cleanliness += dwarf.cleanliness;
         });
+        
         const count = game.dworfs.length;
         return {
             hunger: totals.hunger / count,
@@ -1247,7 +1157,6 @@ class Dworf {
                         }
                     }
                     
-                    // Personal Gold Vault steals from other dwarfs
                     const personalVaults = game.negativeBuildings.filter(b => b.type === 'personal_gold_vault');
                     if (personalVaults.length > 0) {
                         personalVaults.forEach(vault => {
@@ -1267,15 +1176,12 @@ class Dworf {
                 this.task = 'idle';
                 break;
                 
-            // NEW: Reproductive behavior states
             case 'chasing':
                 this.workTimer--;
                 if (this.target) {
-                    // Keep chasing the target
                     this.targetX = this.target.x;
                     this.targetY = this.target.y;
                     
-                    // Stop chasing after timer runs out
                     if (this.workTimer <= 0) {
                         this.task = 'idle';
                         this.target = null;
@@ -1287,19 +1193,12 @@ class Dworf {
                 
             case 'fleeing':
                 this.workTimer--;
-                // Keep running away
                 if (this.workTimer <= 0) {
                     this.task = 'idle';
                 }
                 break;
                 
             case 'mating':
-                this.workTimer--;
-                if (this.workTimer <= 0) {
-                    this.task = 'idle';
-                }
-                break;
-                
             case 'lazy_break':
             case 'panicking':
             case 'confused':
@@ -1308,11 +1207,10 @@ class Dworf {
             case 'nervous_breakdown':
             case 'work_refusal':
             case 'forced_party':
-            case 'reproducing': // Keep for compatibility but less used now
+            case 'reproducing':
                 this.workTimer--;
                 if (this.workTimer <= 0) {
                     if (this.task === 'reproducing') {
-                        // Legacy reproduction handling
                         this.createNewDwarf();
                     } else {
                         this.task = 'idle';
@@ -1340,34 +1238,6 @@ class Dworf {
                 }
                 break;
                 
-            case 'building_negative':
-                this.workTimer--;
-                if (this.personality.conscientiousness > 60) {
-                    this.workTimer -= 0.5;
-                }
-                
-                if (this.workTimer <= 0) {
-                    game.negativeBuildings.push({
-                        x: this.targetX,
-                        y: this.targetY,
-                        type: this.negativeType,
-                        owner: this.name,
-                        timer: 0
-                    });
-                    this.task = 'idle';
-                    
-                    const messages = {
-                        'gold_mutation_chamber': this.name + ' completed their "research facility"!',
-                        'motion_alarm_tower': this.name + ' finished their "safety system"!',
-                        'party_pavilion': this.name + ' built a place for "team building"!',
-                        'unsafe_mining_rig': this.name + ' rushed their mining equipment!',
-                        'personal_gold_vault': this.name + ' secured their "savings account"!'
-                    };
-                    
-                    addLog('💀 ' + messages[this.negativeType], true, 'disaster');
-                }
-                break;
-                
             case 'building_rocket':
                 this.workTimer--;
                 const part = game.rocketParts[this.rocketPart];
@@ -1378,12 +1248,14 @@ class Dworf {
                 
                 this.workTimer -= (workSpeed - 1);
                 part.progress = 1 - (this.workTimer / 600);
+                
                 if (this.workTimer <= 0) {
                     part.built = true;
                     part.building = false;
                     part.progress = 1;
                     this.task = 'idle';
                     addLog('✅ ' + this.rocketPart + ' completed by ' + this.name + '!', true);
+                    
                     let allComplete = true;
                     for (let p in game.rocketParts) {
                         if (!game.rocketParts[p].built) {
@@ -1422,7 +1294,6 @@ class Dworf {
         }
     }
     
-    // Legacy method for compatibility
     createNewDwarf() {
         const baby = new Dworf(this.x + (Math.random() - 0.5) * 40, this.y + (Math.random() - 0.5) * 40);
         game.dworfs.push(baby);
@@ -1455,7 +1326,6 @@ class Dworf {
         // Change dwarf color based on health and age
         let dwarfColor = self.color;
         
-        // Age-based color adjustments
         if (!self.isAdult) {
             dwarfColor = '#FFB6C1'; // Pink for children
         } else if (self.hunger < 20 || self.thirst < 20) {
@@ -1678,7 +1548,7 @@ class Dworf {
         if (this.gender === 'male' && 
             this.reproductionStrategy === 'orange' && 
             this.territory && 
-            Math.random() < 0.1) { // Only occasionally visible
+            Math.random() < 0.1) {
             
             ctx.strokeStyle = 'rgba(255, 102, 0, 0.3)';
             ctx.lineWidth = 2;
