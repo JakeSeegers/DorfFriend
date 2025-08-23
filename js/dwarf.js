@@ -572,17 +572,6 @@ class Dworf {
                 });
             }
             
-            // 4b. AMENITY BUILDING CHECK
-            const infraType = this.shouldBuildAmenity(game.gold);
-            if (infraType) {
-                taskOptions.push({
-                    task: 'build_Amenity',
-                    priority: TASK_PRIORITIES.Amenity,
-                    reason: 'Amenity: ' + infraType,
-                    data: infraType
-                });
-            }            
-            
             // 5. AMENITY SEEKING CHECK
             const criticalAmenityNeed = this.evaluateAmenityNeeds();
             if (criticalAmenityNeed) {
