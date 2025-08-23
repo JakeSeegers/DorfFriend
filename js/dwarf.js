@@ -825,6 +825,7 @@ class Dworf {
             }
         }
     }
+}
     
     handlePersonalityEffects() {
         // COMPOUND EFFECTS - Multiple poor traits create worse outcomes
