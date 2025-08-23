@@ -1,4 +1,4 @@
-// Dwarf class and behavior system
+// Dwarf class and behavior system with spam reduction
 class Dworf {
     constructor(x, y) {
         this.x = x;
@@ -322,16 +322,11 @@ class Dworf {
         taskOptions.sort((a, b) => b.priority - a.priority);
         const chosenTask = taskOptions[0];
         
-        // Debug: occasionally log task decisions
-        if (Math.random() < 0.02) {
-            addLog(this.name + ' chose: ' + chosenTask.reason, false);
-        }
-        
         // Execute the chosen task
         this.executeChosenTask(chosenTask);
     }
     
-    // Execute the task chosen by the priority system
+    // Execute the task chosen by the priority system - SPAM REDUCED
     executeChosenTask(chosenTask) {
         switch (chosenTask.task) {
             case 'seeking_sustenance':
@@ -357,6 +352,11 @@ class Dworf {
                 this.targetX = Math.random() * (canvas.width - 100) + 50;
                 this.targetY = Math.random() * (canvas.height - 100) + 50;
                 break;
+        }
+        
+        // REDUCED: Debug logging only occasionally and for important decisions
+        if (Math.random() < 0.005 && chosenTask.task !== 'idle' && chosenTask.task !== 'mining') {
+            addLog(this.name + ' chose: ' + chosenTask.reason, false);
         }
     }
     
@@ -423,6 +423,7 @@ class Dworf {
         this.handlePersonalityEffects();
     }
     
+    // SPAM REDUCED: Less frequent "couldn't find" messages
     handleSustenanceSeeking() {
         let nearestSource = null;
         let minDist = Infinity;
@@ -505,12 +506,14 @@ class Dworf {
             }
         } else {
             this.task = 'idle';
-            if (Math.random() < 0.05) {
+            // REDUCED: Only occasionally log when can't find food
+            if (Math.random() < 0.01) {
                 addLog(this.name + ' couldn\'t find any sustenance sources!', false, 'disaster');
             }
         }
     }
     
+    // SPAM REDUCED: Less frequent "feels refreshed" messages
     consumeResource(source, sourceType) {
         if (sourceType === 'food') {
             this.hunger = Math.min(100, this.hunger + 25);
@@ -538,7 +541,8 @@ class Dworf {
         // Stop seeking when reasonably satisfied
         if (this.hunger > 40 && this.thirst > 40) {
             this.task = 'idle';
-            if (Math.random() < 0.1) {
+            // REDUCED: Only log satisfaction message rarely
+            if (Math.random() < 0.02) {
                 addLog(this.name + ' feels refreshed and ready to work!', false);
             }
         }
@@ -686,49 +690,50 @@ class Dworf {
         }
     }
     
+    // SPAM REDUCED: Much less frequent amenity satisfaction messages
     useAmenity(building) {
         // Much more effective amenities
         switch (building.amenityType) {
             case 'house':
                 this.rest = Math.min(100, this.rest + 40);
-                if (Math.random() < 0.1) addLog(this.name + ' feels well-rested after sleeping!', false);
+                if (Math.random() < 0.05) addLog(this.name + ' feels well-rested after sleeping!', false);
                 break;
             case 'inn':
                 this.joy = Math.min(100, this.joy + 30);
                 this.social = Math.min(100, this.social + 20);
-                if (Math.random() < 0.1) addLog(this.name + ' had a great time at the inn!', false);
+                if (Math.random() < 0.05) addLog(this.name + ' had a great time at the inn!', false);
                 break;
                 
             case 'museum':
                 this.art = Math.min(100, this.art + 25);
                 this.wisdom = Math.min(100, this.wisdom + 15);
-                if (Math.random() < 0.1) addLog(this.name + ' was inspired by beautiful art!', false);
+                if (Math.random() < 0.05) addLog(this.name + ' was inspired by beautiful art!', false);
                 break;
             case 'coffee_shop':
                 this.coffee = Math.min(100, this.coffee + 50);
                 this.joy = Math.min(100, this.joy + 15);
-                if (Math.random() < 0.1) addLog(this.name + ' feels energized after coffee!', false);
+                if (Math.random() < 0.05) addLog(this.name + ' feels energized after coffee!', false);
                 break;
             case 'library':
                 this.wisdom = Math.min(100, this.wisdom + 35);
                 this.rest = Math.min(100, this.rest + 10);
-                if (Math.random() < 0.1) addLog(this.name + ' learned something new!', false);
+                if (Math.random() < 0.05) addLog(this.name + ' learned something new!', false);
                 break;
             case 'gym':
                 this.exercise = Math.min(100, this.exercise + 45);
                 this.rest = Math.max(0, this.rest - 8);
-                if (Math.random() < 0.1) addLog(this.name + ' had a good workout!', false);
+                if (Math.random() < 0.05) addLog(this.name + ' had a good workout!', false);
                 break;
             case 'community_center':
                 this.social = Math.min(100, this.social + 40);
                 this.joy = Math.min(100, this.joy + 20);
-                if (Math.random() < 0.1) addLog(this.name + ' made new friends!', false);
+                if (Math.random() < 0.05) addLog(this.name + ' made new friends!', false);
                 break;
             case 'spa':
                 this.cleanliness = Math.min(100, this.cleanliness + 60);
                 this.rest = Math.min(100, this.rest + 20);
                 this.joy = Math.min(100, this.joy + 15);
-                if (Math.random() < 0.1) addLog(this.name + ' feels squeaky clean and relaxed!', false);
+                if (Math.random() < 0.05) addLog(this.name + ' feels squeaky clean and relaxed!', false);
                 break;
         }
         
