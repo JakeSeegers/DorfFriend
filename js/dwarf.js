@@ -1,4 +1,4 @@
-// Dwarf class and behavior system with spam reduction
+// Dwarf class and behavior system with proper reproduction
 class Dworf {
     constructor(x, y) {
         this.x = x;
@@ -15,6 +15,32 @@ class Dworf {
         this.efficiency = this.baseEfficiency;
         this.sparkles = [];
         
+        // FIXED: Proper gender and age system
+        this.gender = Math.random() < 0.5 ? 'male' : 'female';
+        this.age = 0; // Age in game ticks
+        this.maturityAge = 1800 + Math.random() * 1200; // 30-50 seconds to mature
+        this.isAdult = false;
+        
+        // FIXED: Reproduction strategy only for males
+        if (this.gender === 'male') {
+            const strategies = ['orange', 'blue', 'yellow'];
+            this.reproductionStrategy = strategies[Math.floor(Math.random() * strategies.length)];
+        } else {
+            this.reproductionStrategy = 'female';
+        }
+        
+        // FIXED: Proper reproduction timers and state
+        this.reproductionTimer = 0; // Cooldown between attempts
+        this.reproductionCooldown = 7200; // 2 minutes minimum between pregnancies
+        this.isPregnant = false;
+        this.pregnancyTimer = 0;
+        this.pregnancyDuration = 1800; // 30 seconds pregnancy
+        this.partner = null;
+        this.territory = null; // For orange males
+        this.guardedMate = null; // For blue males
+        this.guardedBy = null; // For females being guarded
+        this.lastReproductionAttempt = 0;
+        
         // Big Five personality traits (0-100 scale)
         this.personality = {
             openness: Math.random() * 100,
@@ -23,12 +49,6 @@ class Dworf {
             agreeableness: Math.random() * 100,
             neuroticism: Math.random() * 100
         };
-        
-        // Lizard reproductive strategies
-        const strategies = ['orange', 'blue', 'yellow'];
-        this.reproductionStrategy = strategies[Math.floor(Math.random() * strategies.length)];
-        this.reproductionTimer = 0; // Timer to control reproduction attempts
-        this.reproductionPartner = null; // Track reproduction partner
 
         // Survival needs (0-100 scale, start well-fed)
         this.hunger = 80 + Math.random() * 20;
@@ -62,10 +82,34 @@ class Dworf {
     }
     
     update() {
+        // Age the dwarf
+        this.age++;
+        if (!this.isAdult && this.age >= this.maturityAge) {
+            this.isAdult = true;
+            addLog(this.name + ' has reached maturity! (' + this.gender + (this.gender === 'male' ? ', ' + this.reproductionStrategy : '') + ')', false, 'success');
+        }
+        
+        // Handle pregnancy for females
+        if (this.isPregnant) {
+            this.pregnancyTimer--;
+            if (this.pregnancyTimer <= 0) {
+                this.giveBirth();
+            }
+        }
+        
+        // Reduce reproduction cooldown
+        if (this.reproductionTimer > 0) {
+            this.reproductionTimer--;
+        }
+        
         this.updateSparkles();
         this.updateSurvivalNeeds();
         this.applyPersonalityBehavior();
-        this.checkReproduction(); // New check for reproduction opportunities
+        
+        // FIXED: Proper behavioral conflicts based on strategy
+        if (this.isAdult) {
+            this.updateReproductiveBehavior();
+        }
         
         const dx = this.targetX - this.x;
         const dy = this.targetY - this.y;
@@ -93,162 +137,396 @@ class Dworf {
         }
     }
     
+    // FIXED: Proper reproductive behavior with conflicts
+    updateReproductiveBehavior() {
+        if (!this.isAdult || this.isPregnant) return;
+        
+        // Only check reproduction occasionally (much less frequent)
+        if (Math.random() < 0.001) { // 0.1% chance per frame instead of every frame
+            if (this.gender === 'male') {
+                this.updateMaleBehavior();
+            } else {
+                this.updateFemaleBehavior();
+            }
+        }
+        
+        // Handle territorial and social conflicts
+        this.handleSocialConflicts();
+    }
+    
+    // FIXED: Male behavior based on strategy
+    updateMaleBehavior() {
+        const nearbyDwarfs = game.dworfs.filter(d => 
+            d !== this && 
+            d.isAdult &&
+            Math.sqrt((d.x - this.x) ** 2 + (d.y - this.y) ** 2) < 120
+        );
+        
+        switch (this.reproductionStrategy) {
+            case 'orange':
+                this.orangeMaleBehavior(nearbyDwarfs);
+                break;
+            case 'blue':
+                this.blueMaleBehavior(nearbyDwarfs);
+                break;
+            case 'yellow':
+                this.yellowMaleBehavior(nearbyDwarfs);
+                break;
+        }
+    }
+    
+    // Orange males: Aggressive and territorial
+    orangeMaleBehavior(nearbyDwarfs) {
+        // Establish territory if don't have one
+        if (!this.territory) {
+            this.territory = {
+                x: this.x,
+                y: this.y,
+                radius: 80 + Math.random() * 40
+            };
+            if (Math.random() < 0.3) {
+                addLog('🟠 ' + this.name + ' established a territory!', false);
+            }
+        }
+        
+        // Chase away other males from territory
+        const malesInTerritory = nearbyDwarfs.filter(d => 
+            d.gender === 'male' && 
+            d !== this &&
+            Math.sqrt((d.x - this.territory.x) ** 2 + (d.y - this.territory.y) ** 2) < this.territory.radius
+        );
+        
+        if (malesInTerritory.length > 0) {
+            const intruder = malesInTerritory[0];
+            this.chaseMale(intruder);
+            return;
+        }
+        
+        // Look for females in territory
+        const femalesInTerritory = nearbyDwarfs.filter(d => 
+            d.gender === 'female' && 
+            !d.isPregnant &&
+            d.reproductionTimer <= 0 &&
+            Math.sqrt((d.x - this.territory.x) ** 2 + (d.y - this.territory.y) ** 2) < this.territory.radius
+        );
+        
+        if (femalesInTerritory.length > 0 && this.reproductionTimer <= 0) {
+            const female = femalesInTerritory[0];
+            this.attemptMating(female);
+        }
+    }
+    
+    // Blue males: Cooperative and mate-guarding
+    blueMaleBehavior(nearbyDwarfs) {
+        // Look for a mate to guard
+        if (!this.guardedMate || !this.guardedMate.isAdult || this.guardedMate.isPregnant) {
+            const availableFemales = nearbyDwarfs.filter(d => 
+                d.gender === 'female' && 
+                !d.isPregnant &&
+                d.reproductionTimer <= 0 &&
+                !d.guardedBy
+            );
+            
+            if (availableFemales.length > 0) {
+                // Release previous mate if any
+                if (this.guardedMate) {
+                    this.guardedMate.guardedBy = null;
+                }
+                
+                this.guardedMate = availableFemales[0];
+                this.guardedMate.guardedBy = this;
+                if (Math.random() < 0.3) {
+                    addLog('🔵 ' + this.name + ' is now guarding ' + this.guardedMate.name, false);
+                }
+            }
+        }
+        
+        // Guard mate from other males
+        if (this.guardedMate) {
+            const threateningMales = nearbyDwarfs.filter(d => 
+                d.gender === 'male' && 
+                d !== this &&
+                Math.sqrt((d.x - this.guardedMate.x) ** 2 + (d.y - this.guardedMate.y) ** 2) < 60
+            );
+            
+            if (threateningMales.length > 0) {
+                // Move towards mate to guard her
+                this.targetX = this.guardedMate.x;
+                this.targetY = this.guardedMate.y;
+                
+                // Chase away threats
+                const threat = threateningMales[0];
+                this.chaseMale(threat);
+                return;
+            }
+            
+            // Attempt mating with guarded mate
+            if (this.reproductionTimer <= 0) {
+                this.attemptMating(this.guardedMate);
+            }
+        }
+    }
+    
+    // Yellow males: Sneaky and opportunistic
+    yellowMaleBehavior(nearbyDwarfs) {
+        // Look for unguarded females or sneak around territories
+        const potentialMates = nearbyDwarfs.filter(d => 
+            d.gender === 'female' && 
+            !d.isPregnant &&
+            d.reproductionTimer <= 0
+        );
+        
+        const guardedFemales = potentialMates.filter(f => f.guardedBy);
+        const unguardedFemales = potentialMates.filter(f => !f.guardedBy);
+        
+        // Try to sneak mate with guarded females (risky but rewarding)
+        if (guardedFemales.length > 0 && Math.random() < 0.3 && this.reproductionTimer <= 0) {
+            const target = guardedFemales[0];
+            const guard = target.guardedBy;
+            
+            // Check if guard is distracted or far away
+            const guardDistance = Math.sqrt((guard.x - target.x) ** 2 + (guard.y - target.y) ** 2);
+            if (guardDistance > 40) {
+                this.attemptSneakyMating(target);
+                return;
+            }
+        }
+        
+        // Mate with unguarded females
+        if (unguardedFemales.length > 0 && this.reproductionTimer <= 0) {
+            const female = unguardedFemales[0];
+            this.attemptMating(female);
+        }
+    }
+    
+    // Female behavior - choose mates based on strategy and circumstances
+    updateFemaleBehavior() {
+        if (this.reproductionTimer > 0 || this.isPregnant) return;
+        
+        const nearbyMales = game.dworfs.filter(d => 
+            d.gender === 'male' && 
+            d.isAdult &&
+            d.reproductionTimer <= 0 &&
+            Math.sqrt((d.x - this.x) ** 2 + (d.y - this.y) ** 2) < 100
+        );
+        
+        if (nearbyMales.length === 0) return;
+        
+        // Female choice based on male strategies and local conditions
+        let preferredMale = null;
+        let maxScore = 0;
+        
+        nearbyMales.forEach(male => {
+            let score = 0;
+            
+            switch (male.reproductionStrategy) {
+                case 'orange':
+                    // Prefer territorial males when resources are scarce
+                    if (game.goldDeposits.length < 2) score += 30;
+                    if (male.territory) score += 20;
+                    score += 10; // Base attractiveness
+                    break;
+                case 'blue':
+                    // Prefer cooperative males when stability is low
+                    if (stabilityLevel < 50) score += 25;
+                    if (male.guardedMate === this) score += 15;
+                    score += 15; // Base attractiveness
+                    break;
+                case 'yellow':
+                    // Prefer sneaky males when population is dense
+                    if (game.dworfs.length > 5) score += 20;
+                    score += 5; // Lower base attractiveness
+                    break;
+            }
+            
+            // Personality compatibility
+            if (Math.abs(this.personality.agreeableness - male.personality.agreeableness) < 30) score += 10;
+            
+            if (score > maxScore) {
+                maxScore = score;
+                preferredMale = male;
+            }
+        });
+        
+        // Sometimes accept mating attempts
+        if (preferredMale && Math.random() < 0.1) {
+            this.acceptMating(preferredMale);
+        }
+    }
+    
+    // Handle social conflicts between males
+    handleSocialConflicts() {
+        if (this.gender !== 'male' || !this.isAdult) return;
+        
+        const nearbyMales = game.dworfs.filter(d => 
+            d.gender === 'male' && 
+            d.isAdult &&
+            d !== this &&
+            Math.sqrt((d.x - this.x) ** 2 + (d.y - this.y) ** 2) < 80
+        );
+        
+        nearbyMales.forEach(otherMale => {
+            // Orange vs Blue conflict
+            if (this.reproductionStrategy === 'orange' && otherMale.reproductionStrategy === 'blue') {
+                if (Math.random() < 0.02) {
+                    this.dominateMale(otherMale);
+                }
+            }
+            
+            // Blue vs Yellow conflict  
+            if (this.reproductionStrategy === 'blue' && otherMale.reproductionStrategy === 'yellow') {
+                if (Math.random() < 0.02) {
+                    this.dominateMale(otherMale);
+                }
+            }
+            
+            // Yellow vs Orange conflict
+            if (this.reproductionStrategy === 'yellow' && otherMale.reproductionStrategy === 'orange') {
+                if (Math.random() < 0.02) {
+                    this.avoidMale(otherMale);
+                }
+            }
+        });
+    }
+    
+    // Mating attempt methods
+    attemptMating(female) {
+        if (!female || female.isPregnant || female.reproductionTimer > 0) return;
+        
+        // Success rates based on strategy interactions
+        let successRate = 0.1; // Base rate
+        
+        if (this.reproductionStrategy === 'orange') successRate = 0.3;
+        else if (this.reproductionStrategy === 'blue') successRate = 0.25;
+        else if (this.reproductionStrategy === 'yellow') successRate = 0.15;
+        
+        if (Math.random() < successRate) {
+            this.successfulMating(female);
+        } else {
+            this.reproductionTimer = 600; // Short cooldown after failure
+        }
+    }
+    
+    attemptSneakyMating(guardedFemale) {
+        const guard = guardedFemale.guardedBy;
+        
+        if (Math.random() < 0.2) { // Lower success but possible
+            this.successfulMating(guardedFemale);
+            addLog('🟡 ' + this.name + ' successfully sneaked past ' + guard.name + '!', false);
+        } else {
+            // Get caught!
+            this.reproductionTimer = 1200;
+            this.task = 'fleeing';
+            this.workTimer = 300;
+            addLog('🟡 ' + this.name + ' was caught sneaking by ' + guard.name + '!', false, 'disaster');
+        }
+    }
+    
+    acceptMating(male) {
+        if (Math.random() < 0.5) {
+            male.successfulMating(this);
+        }
+    }
+    
+    successfulMating(female) {
+        female.isPregnant = true;
+        female.pregnancyTimer = female.pregnancyDuration;
+        female.partner = this;
+        female.reproductionTimer = female.reproductionCooldown;
+        this.reproductionTimer = this.reproductionCooldown;
+        
+        addLog('💕 ' + this.name + ' (' + this.reproductionStrategy + ') mated with ' + female.name, false, 'success');
+    }
+    
+    giveBirth() {
+        const baby = new Dworf(this.x + (Math.random() - 0.5) * 30, this.y + (Math.random() - 0.5) * 30);
+        
+        // Inherit traits from parents
+        if (this.partner) {
+            // Mix personality traits
+            Object.keys(baby.personality).forEach(trait => {
+                baby.personality[trait] = (this.personality[trait] + this.partner.personality[trait]) / 2 + (Math.random() - 0.5) * 40;
+                baby.personality[trait] = Math.max(0, Math.min(100, baby.personality[trait]));
+            });
+            
+            // Inherit reproduction strategy (males only)
+            if (baby.gender === 'male') {
+                if (Math.random() < 0.1) {
+                    // 10% mutation rate
+                    const strategies = ['orange', 'blue', 'yellow'];
+                    baby.reproductionStrategy = strategies[Math.floor(Math.random() * strategies.length)];
+                } else {
+                    // Inherit from male parent
+                    baby.reproductionStrategy = this.partner.reproductionStrategy;
+                }
+            }
+        }
+        
+        game.dworfs.push(baby);
+        this.isPregnant = false;
+        this.partner = null;
+        
+        // Release from guarding if being guarded
+        if (this.guardedBy) {
+            this.guardedBy.guardedMate = null;
+            this.guardedBy = null;
+        }
+        
+        addLog('👶 ' + baby.name + ' was born! (' + baby.gender + (baby.gender === 'male' ? ', ' + baby.reproductionStrategy : '') + ')', true, 'success');
+    }
+    
+    // Combat and social dominance methods
+    chaseMale(target) {
+        this.task = 'chasing';
+        this.target = target;
+        this.targetX = target.x;
+        this.targetY = target.y;
+        this.workTimer = 200;
+        
+        // Make target flee
+        target.task = 'fleeing';
+        target.workTimer = 300;
+        target.targetX = target.x + (target.x - this.x) * 2;
+        target.targetY = target.y + (target.y - this.y) * 2;
+        
+        if (Math.random() < 0.1) {
+            addLog(this.reproductionStrategy + ' male ' + this.name + ' chased away ' + target.name, false);
+        }
+    }
+    
+    dominateMale(target) {
+        target.efficiency *= 0.8;
+        target.workTimer += 200;
+        
+        // Territory takeover for orange males
+        if (this.reproductionStrategy === 'orange' && target.territory) {
+            this.territory = target.territory;
+            target.territory = null;
+            addLog('🟠 ' + this.name + ' dominated ' + target.name + ' and took their territory!', false, 'disaster');
+        }
+        
+        if (Math.random() < 0.1) {
+            addLog(this.name + ' dominated ' + target.name + '!', false, 'disaster');
+        }
+    }
+    
+    avoidMale(dominant) {
+        this.targetX = this.x + (this.x - dominant.x);
+        this.targetY = this.y + (this.y - dominant.y);
+        
+        if (Math.random() < 0.05) {
+            addLog('🟡 ' + this.name + ' avoided confrontation with ' + dominant.name, false);
+        }
+    }
+    
     // Check if dwarf is in a special state that shouldn't be interrupted
     isInSpecialState() {
         const specialStates = [
             'lazy_break', 'panicking', 'confused', 'recovering', 
             'avoiding_conflict', 'nervous_breakdown', 'work_refusal', 'forced_party',
-            'reproducing' // New special state for reproduction
+            'reproducing', 'chasing', 'fleeing', 'mating'
         ];
         return specialStates.includes(this.task);
-    }
-    
-    // FIXED: Enhanced reproduction system with proper lizard rules
-    checkReproduction() {
-        if (this.reproductionTimer > 0) {
-            this.reproductionTimer--;
-            return;
-        }
-
-        // Only attempt reproduction if not in survival mode
-        if (this.hunger < 30 || this.thirst < 30) return;
-
-        const nearbyDwarfs = game.dworfs.filter(d => 
-            d !== this && 
-            d.task !== 'reproducing' && // Don't interrupt others already reproducing
-            Math.sqrt((d.x - this.x) ** 2 + (d.y - this.y) ** 2) < 80 // Slightly larger range
-        );
-
-        if (nearbyDwarfs.length > 0) {
-            const partner = nearbyDwarfs[Math.floor(Math.random() * nearbyDwarfs.length)];
-            
-            // Check if we can reproduce with this partner
-            if (this.canReproduceWith(partner)) {
-                // Look for a house first (preferred)
-                const emptyHouses = game.buildings.filter(b => 
-                    b.type === 'amenity' && 
-                    b.amenityType === 'house' && 
-                    !b.occupied
-                );
-
-                let targetX, targetY;
-                
-                if (emptyHouses.length > 0) {
-                    // Use house if available
-                    const house = emptyHouses[0];
-                    house.occupied = true;
-                    targetX = house.x;
-                    targetY = house.y;
-                    addLog(this.name + ' and ' + partner.name + ' are starting a family in a house!', false);
-                } else if (game.buildings.length > 0) {
-                    // Use any building as backup
-                    const anyBuilding = game.buildings[Math.floor(Math.random() * game.buildings.length)];
-                    targetX = anyBuilding.x + (Math.random() - 0.5) * 60;
-                    targetY = anyBuilding.y + (Math.random() - 0.5) * 60;
-                    addLog(this.name + ' and ' + partner.name + ' found a cozy spot near a building!', false);
-                } else {
-                    // Last resort: find a quiet corner
-                    targetX = Math.random() * (canvas.width - 100) + 50;
-                    targetY = Math.random() * (canvas.height - 100) + 50;
-                    addLog(this.name + ' and ' + partner.name + ' found a quiet spot in the wilderness!', false);
-                }
-                
-                // Set both dwarfs to reproducing state
-                this.task = 'reproducing';
-                this.targetX = targetX;
-                this.targetY = targetY;
-                this.workTimer = 300; // Reduced from implied longer time
-                this.reproductionPartner = partner.name;
-                
-                partner.task = 'reproducing';
-                partner.targetX = targetX;
-                partner.targetY = targetY;
-                partner.workTimer = 300;
-                partner.reproductionPartner = this.name;
-                
-                // Shorter cooldown
-                this.reproductionTimer = 600; // Reduced from 1000
-                partner.reproductionTimer = 600;
-            }
-        }
-    }
-
-    // FIXED: Enhanced lizard reproductive strategies
-    canReproduceWith(partner) {
-        // Enhanced lizard reproductive strategies
-        const thisStrategy = this.reproductionStrategy;
-        const partnerStrategy = partner.reproductionStrategy;
-        
-        // Orange males (aggressive, territorial) - can reproduce with multiple strategies
-        if (thisStrategy === 'orange') {
-            if (partnerStrategy === 'yellow') return Math.random() < 0.8; // High success with sneaky yellow
-            if (partnerStrategy === 'blue') return Math.random() < 0.3;   // Lower success, blue guards mate
-            if (partnerStrategy === 'orange') return Math.random() < 0.1; // Rare, both aggressive
-            return false;
-        }
-        
-        // Yellow males (sneaky, mimic females) - very adaptable
-        if (thisStrategy === 'yellow') {
-            if (partnerStrategy === 'orange') return Math.random() < 0.8; // High success, can sneak past
-            if (partnerStrategy === 'blue') return Math.random() < 0.6;   // Good success, sneaky approach
-            if (partnerStrategy === 'yellow') return Math.random() < 0.4; // Moderate success
-            return false;
-        }
-        
-        // Blue males (guarding, selective) - most restrictive but stable
-        if (thisStrategy === 'blue') {
-            if (partnerStrategy === 'orange') return Math.random() < 0.2; // Low success, orange too aggressive
-            if (partnerStrategy === 'yellow') return Math.random() < 0.5; // Moderate success
-            if (partnerStrategy === 'blue') return Math.random() < 0.7;   // High success with fellow guarders
-            return false;
-        }
-        
-        return false;
-    }
-
-    // FIXED: Enhanced offspring creation with trait inheritance
-    createNewDwarf() {
-        // Create new dwarf with mixed traits from parents
-        const newDwarf = new Dworf(this.x + (Math.random() - 0.5) * 40, this.y + (Math.random() - 0.5) * 40);
-        
-        // Find the partner
-        const partner = game.dworfs.find(d => d.name === this.reproductionPartner);
-        if (partner) {
-            // Mix personality traits from both parents
-            newDwarf.personality.openness = (this.personality.openness + partner.personality.openness) / 2 + (Math.random() - 0.5) * 40;
-            newDwarf.personality.conscientiousness = (this.personality.conscientiousness + partner.personality.conscientiousness) / 2 + (Math.random() - 0.5) * 40;
-            newDwarf.personality.extraversion = (this.personality.extraversion + partner.personality.extraversion) / 2 + (Math.random() - 0.5) * 40;
-            newDwarf.personality.agreeableness = (this.personality.agreeableness + partner.personality.agreeableness) / 2 + (Math.random() - 0.5) * 40;
-            newDwarf.personality.neuroticism = (this.personality.neuroticism + partner.personality.neuroticism) / 2 + (Math.random() - 0.5) * 40;
-            
-            // Clamp values to 0-100
-            Object.keys(newDwarf.personality).forEach(trait => {
-                newDwarf.personality[trait] = Math.max(0, Math.min(100, newDwarf.personality[trait]));
-            });
-            
-            // Inherit reproduction strategy from one parent (with slight mutation chance)
-            if (Math.random() < 0.1) {
-                // 10% mutation rate
-                const strategies = ['orange', 'blue', 'yellow'];
-                newDwarf.reproductionStrategy = strategies[Math.floor(Math.random() * strategies.length)];
-            } else {
-                // Inherit from random parent
-                newDwarf.reproductionStrategy = Math.random() < 0.5 ? this.reproductionStrategy : partner.reproductionStrategy;
-            }
-            
-            partner.task = 'idle';
-            partner.reproductionPartner = null;
-        }
-        
-        game.dworfs.push(newDwarf);
-        addLog('👶 A new dwarf, ' + newDwarf.name + ', has been born! Strategy: ' + newDwarf.reproductionStrategy, true, 'success');
-        
-        // Free up house if used
-        const house = game.buildings.find(b => b.x === this.targetX && b.y === this.targetY && b.occupied);
-        if (house) house.occupied = false;
-        
-        this.task = 'idle';
-        this.reproductionPartner = null;
     }
 
     // Evaluate all possible tasks by priority and choose the most important
@@ -658,14 +936,14 @@ class Dworf {
             
             // Calculate urgency based on building type and dwarf needs
             switch (building.amenityType) {
-                case 'house': urgency = Math.max(0, 45 - this.rest); break;
-                case 'inn': urgency = Math.max(0, 31 - this.joy); break;
-                case 'museum': urgency = Math.max(0, 30 - this.art); break;
-                case 'coffee_shop': urgency = Math.max(0, 35 - this.coffee); break;
-                case 'library': urgency = Math.max(0, 34 - this.wisdom); break;
-                case 'gym': urgency = Math.max(0, 32 - this.exercise); break;
-                case 'community_center': urgency = Math.max(0, 30 - this.social); break;
-                case 'spa': urgency = Math.max(0, 29 - this.cleanliness); break;
+                case 'house': urgency = Math.max(0, 30 - this.rest); break;
+                case 'inn': urgency = Math.max(0, 25 - this.joy); break;
+                case 'museum': urgency = Math.max(0, 20 - this.art); break;
+                case 'coffee_shop': urgency = Math.max(0, 25 - this.coffee); break;
+                case 'library': urgency = Math.max(0, 20 - this.wisdom); break;
+                case 'gym': urgency = Math.max(0, 25 - this.exercise); break;
+                case 'community_center': urgency = Math.max(0, 25 - this.social); break;
+                case 'spa': urgency = Math.max(0, 30 - this.cleanliness); break;
                 default: urgency = 0;
             }
             
@@ -763,6 +1041,9 @@ class Dworf {
     }
     
     shouldBuildRocket(gold) {
+        // Only adults should build rockets
+        if (!this.isAdult) return false;
+        
         for (let part in game.rocketParts) {
             const data = game.rocketParts[part];
             if (!data.built && !data.building && gold >= data.cost) {
@@ -773,6 +1054,9 @@ class Dworf {
     }
     
     shouldBuildInfrastructure(gold) {
+        // Only adults should build infrastructure
+        if (!this.isAdult) return false;
+        
         // Focus on useful buildings, not machines
         const buildingRatio = game.buildings.length / game.dworfs.length;
         // PRIORITY 1: Houses for rest (most important)
@@ -856,7 +1140,7 @@ class Dworf {
     }
     
     startRocketConstruction(part) {
-        if (part) {
+        if (part && this.isAdult) {
             this.task = 'building_rocket';
             this.workTimer = 600;
             this.rocketPart = part;
@@ -870,6 +1154,8 @@ class Dworf {
     }
     
     startInfrastructureConstruction(type) {
+        if (!this.isAdult) return;
+        
         if (type === 'building') {
             this.task = 'building_structure';
             this.workTimer = 400;
@@ -980,6 +1266,39 @@ class Dworf {
                 this.task = 'idle';
                 break;
                 
+            // NEW: Reproductive behavior states
+            case 'chasing':
+                this.workTimer--;
+                if (this.target) {
+                    // Keep chasing the target
+                    this.targetX = this.target.x;
+                    this.targetY = this.target.y;
+                    
+                    // Stop chasing after timer runs out
+                    if (this.workTimer <= 0) {
+                        this.task = 'idle';
+                        this.target = null;
+                    }
+                } else {
+                    this.task = 'idle';
+                }
+                break;
+                
+            case 'fleeing':
+                this.workTimer--;
+                // Keep running away
+                if (this.workTimer <= 0) {
+                    this.task = 'idle';
+                }
+                break;
+                
+            case 'mating':
+                this.workTimer--;
+                if (this.workTimer <= 0) {
+                    this.task = 'idle';
+                }
+                break;
+                
             case 'lazy_break':
             case 'panicking':
             case 'confused':
@@ -988,10 +1307,11 @@ class Dworf {
             case 'nervous_breakdown':
             case 'work_refusal':
             case 'forced_party':
-            case 'reproducing': // Handle the new reproducing state
+            case 'reproducing': // Keep for compatibility but less used now
                 this.workTimer--;
                 if (this.workTimer <= 0) {
                     if (this.task === 'reproducing') {
+                        // Legacy reproduction handling
                         this.createNewDwarf();
                     } else {
                         this.task = 'idle';
@@ -1101,6 +1421,14 @@ class Dworf {
         }
     }
     
+    // Legacy method for compatibility
+    createNewDwarf() {
+        const baby = new Dworf(this.x + (Math.random() - 0.5) * 40, this.y + (Math.random() - 0.5) * 40);
+        game.dworfs.push(baby);
+        addLog('👶 A new dwarf, ' + baby.name + ', has been born! (' + baby.gender + (baby.gender === 'male' ? ', ' + baby.reproductionStrategy : '') + ')', true, 'success');
+        this.task = 'idle';
+    }
+    
     getPersonalityWorkModifier() {
         let modifier = 0.7 + (this.personality.conscientiousness / 200);
         if (stabilityLevel < 50) {
@@ -1112,35 +1440,92 @@ class Dworf {
     
     draw() {
         const self = this;
+        
+        // Draw sparkles
         self.sparkles.forEach(function(sparkle) {
             ctx.fillStyle = 'rgba(255, 215, 0, ' + (sparkle.life / 20) + ')';
             ctx.fillRect(sparkle.x, sparkle.y, 2, 2);
         });
+        
+        // Shadow
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.fillRect(self.x - 6, self.y + 8, 12, 4);
-        // Change dwarf color based on health
+        
+        // Change dwarf color based on health and age
         let dwarfColor = self.color;
-        if (self.hunger < 20 || self.thirst < 20) {
+        
+        // Age-based color adjustments
+        if (!self.isAdult) {
+            dwarfColor = '#FFB6C1'; // Pink for children
+        } else if (self.hunger < 20 || self.thirst < 20) {
             dwarfColor = '#8B4513';
-        }
-        if (self.hunger < 5 || self.thirst < 5) {
+        } else if (self.hunger < 5 || self.thirst < 5) {
             dwarfColor = '#696969';
         }
         
-        ctx.fillStyle = dwarfColor;
-        ctx.fillRect(self.x - 6, self.y - 8, 12, 16);
+        // Pregnancy glow for females
+        if (self.isPregnant) {
+            ctx.shadowColor = '#FFD700';
+            ctx.shadowBlur = 15;
+        }
         
+        // Body (scaled for children)
+        const bodyScale = self.isAdult ? 1 : 0.7;
+        const bodyWidth = 12 * bodyScale;
+        const bodyHeight = 16 * bodyScale;
+        
+        ctx.fillStyle = dwarfColor;
+        ctx.fillRect(self.x - bodyWidth/2, self.y - bodyHeight/2, bodyWidth, bodyHeight);
+        
+        // Head (scaled for children)
+        const headRadius = 6 * bodyScale;
         ctx.fillStyle = '#FFDBAC';
         ctx.beginPath();
-        ctx.arc(self.x, self.y - 10, 6, 0, Math.PI * 2);
+        ctx.arc(self.x, self.y - 10 * bodyScale, headRadius, 0, Math.PI * 2);
         ctx.fill();
         
+        // Eyes
+        const eyeOffset = 2 * bodyScale;
+        const eyeY = self.y - 12 * bodyScale;
         ctx.fillStyle = '#000';
-        ctx.fillRect(self.x - 2, self.y - 12, 1, 1);
-        ctx.fillRect(self.x + 1, self.y - 12, 1, 1);
+        ctx.fillRect(self.x - eyeOffset, eyeY, 1, 1);
+        ctx.fillRect(self.x + eyeOffset - 1, eyeY, 1, 1);
+        
+        // Reset shadow
+        ctx.shadowBlur = 0;
+        
+        // Hat with gender and strategy indicators
+        this.drawHat();
+        
+        // Draw status bars
+        this.drawStatusBars();
+        
+        // Draw task indicators
+        this.drawTaskIndicators();
+        
+        // Draw gold carried
+        if (self.goldCarried > 0) {
+            ctx.fillStyle = '#FFD700';
+            ctx.font = '10px Arial';
+            ctx.fillText('+' + Math.floor(self.goldCarried), self.x - 8, self.y - 35);
+        }
+        
+        // Draw personality and behavioral indicators
+        this.drawPersonalityIndicators();
+        
+        // Draw territorial boundaries for orange males
+        this.drawTerritorialIndicators();
+    }
+    
+    drawHat() {
+        const bodyScale = this.isAdult ? 1 : 0.7;
+        const hatY = this.y - 17 * bodyScale;
+        const hatWidth = 14 * bodyScale;
+        const hatHeight = 5 * bodyScale;
+        
         // Hat color reflects personality (dominant trait)
         let hatColor = '#8B0000';
-        const personality = self.personality;
+        const personality = this.personality;
         const maxTrait = Math.max(personality.openness, personality.conscientiousness, 
                                  personality.extraversion, personality.agreeableness, personality.neuroticism);
         if (maxTrait === personality.openness) hatColor = '#9370DB';
@@ -1150,158 +1535,170 @@ class Dworf {
         else if (maxTrait === personality.neuroticism) hatColor = '#FF4500';
         
         ctx.fillStyle = hatColor;
-        ctx.fillRect(self.x - 7, self.y - 17, 14, 5);
+        ctx.fillRect(this.x - hatWidth/2, hatY, hatWidth, hatHeight);
         
-        // Show reproduction strategy as colored dot on hat
-        let strategyColor = '#FFD700'; // Default yellow
-        if (this.reproductionStrategy === 'orange') strategyColor = '#FF6600';
-        else if (this.reproductionStrategy === 'blue') strategyColor = '#0066FF';
-        else if (this.reproductionStrategy === 'yellow') strategyColor = '#FFFF00';
-        
-        ctx.fillStyle = strategyColor;
+        // Gender indicator on left side of hat
+        ctx.fillStyle = this.gender === 'male' ? '#4169E1' : '#FF69B4';
         ctx.beginPath();
-        ctx.arc(self.x, self.y - 17, 3, 0, Math.PI * 2);
+        ctx.arc(this.x - 4 * bodyScale, hatY + 2, 2 * bodyScale, 0, Math.PI * 2);
         ctx.fill();
         
-        // Draw hunger bar (red) - only show when getting low
-        if (self.hunger < 30) {
-            ctx.fillStyle = '#FF0000';
-            ctx.fillRect(self.x - 8, self.y - 22, (self.hunger / 100) * 16, 2);
+        // Reproduction strategy indicator on right side (males only)
+        if (this.gender === 'male' && this.reproductionStrategy && this.reproductionStrategy !== 'female') {
+            let strategyColor = '#FFD700';
+            if (this.reproductionStrategy === 'orange') strategyColor = '#FF6600';
+            else if (this.reproductionStrategy === 'blue') strategyColor = '#0066FF';
+            else if (this.reproductionStrategy === 'yellow') strategyColor = '#FFFF00';
+            
+            ctx.fillStyle = strategyColor;
+            ctx.beginPath();
+            ctx.arc(this.x + 4 * bodyScale, hatY + 2, 2 * bodyScale, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Age indicator (small line for adults, no line for children)
+        if (this.isAdult) {
             ctx.strokeStyle = '#FFFFFF';
-            ctx.strokeRect(self.x - 8, self.y - 22, 16, 2);
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(this.x - 2, hatY + hatHeight + 1);
+            ctx.lineTo(this.x + 2, hatY + hatHeight + 1);
+            ctx.stroke();
+        }
+    }
+    
+    drawStatusBars() {
+        const bodyScale = this.isAdult ? 1 : 0.7;
+        let barY = this.y - 22 * bodyScale;
+        
+        // Pregnancy indicator for pregnant females
+        if (this.isPregnant) {
+            const pregnancyProgress = 1 - (this.pregnancyTimer / this.pregnancyDuration);
+            ctx.fillStyle = '#FF69B4';
+            ctx.fillRect(this.x - 8, barY, 16 * pregnancyProgress, 2);
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.strokeRect(this.x - 8, barY, 16, 2);
+            barY -= 3;
+        }
+        
+        // Maturity indicator for children
+        if (!this.isAdult) {
+            const maturityProgress = this.age / this.maturityAge;
+            ctx.fillStyle = '#90EE90';
+            ctx.fillRect(this.x - 8, barY, 16 * maturityProgress, 2);
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.strokeRect(this.x - 8, barY, 16, 2);
+            barY -= 3;
+        }
+        
+        // Draw hunger bar (red) - only show when getting low
+        if (this.hunger < 30) {
+            ctx.fillStyle = '#FF0000';
+            ctx.fillRect(this.x - 8, barY, (this.hunger / 100) * 16, 2);
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.strokeRect(this.x - 8, barY, 16, 2);
+            barY -= 3;
         }
         
         // Draw thirst bar (blue) - only show when getting low
-        if (self.thirst < 30) {
+        if (this.thirst < 30) {
             ctx.fillStyle = '#0066FF';
-            ctx.fillRect(self.x - 8, self.y - 25, (self.thirst / 100) * 16, 2);
+            ctx.fillRect(this.x - 8, barY, (this.thirst / 100) * 16, 2);
             ctx.strokeStyle = '#FFFFFF';
-            ctx.strokeRect(self.x - 8, self.y - 25, 16, 2);
+            ctx.strokeRect(this.x - 8, barY, 16, 2);
         }
-        
-        this.drawTaskIndicators();
-        if (self.goldCarried > 0) {
-            ctx.fillStyle = '#FFD700';
-            ctx.font = '10px Arial';
-            ctx.fillText('+' + Math.floor(self.goldCarried), self.x - 8, self.y - 35);
-        }
-        
-        this.drawPersonalityIndicators();
     }
     
     drawTaskIndicators() {
         const self = this;
+        let indicator = '';
+        let color = '#FFFFFF';
+        
         switch (self.task) {
             case 'mining':
+                // Draw pickaxe
                 ctx.fillStyle = '#8B4513';
                 ctx.fillRect(self.x + 8, self.y - 5, 8, 2);
                 ctx.fillStyle = '#C0C0C0';
                 ctx.fillRect(self.x + 14, self.y - 8, 3, 8);
+                return;
+                
+            case 'chasing':
+                indicator = '⚔️'; color = '#FF4444';
                 break;
-            case 'building_machine':
-            case 'building_structure':
-            case 'building_rocket':
-            case 'building_negative':
-            case 'building_amenity':
-                ctx.fillStyle = '#8B4513';
-                ctx.fillRect(self.x + 6, self.y - 6, 6, 2);
-                ctx.fillStyle = '#696969';
-                ctx.fillRect(self.x + 10, self.y - 8, 4, 6);
-                if (self.workTimer > 0) {
-                    const maxTimer = self.task === 'building_rocket' ? 600 : 
-                                   self.task === 'building_machine' ? 300 : 
-                                   self.task === 'building_negative' ? 350 : 
-                                   self.task === 'building_amenity' ? 450 : 400;
-                    const progress = 1 - (self.workTimer / maxTimer);
-                    let progressColor = '#FFD700';
-                    if (self.task === 'building_negative') progressColor = '#FF4444';
-                    if (self.task === 'building_amenity') progressColor = '#4ECDC4';
-                    
-                    ctx.fillStyle = progressColor;
-                    ctx.fillRect(self.x - 10, self.y - 30, 20 * progress, 3);
-                }
+            case 'fleeing':
+                indicator = '💨'; color = '#FFB347';
+                break;
+            case 'mating':
+            case 'reproducing':
+                indicator = '💕'; color = '#FF69B4';
                 break;
             case 'seeking_sustenance':
-                ctx.fillStyle = '#FF6B6B';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🍞💧', self.x, self.y - 30);
-                ctx.textAlign = 'left';
+                indicator = '🍞💧'; color = '#FF6B6B';
                 break;
             case 'lazy_break':
-                ctx.fillStyle = '#8B4513';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('😴', self.x, self.y - 30);
-                ctx.textAlign = 'left';
+                indicator = '😴'; color = '#8B4513';
                 break;
             case 'panicking':
                 const shakeX = (Math.random() - 0.5) * 4;
                 const shakeY = (Math.random() - 0.5) * 4;
-                ctx.fillStyle = '#FF4444';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('😰', self.x + shakeX, self.y - 30 + shakeY);
-                ctx.textAlign = 'left';
+                indicator = '😰'; color = '#FF4444';
+                ctx.save();
+                ctx.translate(shakeX, shakeY);
                 break;
             case 'confused':
-                ctx.fillStyle = '#FFB347';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('❓', self.x, self.y - 30);
-                ctx.textAlign = 'left';
+                indicator = '❓'; color = '#FFB347';
                 break;
             case 'recovering':
-                ctx.fillStyle = '#FF6B6B';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🤕', self.x, self.y - 30);
-                ctx.textAlign = 'left';
-                break;
-            case 'avoiding_conflict':
-                ctx.fillStyle = '#FFA500';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🏃', self.x, self.y - 30);
-                ctx.textAlign = 'left';
-                break;
-            case 'nervous_breakdown':
-                const bigShakeX = (Math.random() - 0.5) * 8;
-                const bigShakeY = (Math.random() - 0.5) * 8;
-                ctx.fillStyle = '#8B0000';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('💀', self.x + bigShakeX, self.y - 30 + bigShakeY);
-                ctx.textAlign = 'left';
-                break;
-            case 'work_refusal':
-                ctx.fillStyle = '#8B0000';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🚫', self.x, self.y - 30);
-                ctx.textAlign = 'left';
-                break;
-            case 'forced_party':
-                ctx.fillStyle = '#FF69B4';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🕺', self.x, self.y - 30);
-                ctx.textAlign = 'left';
+                indicator = '🤕'; color = '#FF6B6B';
                 break;
             case 'seeking_amenities':
-                ctx.fillStyle = '#4ECDC4';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🏠', self.x, self.y - 30);
-                ctx.textAlign = 'left';
+                indicator = '🏠'; color = '#4ECDC4';
                 break;
-            case 'reproducing':
-                ctx.fillStyle = '#FF69B4';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('💕', self.x, self.y - 30);
-                ctx.textAlign = 'left';
-                break;
+            default:
+                return;
+        }
+        
+        if (indicator) {
+            ctx.fillStyle = color;
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(indicator, self.x, self.y - 30);
+            ctx.textAlign = 'left';
+            
+            if (self.task === 'panicking') {
+                ctx.restore();
+            }
+        }
+    }
+    
+    drawTerritorialIndicators() {
+        // Draw territory boundaries for orange males
+        if (this.gender === 'male' && 
+            this.reproductionStrategy === 'orange' && 
+            this.territory && 
+            Math.random() < 0.1) { // Only occasionally visible
+            
+            ctx.strokeStyle = 'rgba(255, 102, 0, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.arc(this.territory.x, this.territory.y, this.territory.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // Draw mate guarding indicator for blue males
+        if (this.gender === 'male' && 
+            this.reproductionStrategy === 'blue' && 
+            this.guardedMate) {
+            
+            ctx.strokeStyle = 'rgba(0, 102, 255, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.guardedMate.x, this.guardedMate.y);
+            ctx.stroke();
         }
     }
     
