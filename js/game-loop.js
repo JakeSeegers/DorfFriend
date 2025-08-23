@@ -21,7 +21,7 @@ function updateGame() {
     
     // The rate of new dwarf arrivals has been greatly reduced to make reproduction the primary growth method.
     // The random join chance is now 5 times less frequent.
-    if (game.buildings.length > game.dworfs.length && game.time % 4500 === 0) {
+    if (game.buildings.length > game.dworfs.length && game.time % 1500 === 0) {
         const newX = Math.max(50, Math.min(canvas.width - 50, canvas.width / 2 + Math.random() * 100 - 50));
         const newY = Math.max(50, Math.min(canvas.height - 50, canvas.height / 2));
         game.dworfs.push(new Dworf(newX, newY));
