@@ -28,6 +28,7 @@ class Dworf {
         const strategies = ['orange', 'blue', 'yellow'];
         this.reproductionStrategy = strategies[Math.floor(Math.random() * strategies.length)];
         this.reproductionTimer = 0; // Timer to control reproduction attempts
+        this.reproductionPartner = null; // Track reproduction partner
 
         // Survival needs (0-100 scale, start well-fed)
         this.hunger = 80 + Math.random() * 20;
@@ -102,58 +103,152 @@ class Dworf {
         return specialStates.includes(this.task);
     }
     
-    // New method to check for reproduction conditions
+    // FIXED: Enhanced reproduction system with proper lizard rules
     checkReproduction() {
         if (this.reproductionTimer > 0) {
             this.reproductionTimer--;
             return;
         }
 
+        // Only attempt reproduction if not in survival mode
+        if (this.hunger < 30 || this.thirst < 30) return;
+
         const nearbyDwarfs = game.dworfs.filter(d => 
-            d !== this && Math.sqrt((d.x - this.x) ** 2 + (d.y - this.y) ** 2) < 50
+            d !== this && 
+            d.task !== 'reproducing' && // Don't interrupt others already reproducing
+            Math.sqrt((d.x - this.x) ** 2 + (d.y - this.y) ** 2) < 80 // Slightly larger range
         );
 
         if (nearbyDwarfs.length > 0) {
             const partner = nearbyDwarfs[Math.floor(Math.random() * nearbyDwarfs.length)];
-            const emptyHouses = game.buildings.filter(b => b.type === 'amenity' && b.amenityType === 'house' && !b.occupied);
+            
+            // Check if we can reproduce with this partner
+            if (this.canReproduceWith(partner)) {
+                // Look for a house first (preferred)
+                const emptyHouses = game.buildings.filter(b => 
+                    b.type === 'amenity' && 
+                    b.amenityType === 'house' && 
+                    !b.occupied
+                );
 
-            if (emptyHouses.length > 0) {
-                const house = emptyHouses[0];
-                if (this.canReproduceWith(partner)) {
-                    this.task = 'reproducing';
-                    this.targetX = house.x;
-                    this.targetY = house.y;
-                    house.occupied = true; // Mark the house as occupied
-                    this.reproductionTimer = 1000; // Cooldown for attempts
-                    addLog(this.name + ' and ' + partner.name + ' are seeking a house for a new family!', false);
+                let targetX, targetY;
+                
+                if (emptyHouses.length > 0) {
+                    // Use house if available
+                    const house = emptyHouses[0];
+                    house.occupied = true;
+                    targetX = house.x;
+                    targetY = house.y;
+                    addLog(this.name + ' and ' + partner.name + ' are starting a family in a house!', false);
+                } else if (game.buildings.length > 0) {
+                    // Use any building as backup
+                    const anyBuilding = game.buildings[Math.floor(Math.random() * game.buildings.length)];
+                    targetX = anyBuilding.x + (Math.random() - 0.5) * 60;
+                    targetY = anyBuilding.y + (Math.random() - 0.5) * 60;
+                    addLog(this.name + ' and ' + partner.name + ' found a cozy spot near a building!', false);
+                } else {
+                    // Last resort: find a quiet corner
+                    targetX = Math.random() * (canvas.width - 100) + 50;
+                    targetY = Math.random() * (canvas.height - 100) + 50;
+                    addLog(this.name + ' and ' + partner.name + ' found a quiet spot in the wilderness!', false);
                 }
+                
+                // Set both dwarfs to reproducing state
+                this.task = 'reproducing';
+                this.targetX = targetX;
+                this.targetY = targetY;
+                this.workTimer = 300; // Reduced from implied longer time
+                this.reproductionPartner = partner.name;
+                
+                partner.task = 'reproducing';
+                partner.targetX = targetX;
+                partner.targetY = targetY;
+                partner.workTimer = 300;
+                partner.reproductionPartner = this.name;
+                
+                // Shorter cooldown
+                this.reproductionTimer = 600; // Reduced from 1000
+                partner.reproductionTimer = 600;
             }
         }
     }
 
-    // New method to determine if a pairing can reproduce
+    // FIXED: Enhanced lizard reproductive strategies
     canReproduceWith(partner) {
-        // Orange vs Yellow: A classic combo
-        if (this.reproductionStrategy === 'orange' && partner.reproductionStrategy === 'yellow') return true;
-        if (this.reproductionStrategy === 'yellow' && partner.reproductionStrategy === 'orange') return true;
+        // Enhanced lizard reproductive strategies
+        const thisStrategy = this.reproductionStrategy;
+        const partnerStrategy = partner.reproductionStrategy;
         
-        // Blue is a loner and guards his mate
-        if (this.reproductionStrategy === 'blue' && partner.reproductionStrategy === 'blue') {
-            return (Math.random() < 0.05); // Rare chance for blue to reproduce
+        // Orange males (aggressive, territorial) - can reproduce with multiple strategies
+        if (thisStrategy === 'orange') {
+            if (partnerStrategy === 'yellow') return Math.random() < 0.8; // High success with sneaky yellow
+            if (partnerStrategy === 'blue') return Math.random() < 0.3;   // Lower success, blue guards mate
+            if (partnerStrategy === 'orange') return Math.random() < 0.1; // Rare, both aggressive
+            return false;
         }
-
+        
+        // Yellow males (sneaky, mimic females) - very adaptable
+        if (thisStrategy === 'yellow') {
+            if (partnerStrategy === 'orange') return Math.random() < 0.8; // High success, can sneak past
+            if (partnerStrategy === 'blue') return Math.random() < 0.6;   // Good success, sneaky approach
+            if (partnerStrategy === 'yellow') return Math.random() < 0.4; // Moderate success
+            return false;
+        }
+        
+        // Blue males (guarding, selective) - most restrictive but stable
+        if (thisStrategy === 'blue') {
+            if (partnerStrategy === 'orange') return Math.random() < 0.2; // Low success, orange too aggressive
+            if (partnerStrategy === 'yellow') return Math.random() < 0.5; // Moderate success
+            if (partnerStrategy === 'blue') return Math.random() < 0.7;   // High success with fellow guarders
+            return false;
+        }
+        
         return false;
     }
 
-    // New method for creating a new dwarf
+    // FIXED: Enhanced offspring creation with trait inheritance
     createNewDwarf() {
-        const newDwarf = new Dworf(this.x, this.y);
-        game.dworfs.push(newDwarf);
-        addLog('👶 A new dwarf, ' + newDwarf.name + ', has been born!', true, 'success');
+        // Create new dwarf with mixed traits from parents
+        const newDwarf = new Dworf(this.x + (Math.random() - 0.5) * 40, this.y + (Math.random() - 0.5) * 40);
         
-        const house = game.buildings.find(b => b.x === this.targetX && b.y === this.targetY);
+        // Find the partner
+        const partner = game.dworfs.find(d => d.name === this.reproductionPartner);
+        if (partner) {
+            // Mix personality traits from both parents
+            newDwarf.personality.openness = (this.personality.openness + partner.personality.openness) / 2 + (Math.random() - 0.5) * 40;
+            newDwarf.personality.conscientiousness = (this.personality.conscientiousness + partner.personality.conscientiousness) / 2 + (Math.random() - 0.5) * 40;
+            newDwarf.personality.extraversion = (this.personality.extraversion + partner.personality.extraversion) / 2 + (Math.random() - 0.5) * 40;
+            newDwarf.personality.agreeableness = (this.personality.agreeableness + partner.personality.agreeableness) / 2 + (Math.random() - 0.5) * 40;
+            newDwarf.personality.neuroticism = (this.personality.neuroticism + partner.personality.neuroticism) / 2 + (Math.random() - 0.5) * 40;
+            
+            // Clamp values to 0-100
+            Object.keys(newDwarf.personality).forEach(trait => {
+                newDwarf.personality[trait] = Math.max(0, Math.min(100, newDwarf.personality[trait]));
+            });
+            
+            // Inherit reproduction strategy from one parent (with slight mutation chance)
+            if (Math.random() < 0.1) {
+                // 10% mutation rate
+                const strategies = ['orange', 'blue', 'yellow'];
+                newDwarf.reproductionStrategy = strategies[Math.floor(Math.random() * strategies.length)];
+            } else {
+                // Inherit from random parent
+                newDwarf.reproductionStrategy = Math.random() < 0.5 ? this.reproductionStrategy : partner.reproductionStrategy;
+            }
+            
+            partner.task = 'idle';
+            partner.reproductionPartner = null;
+        }
+        
+        game.dworfs.push(newDwarf);
+        addLog('👶 A new dwarf, ' + newDwarf.name + ', has been born! Strategy: ' + newDwarf.reproductionStrategy, true, 'success');
+        
+        // Free up house if used
+        const house = game.buildings.find(b => b.x === this.targetX && b.y === this.targetY && b.occupied);
         if (house) house.occupied = false;
+        
         this.task = 'idle';
+        this.reproductionPartner = null;
     }
 
     // Evaluate all possible tasks by priority and choose the most important
@@ -891,10 +986,11 @@ class Dworf {
             case 'reproducing': // Handle the new reproducing state
                 this.workTimer--;
                 if (this.workTimer <= 0) {
-                    this.task = 'idle';
-                }
-                if (this.task === 'reproducing' && this.workTimer === 0) {
-                    this.createNewDwarf();
+                    if (this.task === 'reproducing') {
+                        this.createNewDwarf();
+                    } else {
+                        this.task = 'idle';
+                    }
                 }
                 break;
                 
@@ -1050,6 +1146,18 @@ class Dworf {
         
         ctx.fillStyle = hatColor;
         ctx.fillRect(self.x - 7, self.y - 17, 14, 5);
+        
+        // Show reproduction strategy as colored dot on hat
+        let strategyColor = '#FFD700'; // Default yellow
+        if (this.reproductionStrategy === 'orange') strategyColor = '#FF6600';
+        else if (this.reproductionStrategy === 'blue') strategyColor = '#0066FF';
+        else if (this.reproductionStrategy === 'yellow') strategyColor = '#FFFF00';
+        
+        ctx.fillStyle = strategyColor;
+        ctx.beginPath();
+        ctx.arc(self.x, self.y - 17, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
         // Draw hunger bar (red) - only show when getting low
         if (self.hunger < 30) {
             ctx.fillStyle = '#FF0000';
@@ -1180,6 +1288,13 @@ class Dworf {
                 ctx.font = '12px Arial';
                 ctx.textAlign = 'center';
                 ctx.fillText('🏠', self.x, self.y - 30);
+                ctx.textAlign = 'left';
+                break;
+            case 'reproducing':
+                ctx.fillStyle = '#FF69B4';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('💕', self.x, self.y - 30);
                 ctx.textAlign = 'left';
                 break;
         }
