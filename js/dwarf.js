@@ -1,4 +1,3 @@
-// Complete dwarf.js with ALL original features restored and syntax fixed
 class Dworf {
     constructor(x, y) {
         this.x = x;
