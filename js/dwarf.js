@@ -1905,4 +1905,4 @@ class Dworf {
             ctx.textAlign = 'left';
         }
     }
-        }
+}
