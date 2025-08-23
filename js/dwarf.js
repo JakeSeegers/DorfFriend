@@ -944,7 +944,7 @@ class Dworf {
                 case 'gym': urgency = Math.max(0, 25 - this.exercise); break;
                 case 'community_center': urgency = Math.max(0, 25 - this.social); break;
                 case 'spa': urgency = Math.max(0, 30 - this.cleanliness); break;
-                default: urgency = 2;
+                default: urgency = 5;
             }
             
             // Prefer closer buildings with high urgency
