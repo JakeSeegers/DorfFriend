@@ -1,4 +1,4 @@
-// Enhanced UI management with spam reduction system
+// UI management and logging system with spam reduction
 
 // Message tracking for spam reduction
 const messageTracker = {
@@ -138,10 +138,37 @@ function addLog(message, important, type) {
     }
 }
 
-// Enhanced updateUI function with better need status indicators
+// Enhanced updateUI function with demographics and spam reduction
 function updateUI() {
     document.getElementById('goldCount').textContent = Math.floor(game.gold);
-    document.getElementById('dworfsCount').textContent = game.dworfs.length;
+    
+    // Enhanced population demographics display
+    const adults = game.dworfs.filter(d => d.isAdult);
+    const children = game.dworfs.filter(d => !d.isAdult);
+    const males = adults.filter(d => d.gender === 'male');
+    const females = adults.filter(d => d.gender === 'female');
+    const pregnant = females.filter(f => f.isPregnant);
+    
+    // Strategy breakdown for adult males
+    const orangeMales = males.filter(m => m.reproductionStrategy === 'orange').length;
+    const blueMales = males.filter(m => m.reproductionStrategy === 'blue').length;
+    const yellowMales = males.filter(m => m.reproductionStrategy === 'yellow').length;
+    
+    // Build population string
+    let populationText = game.dworfs.length.toString();
+    if (adults.length > 0) {
+        populationText += ` (${adults.length}👥`;
+        if (children.length > 0) populationText += `, ${children.length}👶`;
+        if (pregnant.length > 0) populationText += `, ${pregnant.length}🤱`;
+        populationText += ')';
+    }
+    
+    // Add strategy breakdown if there are adult males
+    if (males.length > 0) {
+        populationText += ` [🟠${orangeMales} 🔵${blueMales} 🟡${yellowMales}]`;
+    }
+    
+    document.getElementById('dworfsCount').textContent = populationText;
     
     // Calculate average needs across all dwarfs
     if (game.dworfs.length > 0) {
