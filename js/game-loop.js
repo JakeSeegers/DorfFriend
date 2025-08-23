@@ -10,21 +10,18 @@ function initDworfs() {
 }
 
 function updateGame() {
-    // Simplified gold generation - no more machines
-    game.goldPerSecond = 1 + (game.buildings.length * 0.8);
-    
-    if (game.time % 60 === 0) {
-        game.gold += game.goldPerSecond;
-    }
-    
+    // Passive gold generation has been removed.
+    // Dwarfs must now mine for all gold.
+
     // Update food and water sources
     updateFoodAndWaterSources();
     
     // Update negative buildings
     updateNegativeBuildings();
     
-    // Add new dwarfs when colony grows
-    if (game.buildings.length > game.dworfs.length && game.time % 900 === 0) {
+    // The rate of new dwarf arrivals has been greatly reduced to make reproduction the primary growth method.
+    // The random join chance is now 5 times less frequent.
+    if (game.buildings.length > game.dworfs.length && game.time % 4500 === 0) {
         const newX = Math.max(50, Math.min(canvas.width - 50, canvas.width / 2 + Math.random() * 100 - 50));
         const newY = Math.max(50, Math.min(canvas.height - 50, canvas.height / 2));
         game.dworfs.push(new Dworf(newX, newY));
@@ -68,3 +65,5 @@ function gameLoop() {
     
     requestAnimationFrame(gameLoop);
 }
+
+// NOTE: The lines for passive gold generation have been completely removed from this script.
