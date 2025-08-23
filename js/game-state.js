@@ -1,7 +1,7 @@
 // Global game state management
 const game = {
     gold: 0,
-    goldPerSecond: 1,
+    goldPerSecond: 0,
     dworfs: [],
     machines: [],
     buildings: [],
