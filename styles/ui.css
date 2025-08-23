@@ -1,4 +1,4 @@
-/* UI panels and components */
+/* Complete UI panels and components with spam reduction effects */
 #stats, #rocketProgress, #stabilityPanel {
     background: rgba(0,0,0,0.8);
     padding: 15px;
@@ -145,7 +145,7 @@
     border-radius: 6px;
 }
 
-/* Log panel */
+/* Enhanced Log panel with spam reduction */
 #log {
     background: rgba(0,0,0,0.9);
     padding: 15px;
@@ -160,6 +160,7 @@
 .log-entry {
     margin: 5px 0;
     opacity: 0.8;
+    transition: all 0.3s ease;
 }
 
 .log-entry.important {
@@ -172,4 +173,187 @@
     color: #FF4444;
     font-weight: bold;
     text-shadow: 0 0 5px #FF4444;
+}
+
+.log-entry.success {
+    color: #4CAF50;
+    font-weight: bold;
+    text-shadow: 0 0 3px #4CAF50;
+}
+
+/* NEW: Spam counter effects */
+.log-entry.spam-counter {
+    background: rgba(255, 215, 0, 0.2);
+    border-left: 3px solid #FFD700;
+    padding-left: 8px;
+    margin-left: -8px;
+    transform: scale(1.02);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    border-radius: 4px;
+}
+
+/* Pulsing animation for active spam counters */
+@keyframes spamPulse {
+    0%, 100% { 
+        background: rgba(255, 215, 0, 0.2);
+        transform: scale(1.02);
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+    50% { 
+        background: rgba(255, 215, 0, 0.4);
+        transform: scale(1.04);
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    }
+}
+
+.log-entry.spam-counter {
+    animation: spamPulse 0.3s ease-out;
+}
+
+/* Better scrollbar for log */
+#log::-webkit-scrollbar {
+    width: 6px;
+}
+
+#log::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+}
+
+#log::-webkit-scrollbar-thumb {
+    background: rgba(255, 215, 0, 0.5);
+    border-radius: 3px;
+}
+
+#log::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 215, 0, 0.7);
+}
+
+/* Hover effects for interactive elements */
+.rocket-part:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(2px);
+    transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 8px;
+    margin: 7px -8px;
+    transition: all 0.2s ease;
+}
+
+/* Enhanced visual feedback for critical states */
+.stat-value[style*="color: rgb(255, 68, 68)"],
+.stat-value[style*="color: #FF4444"] {
+    animation: criticalPulse 2s infinite;
+}
+
+@keyframes criticalPulse {
+    0%, 100% { 
+        text-shadow: 0 0 5px #FF4444;
+        transform: scale(1);
+    }
+    50% { 
+        text-shadow: 0 0 15px #FF4444, 0 0 20px #FF4444;
+        transform: scale(1.05);
+    }
+}
+
+/* Smooth transitions for all UI elements */
+* {
+    transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Special styling for reproduction strategy indicators */
+.reproduction-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-left: 5px;
+    box-shadow: 0 0 3px rgba(0,0,0,0.5);
+}
+
+.reproduction-orange { background: #FF6600; }
+.reproduction-blue { background: #0066FF; }
+.reproduction-yellow { background: #FFFF00; }
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .stat-item {
+        font-size: 14px;
+        margin: 12px 0;
+    }
+    
+    .stat-value {
+        font-size: 16px;
+    }
+    
+    .rocket-part {
+        padding: 10px;
+        font-size: 13px;
+    }
+    
+    #log {
+        height: 100px;
+        font-size: 13px;
+    }
+    
+    .log-entry.spam-counter {
+        padding-left: 6px;
+        margin-left: -6px;
+    }
+}
+
+/* Dark mode enhancements */
+@media (prefers-color-scheme: dark) {
+    .log-entry {
+        color: #e0e0e0;
+    }
+    
+    .stability-tip {
+        color: #aaa;
+    }
+    
+    #log::-webkit-scrollbar-track {
+        background: rgba(255,255,255,0.05);
+    }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .log-entry.spam-counter {
+        animation: none;
+        transform: none;
+    }
+    
+    .stability-critical {
+        animation: none;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .log-entry.important {
+        color: #FFFF00;
+        background: rgba(0,0,0,0.8);
+    }
+    
+    .log-entry.disaster {
+        color: #FF0000;
+        background: rgba(255,255,255,0.1);
+    }
+    
+    .log-entry.success {
+        color: #00FF00;
+        background: rgba(0,0,0,0.8);
+    }
 }
