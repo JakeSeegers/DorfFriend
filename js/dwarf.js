@@ -658,14 +658,14 @@ class Dworf {
             
             // Calculate urgency based on building type and dwarf needs
             switch (building.amenityType) {
-                case 'house': urgency = Math.max(0, 30 - this.rest); break;
-                case 'inn': urgency = Math.max(0, 25 - this.joy); break;
-                case 'museum': urgency = Math.max(0, 20 - this.art); break;
-                case 'coffee_shop': urgency = Math.max(0, 25 - this.coffee); break;
-                case 'library': urgency = Math.max(0, 20 - this.wisdom); break;
-                case 'gym': urgency = Math.max(0, 25 - this.exercise); break;
-                case 'community_center': urgency = Math.max(0, 25 - this.social); break;
-                case 'spa': urgency = Math.max(0, 30 - this.cleanliness); break;
+                case 'house': urgency = Math.max(0, 45 - this.rest); break;
+                case 'inn': urgency = Math.max(0, 31 - this.joy); break;
+                case 'museum': urgency = Math.max(0, 30 - this.art); break;
+                case 'coffee_shop': urgency = Math.max(0, 35 - this.coffee); break;
+                case 'library': urgency = Math.max(0, 34 - this.wisdom); break;
+                case 'gym': urgency = Math.max(0, 32 - this.exercise); break;
+                case 'community_center': urgency = Math.max(0, 30 - this.social); break;
+                case 'spa': urgency = Math.max(0, 29 - this.cleanliness); break;
                 default: urgency = 0;
             }
             
