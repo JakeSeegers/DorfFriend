@@ -105,7 +105,7 @@ class Dworf {
         this.updateSurvivalNeeds();
         this.applyPersonalityBehavior();
         
-        // FIXED: Proper behavioral conflicts based on strategy
+        // UPDATED: Fitness-based reproductive behavior
         if (this.isAdult) {
             this.updateReproductiveBehavior();
         }
@@ -136,72 +136,120 @@ class Dworf {
         }
     }
     
-    // FIXED: Proper reproductive behavior with conflicts
+    // NEW FITNESS-BASED REPRODUCTION SYSTEM
     updateReproductiveBehavior() {
         if (!this.isAdult || this.isPregnant) return;
         
-        // Only check reproduction occasionally (much less frequent)
-        if (Math.random() < 0.001) { // 0.1% chance per frame instead of every frame
+        // Update global fitness calculation less frequently
+        if (Math.random() < 0.001) { // Very infrequent global calculation
+            game.populationFitness = this.calculatePopulationFitness();
+        }
+        
+        // Only check reproduction occasionally
+        if (Math.random() < 0.002 && game.populationFitness) { // 0.2% chance per frame
             if (this.gender === 'male') {
-                this.updateMaleBehavior();
+                this.updateMaleBehaviorWithFitness(game.populationFitness);
             } else {
-                this.updateFemaleBehavior();
+                this.updateFemaleBehaviorWithFitness(game.populationFitness);
             }
         }
         
-        // Handle territorial and social conflicts
+        // Handle social conflicts
         this.handleSocialConflicts();
     }
-    
-    // FIXED: Male behavior based on strategy
-    updateMaleBehavior() {
+
+    // Population fitness calculator
+    calculatePopulationFitness() {
+        const adults = game.dworfs.filter(d => d.isAdult);
+        const males = adults.filter(d => d.gender === 'male');
+        const females = adults.filter(d => d.gender === 'female');
+        
+        if (males.length === 0 || females.length === 0) {
+            return { blue: 0.1, orange: 0.1, yellow: 0.1, totalMales: 0, totalFemales: 0, blueMales: 0, orangeMales: 0, yellowMales: 0 };
+        }
+        
+        const totalMales = males.length;
+        const blueMales = males.filter(m => m.reproductionStrategy === 'blue').length;
+        const orangeMales = males.filter(m => m.reproductionStrategy === 'orange').length;
+        const yellowMales = males.filter(m => m.reproductionStrategy === 'yellow').length;
+        
+        // Rock-paper-scissors fitness calculations from lizard simulation
+        const blueFitness = Math.max(0.1, 1 + 0.3 * (yellowMales / totalMales) - 0.4 * (orangeMales / totalMales));
+        const orangeFitness = Math.max(0.1, 1 + 0.4 * (blueMales / totalMales) - 0.3 * (yellowMales / totalMales));
+        const yellowFitness = Math.max(0.1, 1 + 0.3 * (orangeMales / totalMales) - 0.4 * (blueMales / totalMales));
+        
+        return { 
+            blue: blueFitness, 
+            orange: orangeFitness, 
+            yellow: yellowFitness,
+            totalMales: totalMales,
+            totalFemales: females.length,
+            blueMales: blueMales,
+            orangeMales: orangeMales,
+            yellowMales: yellowMales
+        };
+    }
+
+    // Fitness-based male behavior
+    updateMaleBehaviorWithFitness(populationFitness) {
         const nearbyDwarfs = game.dworfs.filter(d => 
             d !== this && 
             d.isAdult &&
             Math.sqrt((d.x - this.x) ** 2 + (d.y - this.y) ** 2) < 120
         );
         
+        // Get fitness for this male's strategy
+        const myFitness = populationFitness[this.reproductionStrategy] || 0.1;
+        
+        // Small population recovery bonus
+        const isSmallPop = populationFitness.totalMales < 5;
+        const recoveryBonus = isSmallPop ? 2.0 : 1.0;
+        
+        // Fitness affects behavior frequency and success
+        const fitnessModifier = Math.max(0.3, myFitness) * recoveryBonus;
+        
         switch (this.reproductionStrategy) {
             case 'orange':
-                this.orangeMaleBehavior(nearbyDwarfs);
+                this.orangeMaleBehaviorWithFitness(nearbyDwarfs, fitnessModifier, populationFitness);
                 break;
             case 'blue':
-                this.blueMaleBehavior(nearbyDwarfs);
+                this.blueMaleBehaviorWithFitness(nearbyDwarfs, fitnessModifier, populationFitness);
                 break;
             case 'yellow':
-                this.yellowMaleBehavior(nearbyDwarfs);
+                this.yellowMaleBehaviorWithFitness(nearbyDwarfs, fitnessModifier, populationFitness);
                 break;
         }
     }
-    
-    // Orange males: Aggressive and territorial
-    orangeMaleBehavior(nearbyDwarfs) {
-        // Establish territory if don't have one
+
+    // Orange male behavior with fitness
+    orangeMaleBehaviorWithFitness(nearbyDwarfs, fitnessModifier, populationFitness) {
+        const territoryRadius = 60 + (fitnessModifier * 30);
+        
         if (!this.territory) {
             this.territory = {
                 x: this.x,
                 y: this.y,
-                radius: 80 + Math.random() * 40
+                radius: territoryRadius
             };
-            if (Math.random() < 0.3) {
-                addLog('🟠 ' + this.name + ' established a territory!', false);
+            if (Math.random() < 0.1) {
+                addLog('🟠 ' + this.name + ' claimed territory (fitness: ' + fitnessModifier.toFixed(2) + ')', false);
             }
         }
         
-        // Chase away other males from territory
+        // Chase males with fitness-based success
         const malesInTerritory = nearbyDwarfs.filter(d => 
             d.gender === 'male' && 
             d !== this &&
             Math.sqrt((d.x - this.territory.x) ** 2 + (d.y - this.territory.y) ** 2) < this.territory.radius
         );
         
-        if (malesInTerritory.length > 0) {
-            const intruder = malesInTerritory[0];
-            this.chaseMale(intruder);
+        if (malesInTerritory.length > 0 && Math.random() < fitnessModifier * 0.15) {
+            const target = malesInTerritory[0];
+            this.chaseMaleWithFitness(target, fitnessModifier);
             return;
         }
         
-        // Look for females in territory
+        // Mating based on fitness
         const femalesInTerritory = nearbyDwarfs.filter(d => 
             d.gender === 'female' && 
             !d.isPregnant &&
@@ -211,13 +259,13 @@ class Dworf {
         
         if (femalesInTerritory.length > 0 && this.reproductionTimer <= 0) {
             const female = femalesInTerritory[0];
-            this.attemptMating(female);
+            const matingSuccess = Math.min(0.6, 0.15 + fitnessModifier * 0.25);
+            this.attemptMatingWithFitness(female, matingSuccess, populationFitness);
         }
     }
-    
-    // Blue males: Cooperative and mate-guarding
-    blueMaleBehavior(nearbyDwarfs) {
-        // Look for a mate to guard
+
+    // Blue male behavior with fitness
+    blueMaleBehaviorWithFitness(nearbyDwarfs, fitnessModifier, populationFitness) {
         if (!this.guardedMate || !this.guardedMate.isAdult || this.guardedMate.isPregnant) {
             const availableFemales = nearbyDwarfs.filter(d => 
                 d.gender === 'female' && 
@@ -226,49 +274,44 @@ class Dworf {
                 !d.guardedBy
             );
             
-            if (availableFemales.length > 0) {
-                // Release previous mate if any
+            if (availableFemales.length > 0 && Math.random() < fitnessModifier * 0.2) {
                 if (this.guardedMate) {
                     this.guardedMate.guardedBy = null;
                 }
                 
                 this.guardedMate = availableFemales[0];
                 this.guardedMate.guardedBy = this;
-                if (Math.random() < 0.3) {
-                    addLog('🔵 ' + this.name + ' is now guarding ' + this.guardedMate.name, false);
+                if (Math.random() < 0.1) {
+                    addLog('🔵 ' + this.name + ' guards ' + this.guardedMate.name + ' (fitness: ' + fitnessModifier.toFixed(2) + ')', false);
                 }
             }
         }
         
-        // Guard mate from other males
         if (this.guardedMate) {
             const threateningMales = nearbyDwarfs.filter(d => 
                 d.gender === 'male' && 
                 d !== this &&
-                Math.sqrt((d.x - this.guardedMate.x) ** 2 + (d.y - this.guardedMate.y) ** 2) < 60
+                Math.sqrt((d.x - this.guardedMate.x) ** 2 + (d.y - this.guardedMate.y) ** 2) < 80
             );
             
-            if (threateningMales.length > 0) {
-                // Move towards mate to guard her
+            if (threateningMales.length > 0 && Math.random() < fitnessModifier * 0.2) {
                 this.targetX = this.guardedMate.x;
                 this.targetY = this.guardedMate.y;
                 
-                // Chase away threats
                 const threat = threateningMales[0];
-                this.chaseMale(threat);
+                this.chaseMaleWithFitness(threat, fitnessModifier);
                 return;
             }
             
-            // Attempt mating with guarded mate
             if (this.reproductionTimer <= 0) {
-                this.attemptMating(this.guardedMate);
+                const matingSuccess = Math.min(0.5, 0.2 + fitnessModifier * 0.2);
+                this.attemptMatingWithFitness(this.guardedMate, matingSuccess, populationFitness);
             }
         }
     }
-    
-    // Yellow males: Sneaky and opportunistic
-    yellowMaleBehavior(nearbyDwarfs) {
-        // Look for unguarded females or sneak around territories
+
+    // Yellow male behavior with fitness
+    yellowMaleBehaviorWithFitness(nearbyDwarfs, fitnessModifier, populationFitness) {
         const potentialMates = nearbyDwarfs.filter(d => 
             d.gender === 'female' && 
             !d.isPregnant &&
@@ -278,28 +321,28 @@ class Dworf {
         const guardedFemales = potentialMates.filter(f => f.guardedBy);
         const unguardedFemales = potentialMates.filter(f => !f.guardedBy);
         
-        // Try to sneak mate with guarded females (risky but rewarding)
-        if (guardedFemales.length > 0 && Math.random() < 0.3 && this.reproductionTimer <= 0) {
+        // Sneaking success based on fitness
+        if (guardedFemales.length > 0 && Math.random() < fitnessModifier * 0.1 && this.reproductionTimer <= 0) {
             const target = guardedFemales[0];
             const guard = target.guardedBy;
             
-            // Check if guard is distracted or far away
             const guardDistance = Math.sqrt((guard.x - target.x) ** 2 + (guard.y - target.y) ** 2);
-            if (guardDistance > 40) {
-                this.attemptSneakyMating(target);
+            if (guardDistance > 50) {
+                const sneakSuccess = Math.min(0.3, fitnessModifier * 0.2);
+                this.attemptSneakyMatingWithFitness(target, sneakSuccess, populationFitness);
                 return;
             }
         }
         
-        // Mate with unguarded females
         if (unguardedFemales.length > 0 && this.reproductionTimer <= 0) {
             const female = unguardedFemales[0];
-            this.attemptMating(female);
+            const matingSuccess = Math.min(0.4, 0.05 + fitnessModifier * 0.15);
+            this.attemptMatingWithFitness(female, matingSuccess, populationFitness);
         }
     }
-    
-    // Female behavior - choose mates based on strategy and circumstances
-    updateFemaleBehavior() {
+
+    // Female mate choice with fitness
+    updateFemaleBehaviorWithFitness(populationFitness) {
         if (this.reproductionTimer > 0 || this.isPregnant) return;
         
         const nearbyMales = game.dworfs.filter(d => 
@@ -311,35 +354,35 @@ class Dworf {
         
         if (nearbyMales.length === 0) return;
         
-        // Female choice based on male strategies and local conditions
         let preferredMale = null;
         let maxScore = 0;
         
         nearbyMales.forEach(male => {
             let score = 0;
+            const maleFitness = populationFitness[male.reproductionStrategy] || 0.1;
             
+            // Prefer males with higher current fitness
+            score += maleFitness * 40;
+            
+            // Environmental and population-based preferences
             switch (male.reproductionStrategy) {
                 case 'orange':
-                    // Prefer territorial males when resources are scarce
-                    if (game.goldDeposits.length < 2) score += 30;
-                    if (male.territory) score += 20;
-                    score += 10; // Base attractiveness
+                    if (game.goldDeposits.length < 2 || populationFitness.totalMales > 6) score += 15;
+                    if (male.territory) score += 10;
                     break;
                 case 'blue':
-                    // Prefer cooperative males when stability is low
-                    if (stabilityLevel < 50) score += 25;
-                    if (male.guardedMate === this) score += 15;
-                    score += 15; // Base attractiveness
+                    if (stabilityLevel < 60 || (populationFitness.totalMales >= 3 && populationFitness.totalMales <= 6)) score += 15;
+                    if (male.guardedMate === this) score += 10;
                     break;
                 case 'yellow':
-                    // Prefer sneaky males when population is dense
-                    if (game.dworfs.length > 5) score += 20;
-                    score += 5; // Lower base attractiveness
+                    if (populationFitness.totalMales > 5 || game.goldDeposits.length > 2) score += 15;
                     break;
             }
             
             // Personality compatibility
             if (Math.abs(this.personality.agreeableness - male.personality.agreeableness) < 30) score += 10;
+            
+            score += Math.random() * 5; // Small randomness
             
             if (score > maxScore) {
                 maxScore = score;
@@ -347,10 +390,172 @@ class Dworf {
             }
         });
         
-        // Sometimes accept mating attempts
-        if (preferredMale && Math.random() < 0.1) {
-            this.acceptMating(preferredMale);
+        // Population pressure affects acceptance rate
+        const totalPop = populationFitness.totalMales + populationFitness.totalFemales;
+        const populationPressure = Math.max(0.05, Math.min(0.4, 1.0 - (totalPop / 15)));
+        
+        if (preferredMale && Math.random() < populationPressure) {
+            this.acceptMatingWithFitness(preferredMale, populationFitness);
         }
+    }
+
+    // Fitness-based mating methods
+    attemptMatingWithFitness(female, successRate, populationFitness) {
+        if (!female || female.isPregnant || female.reproductionTimer > 0) return;
+        
+        const carryingCapacity = 15;
+        const currentPop = populationFitness.totalMales + populationFitness.totalFemales;
+        const crowdingEffect = Math.max(0.2, 1.0 - (currentPop / carryingCapacity));
+        
+        const finalSuccessRate = successRate * crowdingEffect;
+        
+        if (Math.random() < finalSuccessRate) {
+            this.successfulMatingWithFitness(female, populationFitness);
+        } else {
+            this.reproductionTimer = 600 + Math.random() * 600;
+        }
+    }
+
+    attemptSneakyMatingWithFitness(guardedFemale, successRate, populationFitness) {
+        const guard = guardedFemale.guardedBy;
+        
+        if (Math.random() < successRate) {
+            this.successfulMatingWithFitness(guardedFemale, populationFitness);
+            if (Math.random() < 0.2) {
+                addLog('🟡 ' + this.name + ' successfully sneaked past ' + guard.name + '!', false, 'success');
+            }
+        } else {
+            this.reproductionTimer = 1800;
+            this.task = 'fleeing';
+            this.workTimer = 400;
+            this.efficiency *= 0.7;
+            
+            if (Math.random() < 0.15) {
+                addLog('🟡 ' + this.name + ' was caught by ' + guard.name + '!', false, 'disaster');
+            }
+        }
+    }
+
+    acceptMatingWithFitness(male, populationFitness) {
+        const maleFitness = populationFitness[male.reproductionStrategy] || 0.1;
+        const acceptanceRate = Math.min(0.7, 0.2 + maleFitness * 0.4);
+        
+        if (Math.random() < acceptanceRate) {
+            male.successfulMatingWithFitness(this, populationFitness);
+        }
+    }
+
+    successfulMatingWithFitness(female, populationFitness) {
+        female.isPregnant = true;
+        female.pregnancyTimer = female.pregnancyDuration;
+        female.partner = this;
+        
+        const maleFitness = populationFitness[this.reproductionStrategy] || 0.1;
+        const baseCooldown = 3600;
+        const fitnessCooldown = baseCooldown * (2.2 - Math.min(1.8, maleFitness));
+        
+        female.reproductionTimer = fitnessCooldown;
+        this.reproductionTimer = fitnessCooldown * 0.7;
+        
+        if (Math.random() < 0.2) {
+            const fitnessStr = maleFitness.toFixed(2);
+            addLog('💕 ' + this.name + ' (' + this.reproductionStrategy + ', fit:' + fitnessStr + ') mated with ' + female.name, false, 'success');
+        }
+    }
+
+    chaseMaleWithFitness(target, fitnessModifier) {
+        this.task = 'chasing';
+        this.target = target;
+        this.targetX = target.x;
+        this.targetY = target.y;
+        this.workTimer = 80 + Math.floor(fitnessModifier * 60);
+        
+        const targetFitness = game.populationFitness ? game.populationFitness[target.reproductionStrategy] || 0.1 : 0.1;
+        const fleeIntensity = Math.max(120, 250 - targetFitness * 80);
+        
+        target.task = 'fleeing';
+        target.workTimer = fleeIntensity;
+        target.targetX = target.x + (target.x - this.x) * (1 + fitnessModifier * 0.5);
+        target.targetY = target.y + (target.y - this.y) * (1 + fitnessModifier * 0.5);
+        
+        if (fitnessModifier > 1.3) {
+            target.efficiency *= 0.8;
+            if (Math.random() < 0.1) {
+                addLog('⚔️ ' + this.name + ' dominated ' + target.name + '!', false, 'disaster');
+            }
+        }
+    }
+
+    // Enhanced birth with strategy inheritance and mutation
+    giveBirth() {
+        const baby = new Dworf(this.x + (Math.random() - 0.5) * 30, this.y + (Math.random() - 0.5) * 30);
+        
+        // Get current population fitness
+        const populationFitness = this.calculatePopulationFitness();
+        
+        // Inherit traits from parents
+        if (this.partner) {
+            // Mix personality traits
+            Object.keys(baby.personality).forEach(trait => {
+                baby.personality[trait] = (this.personality[trait] + this.partner.personality[trait]) / 2 + (Math.random() - 0.5) * 30;
+                baby.personality[trait] = Math.max(0, Math.min(100, baby.personality[trait]));
+            });
+            
+            // Strategy inheritance with fitness-based mutation for males
+            if (baby.gender === 'male') {
+                const mutationRate = 0.15; // 15% mutation rate
+                
+                if (Math.random() < mutationRate) {
+                    // Fitness-based mutation: favor strategies that are doing well
+                    const strategies = ['orange', 'blue', 'yellow'];
+                    const fitnesses = [populationFitness.orange, populationFitness.blue, populationFitness.yellow];
+                    
+                    // Weighted selection based on fitness
+                    const totalFitness = fitnesses.reduce((a, b) => a + b, 0);
+                    if (totalFitness > 0) {
+                        const rand = Math.random() * totalFitness;
+                        let cumulative = 0;
+                        
+                        for (let i = 0; i < strategies.length; i++) {
+                            cumulative += fitnesses[i];
+                            if (rand <= cumulative) {
+                                baby.reproductionStrategy = strategies[i];
+                                break;
+                            }
+                        }
+                    } else {
+                        // Fallback to random
+                        baby.reproductionStrategy = strategies[Math.floor(Math.random() * strategies.length)];
+                    }
+                    
+                    if (Math.random() < 0.2) {
+                        addLog('🧬 ' + baby.name + ' mutated to ' + baby.reproductionStrategy + ' strategy!', false, 'success');
+                    }
+                } else {
+                    // Inherit from father
+                    baby.reproductionStrategy = this.partner.reproductionStrategy;
+                }
+            }
+            
+            // Efficiency inheritance with slight variation
+            baby.baseEfficiency = (this.baseEfficiency + this.partner.baseEfficiency) / 2 + (Math.random() - 0.5) * 0.2;
+            baby.baseEfficiency = Math.max(0.4, Math.min(1.2, baby.baseEfficiency));
+            baby.efficiency = baby.baseEfficiency;
+        }
+        
+        game.dworfs.push(baby);
+        this.isPregnant = false;
+        this.partner = null;
+        
+        // Release from guarding
+        if (this.guardedBy) {
+            this.guardedBy.guardedMate = null;
+            this.guardedBy = null;
+        }
+        
+        const strategyStr = baby.gender === 'male' ? ', ' + baby.reproductionStrategy : '';
+        const fitnessStr = populationFitness[baby.reproductionStrategy] ? ' (fit:' + populationFitness[baby.reproductionStrategy].toFixed(2) + ')' : '';
+        addLog('👶 ' + baby.name + ' born! (' + baby.gender + strategyStr + fitnessStr + ')', true, 'success');
     }
     
     // Handle social conflicts between males
@@ -388,111 +593,7 @@ class Dworf {
         });
     }
     
-    // Mating attempt methods
-    attemptMating(female) {
-        if (!female || female.isPregnant || female.reproductionTimer > 0) return;
-        
-        // Success rates based on strategy interactions
-        let successRate = 0.1; // Base rate
-        
-        if (this.reproductionStrategy === 'orange') successRate = 0.3;
-        else if (this.reproductionStrategy === 'blue') successRate = 0.25;
-        else if (this.reproductionStrategy === 'yellow') successRate = 0.15;
-        
-        if (Math.random() < successRate) {
-            this.successfulMating(female);
-        } else {
-            this.reproductionTimer = 600; // Short cooldown after failure
-        }
-    }
-    
-    attemptSneakyMating(guardedFemale) {
-        const guard = guardedFemale.guardedBy;
-        
-        if (Math.random() < 0.2) { // Lower success but possible
-            this.successfulMating(guardedFemale);
-            addLog('🟡 ' + this.name + ' successfully sneaked past ' + guard.name + '!', false);
-        } else {
-            // Get caught!
-            this.reproductionTimer = 1200;
-            this.task = 'fleeing';
-            this.workTimer = 300;
-            addLog('🟡 ' + this.name + ' was caught sneaking by ' + guard.name + '!', false, 'disaster');
-        }
-    }
-    
-    acceptMating(male) {
-        if (Math.random() < 0.5) {
-            male.successfulMating(this);
-        }
-    }
-    
-    successfulMating(female) {
-        female.isPregnant = true;
-        female.pregnancyTimer = female.pregnancyDuration;
-        female.partner = this;
-        female.reproductionTimer = female.reproductionCooldown;
-        this.reproductionTimer = this.reproductionCooldown;
-        
-        addLog('💕 ' + this.name + ' (' + this.reproductionStrategy + ') mated with ' + female.name, false, 'success');
-    }
-    
-    giveBirth() {
-        const baby = new Dworf(this.x + (Math.random() - 0.5) * 30, this.y + (Math.random() - 0.5) * 30);
-        
-        // Inherit traits from parents
-        if (this.partner) {
-            // Mix personality traits
-            Object.keys(baby.personality).forEach(trait => {
-                baby.personality[trait] = (this.personality[trait] + this.partner.personality[trait]) / 2 + (Math.random() - 0.5) * 40;
-                baby.personality[trait] = Math.max(0, Math.min(100, baby.personality[trait]));
-            });
-            
-            // Inherit reproduction strategy (males only)
-            if (baby.gender === 'male') {
-                if (Math.random() < 0.1) {
-                    // 10% mutation rate
-                    const strategies = ['orange', 'blue', 'yellow'];
-                    baby.reproductionStrategy = strategies[Math.floor(Math.random() * strategies.length)];
-                } else {
-                    // Inherit from male parent
-                    baby.reproductionStrategy = this.partner.reproductionStrategy;
-                }
-            }
-        }
-        
-        game.dworfs.push(baby);
-        this.isPregnant = false;
-        this.partner = null;
-        
-        // Release from guarding if being guarded
-        if (this.guardedBy) {
-            this.guardedBy.guardedMate = null;
-            this.guardedBy = null;
-        }
-        
-        addLog('👶 ' + baby.name + ' was born! (' + baby.gender + (baby.gender === 'male' ? ', ' + baby.reproductionStrategy : '') + ')', true, 'success');
-    }
-    
     // Combat and social dominance methods
-    chaseMale(target) {
-        this.task = 'chasing';
-        this.target = target;
-        this.targetX = target.x;
-        this.targetY = target.y;
-        this.workTimer = 200;
-        
-        // Make target flee
-        target.task = 'fleeing';
-        target.workTimer = 300;
-        target.targetX = target.x + (target.x - this.x) * 2;
-        target.targetY = target.y + (target.y - this.y) * 2;
-        
-        if (Math.random() < 0.1) {
-            addLog(this.reproductionStrategy + ' male ' + this.name + ' chased away ' + target.name, false);
-        }
-    }
-    
     dominateMale(target) {
         target.efficiency *= 0.8;
         target.workTimer += 200;
@@ -1437,7 +1538,7 @@ class Dworf {
                 this.task = 'idle';
                 break;
                 
-            // NEW: Reproductive behavior states
+            // Fitness-based reproductive behavior states
             case 'chasing':
                 this.workTimer--;
                 if (this.target) {
@@ -1859,8 +1960,12 @@ class Dworf {
             this.territory && 
             Math.random() < 0.1) { // Only occasionally visible
             
-            ctx.strokeStyle = 'rgba(255, 102, 0, 0.3)';
-            ctx.lineWidth = 2;
+            // Get fitness to determine territory visibility
+            const fitness = game.populationFitness ? game.populationFitness.orange : 1;
+            const alpha = Math.min(0.6, 0.2 + fitness * 0.3);
+            
+            ctx.strokeStyle = `rgba(255, 102, 0, ${alpha})`;
+            ctx.lineWidth = fitness > 1.3 ? 3 : 2;
             ctx.setLineDash([5, 5]);
             ctx.beginPath();
             ctx.arc(this.territory.x, this.territory.y, this.territory.radius, 0, Math.PI * 2);
@@ -1873,12 +1978,47 @@ class Dworf {
             this.reproductionStrategy === 'blue' && 
             this.guardedMate) {
             
-            ctx.strokeStyle = 'rgba(0, 102, 255, 0.5)';
-            ctx.lineWidth = 1;
+            const fitness = game.populationFitness ? game.populationFitness.blue : 1;
+            const alpha = Math.min(0.8, 0.3 + fitness * 0.4);
+            
+            ctx.strokeStyle = `rgba(0, 102, 255, ${alpha})`;
+            ctx.lineWidth = fitness > 1.2 ? 2 : 1;
             ctx.beginPath();
             ctx.moveTo(this.x, this.y);
             ctx.lineTo(this.guardedMate.x, this.guardedMate.y);
             ctx.stroke();
+            
+            // Draw guard radius for high fitness
+            if (fitness > 1.1) {
+                ctx.strokeStyle = `rgba(0, 102, 255, ${alpha * 0.3})`;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 8]);
+                ctx.beginPath();
+                ctx.arc(this.guardedMate.x, this.guardedMate.y, 60, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+        
+        // Draw sneaking indicator for yellow males
+        if (this.gender === 'male' && 
+            this.reproductionStrategy === 'yellow' && 
+            this.task === 'reproducing') {
+            
+            const fitness = game.populationFitness ? game.populationFitness.yellow : 1;
+            
+            // Stealth shimmer effect
+            const shimmer = Math.sin(game.time * 0.2) * 0.4 + 0.6;
+            ctx.shadowColor = `rgba(255, 255, 0, ${shimmer * fitness})`;
+            ctx.shadowBlur = 8 + fitness * 4;
+            
+            // Draw small stealth indicator
+            ctx.fillStyle = `rgba(255, 255, 0, ${0.4 + fitness * 0.3})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y - 25, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
         }
     }
     
