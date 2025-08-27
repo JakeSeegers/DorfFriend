@@ -3,7 +3,7 @@
 function initDworfs() {
     // Create initial dwarfs using the Dwarf class
     for (let i = 0; i < 3; i++) {
-        game.dworfs.push(new Dwarf(
+        game.dworfs.push(new Dworf(
             canvas.width / 2 + (i - 1) * 40,
             canvas.height / 2
         ));
