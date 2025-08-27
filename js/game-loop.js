@@ -1,6 +1,7 @@
-// Main game loop and update logic
+// Main game loop and update logic - FIXED VERSION
 
 function initDworfs() {
+    // FIXED: Use Dwarf instead of Dworf
     for (let i = 0; i < 3; i++) {
         game.dworfs.push(new Dwarf(
             canvas.width / 2 + (i - 1) * 40,
@@ -10,26 +11,36 @@ function initDworfs() {
 }
 
 function updateGame() {
-    // Passive gold generation has been removed.
-    // Dwarfs must now mine for all gold.
-
-    // Update food and water sources
+    // Validate gold integrity periodically
+    if (game.time % 300 === 0) {
+        validateGoldIntegrity();
+    }
+    
+    // Update resources
     updateFoodAndWaterSources();
+    updateGoldDeposits(); // ADD THIS LINE
     
     // Update negative buildings
     updateNegativeBuildings();
     
-    // The rate of new dwarf arrivals has been greatly reduced to make reproduction the primary growth method.
-    // The random join chance is now 5 times less frequent.
-    if (game.buildings.length > game.dworfs.length && game.time % 1500 === 0) {
+    // Reduced new dwarf arrivals (5x less frequent)
+    if (game.buildings.length > game.dworfs.length && game.time % 1500 === 0 && Math.random() < 0.2) {
         const newX = Math.max(50, Math.min(canvas.width - 50, canvas.width / 2 + Math.random() * 100 - 50));
         const newY = Math.max(50, Math.min(canvas.height - 50, canvas.height / 2));
-        game.dworfs.push(new Dworf(newX, newY));
-        addLog('👤 New Dworf joined the colony!');
+        // FIXED: Use Dwarf instead of Dworf
+        game.dworfs.push(new Dwarf(newX, newY));
+        addLog('👤 New Dwarf joined the colony!'); // FIXED: Dwarf not Dworf
     }
     
     // Check milestones
     checkMilestones();
+    
+    // Calculate gold per second (for display only)
+    if (game.time % 60 === 0) {
+        const currentGold = game.gold;
+        game.goldPerSecond = Math.max(0, (currentGold - (game.lastGoldCheck || 0)) / 1); // Per second
+        game.lastGoldCheck = currentGold;
+    }
 }
 
 function checkMilestones() {
@@ -45,12 +56,32 @@ function checkMilestones() {
         game.milestones.tenThousandGold = true;
         addLog('🏆 10,000 gold! Colony is thriving!', true);
     }
+    
+    // Rocket completion check
+    let allPartsBuilt = true;
+    for (let part in game.rocketParts) {
+        if (!game.rocketParts[part].built) {
+            allPartsBuilt = false;
+            break;
+        }
+    }
+    
+    if (allPartsBuilt && !game.milestones.rocketComplete) {
+        game.milestones.rocketComplete = true;
+        addLog('🚀 ROCKET COMPLETED! Your dwarfs can escape to space!', true, 'success');
+        addLog('🎉 VICTORY! The Fragile Dwarf Colony has achieved its goal!', true, 'success');
+        
+        // Victory celebration
+        setTimeout(() => {
+            addLog('👽 The dwarfs blast off into the cosmos, leaving their fragile world behind...', true, 'success');
+        }, 3000);
+    }
 }
 
 function gameLoop() {
-    // Update all dwarfs
-    game.dworfs.forEach(function(dworf) {
-        dworf.update();
+    // Update all dwarfs (FIXED: consistent naming)
+    game.dworfs.forEach(function(dwarf) {
+        dwarf.update();
     });
     
     // Render everything
@@ -66,4 +97,25 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// NOTE: The lines for passive gold generation have been completely removed from this script.
+// Emergency reset function (for debugging)
+function resetGame() {
+    game.gold = 0;
+    game.dworfs = [];
+    game.buildings = [];
+    game.negativeBuildings = [];
+    game.goldDeposits = [];
+    game.foodSources = [];
+    game.waterSources = [];
+    game.time = 0;
+    game.rocketParts = { ...ROCKET_PARTS_CONFIG };
+    
+    // Reinitialize
+    initDworfs();
+    initFoodAndWaterSources();
+    initializeGoldDeposits();
+    
+    addLog('🔄 Game reset successfully!', true);
+}
+
+// Make reset function available globally for debugging
+window.resetGame = resetGame;
