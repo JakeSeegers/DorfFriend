@@ -2,7 +2,7 @@
 
 function initDworfs() {
     for (let i = 0; i < 3; i++) {
-        game.dworfs.push(new Dworf(
+        game.dworfs.push(new Dwarf(
             canvas.width / 2 + (i - 1) * 40,
             canvas.height / 2
         ));
