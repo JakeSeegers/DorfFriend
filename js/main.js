@@ -1,4 +1,4 @@
-// Main initialization and event handlers
+// Main initialization and event handlers - FIXED VERSION
 
 function initializeGame() {
     initializeCanvas();
@@ -8,6 +8,7 @@ function initializeGame() {
     setTimeout(() => {
         initDworfs();
         initFoodAndWaterSources();
+        initializeGoldDeposits(); // ADD THIS LINE
         
         // Add initial log messages
         addInitialLogs();
@@ -28,11 +29,11 @@ function initializeGame() {
 }
 
 function addInitialLogs() {
-    addLog('🌟 Fragile Dworf colony started!');
+    addLog('🌟 Fragile Dwarf colony started!'); // FIXED: Dwarf not Dworf
     addLog('🎯 Goal: Build a rocket to reach outer space!');
     addLog('⚠️ Warning: This colony is sensitive to movement...');
     
-    // NEW REPRODUCTION SYSTEM EXPLANATIONS
+    // Game system explanations
     addLog('🆕 NEW: Proper gender and age system implemented!', true);
     addLog('🦎 LIZARD DYNAMICS: Orange🟠=Territorial, Blue🔵=Cooperative, Yellow🟡=Sneaky', true);
     addLog('👶 Dwarfs must mature before reproducing (30-50 seconds)', false);
@@ -46,7 +47,7 @@ function addInitialLogs() {
     addLog('🟡 Yellow males sneak around trying to steal matings', false);
     addLog('⚡ Much slower reproduction rate - proper 2+ minute cooldowns!', true);
     
-    // REBALANCE NOTES
+    // Balance notes
     addLog('🔧 MAJOR REBALANCE: Need consumption rates reduced by 75%!', true);
     addLog('🍗 MUCH MORE FILLING: Food/water now restores 3x more!', true);
     addLog('🏠 FASTER HEALING: Amenities now restore 2-3x more per use!', true);
@@ -72,7 +73,7 @@ function addInitialLogs() {
     addLog('💰 PRIORITY: Houses → Coffee Shops → Other Amenities → Basic Buildings!', false);
     addLog('❌ REMOVED: Stupid gold-generating machines - no more clutter!', true);
     
-    // SPAM REDUCTION NOTES
+    // Spam reduction notes
     addLog('🔇 SPAM REDUCTION: Duplicate messages now show counters!', true);
     addLog('✨ Golden glow indicates active repeated actions', false);
     addLog('📊 Population display shows demographics: Adults👥, Children👶, Pregnant🤱', false);
