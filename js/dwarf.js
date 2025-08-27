@@ -1447,58 +1447,42 @@ class Dworf {
     }
     
     findGoldDeposit() {
-        if (game.goldDeposits.length === 0) {
-            game.goldDeposits.push({
-                x: Math.random() * (canvas.width - 100) + 50,
-                y: Math.random() * (canvas.height - 100) + 50,
-                gold: 50 + Math.random() * 100
-            });
-        }
-        
-        let nearest = game.goldDeposits[0];
-        let minDist = Infinity;
-        
-        for (let i = 0; i < game.goldDeposits.length; i++) {
-            const deposit = game.goldDeposits[i];
-            const dist = Math.sqrt((this.x - deposit.x) * (this.x - deposit.x) + (this.y - deposit.y) * (this.y - deposit.y));
-            if (dist < minDist) {
-                minDist = dist;
-                nearest = deposit;
-            }
-        }
-        
-        this.task = 'mining';
-        this.target = nearest;
-        this.targetX = nearest.x;
-        this.targetY = nearest.y;
-        this.workTimer = 60;
+    // Only consider deposits with gold > 0
+    const nonEmptyDeposits = game.goldDeposits.filter(deposit => deposit.gold > 0);
+    if (nonEmptyDeposits.length === 0) {
+        // If none exist, spawn a new deposit
+        game.goldDeposits.push({
+            x: Math.random() * (canvas.width - 100) + 50,
+            y: Math.random() * (canvas.height - 100) + 50,
+            gold: 50 + Math.random() * 100
+        });
     }
-    
-    handleTask() {
-        const healthModifier = this.getHealthModifier();
-        const personalityWorkModifier = this.getPersonalityWorkModifier();
-        
-        switch (this.task) {
-            case 'mining':
-                this.workTimer--;
-                if (this.workTimer <= 0) {
-                    if (this.target && this.target.gold > 0) {
-                        let mineAmount = Math.min(5, this.target.gold);
-                        mineAmount *= healthModifier * personalityWorkModifier;
-                        
-                        this.target.gold -= mineAmount;
-                        this.goldCarried += mineAmount;
-                        if (this.target.gold <= 0) {
-                            const index = game.goldDeposits.indexOf(this.target);
-                            if (index > -1) game.goldDeposits.splice(index, 1);
-                        }
-                    }
-                    
-                    this.task = 'returning';
-                    this.targetX = canvas.width / 2;
-                    this.targetY = canvas.height / 2;
-                    this.workTimer = 60;
-                }
+
+    // Re-filter in case we just spawned one
+    const validDeposits = game.goldDeposits.filter(deposit => deposit.gold > 0);
+    if (validDeposits.length === 0) {
+        // No valid deposits, go idle
+        this.task = 'idle';
+        return;
+    }
+
+    let nearest = validDeposits[0];
+    let minDist = Infinity;
+    for (let i = 0; i < validDeposits.length; i++) {
+        const deposit = validDeposits[i];
+        const dist = Math.sqrt((this.x - deposit.x) * (this.x - deposit.x) + (this.y - deposit.y) * (this.y - deposit.y));
+        if (dist < minDist) {
+            minDist = dist;
+            nearest = deposit;
+        }
+    }
+
+    this.task = 'mining';
+    this.target = nearest;
+    this.targetX = nearest.x;
+    this.targetY = nearest.y;
+    this.workTimer = 60;
+    }
                 break;
                 
             case 'returning':
