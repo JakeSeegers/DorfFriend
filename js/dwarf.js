@@ -1483,7 +1483,6 @@ class Dworf {
     this.targetY = nearest.y;
     this.workTimer = 60;
     }
-                break;
                 
             case 'returning':
                 if (this.goldCarried > 0) {
