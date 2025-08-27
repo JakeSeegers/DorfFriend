@@ -1,300 +1,286 @@
-// UI management and logging system with spam reduction
+// Add to js/rendering.js - replace the drawColonyCenter function
 
-// Message tracking for spam reduction
-const messageTracker = {
-    recentMessages: new Map(), // Map of message -> {count, element, timestamp, type}
-    duplicateWindow: 5000, // 5 seconds window for duplicate detection
+function drawColonyCenter() {
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
     
-    // Clean old messages from tracker
-    cleanup() {
-        const now = Date.now();
-        for (let [message, data] of this.recentMessages) {
-            if (now - data.timestamp > this.duplicateWindow) {
-                this.recentMessages.delete(message);
+    // Draw colony center area
+    ctx.fillStyle = 'rgba(255, 215, 0, 0.1)';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 50, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw fitness indicators if available
+    if (game.populationFitness) {
+        const adults = game.dworfs.filter(d => d.isAdult);
+        const males = adults.filter(d => d.gender === 'male');
+        
+        if (males.length > 0) {
+            // Fitness visualization parameters
+            const barWidth = 60;
+            const barHeight = 12;
+            const spacing = 18;
+            const startY = centerY - 40;
+            
+            const maxFitness = Math.max(
+                game.populationFitness.orange,
+                game.populationFitness.blue,
+                game.populationFitness.yellow
+            );
+            
+            if (maxFitness > 0) {
+                // Orange fitness bar
+                const orangeWidth = (game.populationFitness.orange / maxFitness) * barWidth;
+                const orangeIntensity = Math.min(1, game.populationFitness.orange / 2);
+                
+                ctx.fillStyle = `rgba(255, 102, 0, ${0.3 + orangeIntensity * 0.5})`;
+                ctx.fillRect(centerX - 30, startY, orangeWidth, barHeight);
+                ctx.strokeStyle = '#FF6600';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(centerX - 30, startY, barWidth, barHeight);
+                
+                // Orange strategy count and fitness
+                const orangeCount = males.filter(m => m.reproductionStrategy === 'orange').length;
+                ctx.fillStyle = '#FF6600';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`🟠${orangeCount} (${game.populationFitness.orange.toFixed(2)})`, centerX - 28, startY - 3);
+                
+                // Blue fitness bar
+                const blueWidth = (game.populationFitness.blue / maxFitness) * barWidth;
+                const blueIntensity = Math.min(1, game.populationFitness.blue / 2);
+                
+                ctx.fillStyle = `rgba(0, 102, 255, ${0.3 + blueIntensity * 0.5})`;
+                ctx.fillRect(centerX - 30, startY + spacing, blueWidth, barHeight);
+                ctx.strokeStyle = '#0066FF';
+                ctx.strokeRect(centerX - 30, startY + spacing, barWidth, barHeight);
+                
+                const blueCount = males.filter(m => m.reproductionStrategy === 'blue').length;
+                ctx.fillStyle = '#0066FF';
+                ctx.fillText(`🔵${blueCount} (${game.populationFitness.blue.toFixed(2)})`, centerX - 28, startY + spacing - 3);
+                
+                // Yellow fitness bar
+                const yellowWidth = (game.populationFitness.yellow / maxFitness) * barWidth;
+                const yellowIntensity = Math.min(1, game.populationFitness.yellow / 2);
+                
+                ctx.fillStyle = `rgba(255, 255, 0, ${0.3 + yellowIntensity * 0.5})`;
+                ctx.fillRect(centerX - 30, startY + spacing * 2, yellowWidth, barHeight);
+                ctx.strokeStyle = '#FFFF00';
+                ctx.strokeRect(centerX - 30, startY + spacing * 2, barWidth, barHeight);
+                
+                const yellowCount = males.filter(m => m.reproductionStrategy === 'yellow').length;
+                ctx.fillStyle = '#FFFF00';
+                ctx.fillText(`🟡${yellowCount} (${game.populationFitness.yellow.toFixed(2)})`, centerX - 28, startY + spacing * 2 - 3);
+                
+                // Dominant strategy indicator
+                const dominantFitness = Math.max(
+                    game.populationFitness.orange,
+                    game.populationFitness.blue,
+                    game.populationFitness.yellow
+                );
+                
+                let dominantStrategy = '';
+                let dominantColor = '#FFFFFF';
+                
+                if (dominantFitness > 1.2) {
+                    if (game.populationFitness.orange === dominantFitness) {
+                        dominantStrategy = 'ORANGE DOMINANT';
+                        dominantColor = '#FF6600';
+                    } else if (game.populationFitness.blue === dominantFitness) {
+                        dominantStrategy = 'BLUE DOMINANT';
+                        dominantColor = '#0066FF';
+                    } else {
+                        dominantStrategy = 'YELLOW DOMINANT';
+                        dominantColor = '#FFFF00';
+                    }
+                } else {
+                    dominantStrategy = 'BALANCED';
+                    dominantColor = '#4ECDC4';
+                }
+                
+                // Draw dominance indicator
+                ctx.fillStyle = dominantColor;
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(dominantStrategy, centerX, startY + spacing * 3 + 8);
+                
+                // Draw population pressure indicator
+                const totalAdults = adults.length;
+                const carryingCapacity = 15;
+                const pressureLevel = totalAdults / carryingCapacity;
+                
+                let pressureText = '';
+                let pressureColor = '#4CAF50';
+                
+                if (pressureLevel > 0.9) {
+                    pressureText = 'OVERCROWDED';
+                    pressureColor = '#FF4444';
+                } else if (pressureLevel > 0.7) {
+                    pressureText = 'HIGH DENSITY';
+                    pressureColor = '#FF9800';
+                } else if (totalAdults < 3) {
+                    pressureText = 'RECOVERY MODE';
+                    pressureColor = '#4ECDC4';
+                } else {
+                    pressureText = `${totalAdults}/${carryingCapacity}`;
+                    pressureColor = '#4CAF50';
+                }
+                
+                ctx.fillStyle = pressureColor;
+                ctx.font = '9px Arial';
+                ctx.fillText(pressureText, centerX, startY + spacing * 3 + 20);
+                
+                // Reset text alignment
+                ctx.textAlign = 'left';
             }
         }
-    },
-    
-    // Check if message is a duplicate and should be grouped
-    isDuplicate(message) {
-        this.cleanup();
-        return this.recentMessages.has(message);
-    },
-    
-    // Update existing message counter
-    updateCounter(message) {
-        const data = this.recentMessages.get(message);
-        if (data) {
-            data.count++;
-            data.timestamp = Date.now(); // Reset timer
-            
-            // Update the display
-            const timeStr = '[' + Math.floor(game.time / 60) + 's]';
-            data.element.textContent = `${timeStr} ${message} (x${data.count})`;
-            
-            // Add pulsing effect for active spam
-            data.element.classList.add('spam-counter');
-            setTimeout(() => {
-                if (data.element) data.element.classList.remove('spam-counter');
-            }, 300);
-            
-            return true;
-        }
-        return false;
-    },
-    
-    // Add new message to tracker
-    addMessage(message, element, type) {
-        this.recentMessages.set(message, {
-            count: 1,
-            element: element,
-            timestamp: Date.now(),
-            type: type || 'normal'
-        });
-    },
-    
-    // Check if a message should be suppressed (for very frequent messages)
-    shouldSuppress(message) {
-        // Suppress very frequent low-importance messages
-        const suppressPatterns = [
-            /chose: Need amenity:/,
-            /chose: Mine for gold/,
-            /chose: Nothing urgent/,
-            /feels refreshed and ready to work/,
-            /couldn't find any sustenance/
-        ];
-        
-        return suppressPatterns.some(pattern => pattern.test(message));
-    }
-};
-
-function addLog(message, important, type) {
-    const logDiv = document.getElementById('log');
-    
-    // Clean the message for duplicate detection (remove timestamp and dwarf names for better grouping)
-    const cleanMessage = message.replace(/^[A-Za-z_0-9]+\s+(chose:|is|feels|couldn't|needs|had|learned|made|was)/, 'Dwarf $1');
-    
-    // Check if this is a duplicate message within the time window
-    if (!important && messageTracker.isDuplicate(cleanMessage)) {
-        // Update existing counter instead of adding new message
-        if (messageTracker.updateCounter(cleanMessage)) {
-            return; // Successfully updated counter, don't add new message
-        }
-    }
-    
-    // Check if message should be suppressed for being too spammy
-    if (!important && messageTracker.shouldSuppress(message)) {
-        // Only log every 5th occurrence of these messages
-        const suppressKey = cleanMessage + '_suppress';
-        if (!window.suppressCounts) window.suppressCounts = {};
-        window.suppressCounts[suppressKey] = (window.suppressCounts[suppressKey] || 0) + 1;
-        
-        if (window.suppressCounts[suppressKey] % 5 !== 0) {
-            return; // Skip this message
-        }
-        
-        // Modify message to show it's been suppressed
-        message += ` (${window.suppressCounts[suppressKey]} total)`;
-    }
-    
-    // Create new log entry
-    const entry = document.createElement('div');
-    
-    if (important) {
-        entry.className = 'log-entry important';
-    } else if (type === 'disaster') {
-        entry.className = 'log-entry disaster';
-    } else if (type === 'success') {
-        entry.className = 'log-entry success';
-    } else {
-        entry.className = 'log-entry';
-    }
-    
-    const timeStr = '[' + Math.floor(game.time / 60) + 's]';
-    entry.textContent = timeStr + ' ' + message;
-    
-    // Add to DOM
-    logDiv.appendChild(entry);
-    logDiv.scrollTop = logDiv.scrollHeight;
-    
-    // Track this message for future duplicate detection (only for non-important messages)
-    if (!important) {
-        messageTracker.addMessage(cleanMessage, entry, type);
-    }
-    
-    // Clean up old entries (keep last 25)
-    while (logDiv.children.length > 25) {
-        const removedElement = logDiv.children[1];
-        
-        // Remove from message tracker if it's being deleted
-        for (let [msg, data] of messageTracker.recentMessages) {
-            if (data.element === removedElement) {
-                messageTracker.recentMessages.delete(msg);
-                break;
-            }
-        }
-        
-        logDiv.removeChild(removedElement);
     }
 }
 
-// Enhanced updateUI function with demographics and spam reduction
-function updateUI() {
-    document.getElementById('goldCount').textContent = Math.floor(game.gold);
-    
-    // Enhanced population demographics display
-    const adults = game.dworfs.filter(d => d.isAdult);
-    const children = game.dworfs.filter(d => !d.isAdult);
-    const males = adults.filter(d => d.gender === 'male');
-    const females = adults.filter(d => d.gender === 'female');
-    const pregnant = females.filter(f => f.isPregnant);
-    
-    // Strategy breakdown for adult males
-    const orangeMales = males.filter(m => m.reproductionStrategy === 'orange').length;
-    const blueMales = males.filter(m => m.reproductionStrategy === 'blue').length;
-    const yellowMales = males.filter(m => m.reproductionStrategy === 'yellow').length;
-    
-    // Build population string
-    let populationText = game.dworfs.length.toString();
-    if (adults.length > 0) {
-        populationText += ` (${adults.length}👥`;
-        if (children.length > 0) populationText += `, ${children.length}👶`;
-        if (pregnant.length > 0) populationText += `, ${pregnant.length}🤱`;
-        populationText += ')';
+// Enhanced territory visualization in dwarf drawing
+// Add this to the Dworf.drawTerritorialIndicators() method:
+
+drawTerritorialIndicators() {
+    // Draw territory boundaries for orange males (enhanced)
+    if (this.gender === 'male' && 
+        this.reproductionStrategy === 'orange' && 
+        this.territory) {
+        
+        // Get current fitness to determine territory visibility
+        const fitness = game.populationFitness ? game.populationFitness.orange : 1;
+        const alpha = Math.min(0.6, 0.2 + fitness * 0.3);
+        
+        // Pulsing effect based on fitness level
+        const pulseIntensity = Math.sin(game.time * 0.05) * 0.3 + 0.7;
+        const territoryAlpha = alpha * pulseIntensity;
+        
+        ctx.strokeStyle = `rgba(255, 102, 0, ${territoryAlpha})`;
+        ctx.lineWidth = fitness > 1.3 ? 3 : 2; // Thicker line for high fitness
+        ctx.setLineDash([8, 4]);
+        ctx.beginPath();
+        ctx.arc(this.territory.x, this.territory.y, this.territory.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
     }
     
-    // Add strategy breakdown if there are adult males
-    if (males.length > 0) {
-        populationText += ` [🟠${orangeMales} 🔵${blueMales} 🟡${yellowMales}]`;
-    }
-    
-    document.getElementById('dworfsCount').textContent = populationText;
-    
-    // Calculate average needs across all dwarfs
-    if (game.dworfs.length > 0) {
-        const totals = {
-            hunger: 0, thirst: 0, rest: 0, joy: 0, coffee: 0, cleanliness: 0
-        };
+    // Draw mate guarding indicator for blue males (enhanced)
+    if (this.gender === 'male' && 
+        this.reproductionStrategy === 'blue' && 
+        this.guardedMate) {
         
-        // Also track how many dwarfs have critical needs
-        const criticalCounts = {
-            hunger: 0, thirst: 0, rest: 0, joy: 0, coffee: 0, cleanliness: 0
-        };
+        const fitness = game.populationFitness ? game.populationFitness.blue : 1;
+        const alpha = Math.min(0.8, 0.3 + fitness * 0.4);
         
-        game.dworfs.forEach(dwarf => {
-            totals.hunger += dwarf.hunger;
-            totals.thirst += dwarf.thirst;
-            totals.rest += dwarf.rest;
-            totals.joy += dwarf.joy;
-            totals.coffee += dwarf.coffee;
-            totals.cleanliness += dwarf.cleanliness;
-            
-            // Count critical needs
-            if (dwarf.hunger < 15) criticalCounts.hunger++;
-            if (dwarf.thirst < 15) criticalCounts.thirst++;
-            if (dwarf.rest < 15) criticalCounts.rest++;
-            if (dwarf.joy < 15) criticalCounts.joy++;
-            if (dwarf.coffee < 10) criticalCounts.coffee++;
-            if (dwarf.cleanliness < 15) criticalCounts.cleanliness++;
-        });
+        ctx.strokeStyle = `rgba(0, 102, 255, ${alpha})`;
+        ctx.lineWidth = fitness > 1.2 ? 2 : 1;
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.guardedMate.x, this.guardedMate.y);
+        ctx.stroke();
         
-        const count = game.dworfs.length;
-        const averages = {
-            hunger: totals.hunger / count,
-            thirst: totals.thirst / count,
-            rest: totals.rest / count,
-            joy: totals.joy / count,
-            coffee: totals.coffee / count,
-            cleanliness: totals.cleanliness / count
-        };
-        
-        // Enhanced UI display with critical counts
-        function updateNeedDisplay(elementId, value, criticalCount, criticalThreshold = 15, lowThreshold = 30) {
-            const element = document.getElementById(elementId);
-            let displayText = Math.floor(value).toString();
-            
-            // Add critical count if there are dwarfs with critical needs
-            if (criticalCount > 0) {
-                displayText += ` (${criticalCount}⚠️)`;
-            }
-            
-            element.textContent = displayText;
-            
-            if (value < criticalThreshold || criticalCount > 0) {
-                element.style.color = '#FF4444';
-            } else if (value < lowThreshold) {
-                element.style.color = '#FF9800';
-            } else {
-                element.style.color = '#4CAF50';
-            }
+        // Draw guard radius
+        if (fitness > 1.1) {
+            ctx.strokeStyle = `rgba(0, 102, 255, ${alpha * 0.3})`;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 8]);
+            ctx.beginPath();
+            ctx.arc(this.guardedMate.x, this.guardedMate.y, 60, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
         }
-        
-        updateNeedDisplay('avgHunger', averages.hunger, criticalCounts.hunger, 15, 35);
-        updateNeedDisplay('avgThirst', averages.thirst, criticalCounts.thirst, 10, 30);
-        updateNeedDisplay('avgRest', averages.rest, criticalCounts.rest, 10, 30);
-        updateNeedDisplay('avgJoy', averages.joy, criticalCounts.joy, 10, 30);
-        updateNeedDisplay('avgCoffee', averages.coffee, criticalCounts.coffee, 5, 25);
-        updateNeedDisplay('avgClean', averages.cleanliness, criticalCounts.cleanliness, 15, 35);
     }
     
-    // Count different types of buildings
-    const regularBuildings = game.buildings.filter(b => b.type !== 'amenity').length;
-    const amenityBuildings = game.buildings.filter(b => b.type === 'amenity').length;
-    const negativeBuildings = game.negativeBuildings.length;
-    
-    let buildingText = regularBuildings.toString();
-    if (amenityBuildings > 0) buildingText += ` (+${amenityBuildings} 🏠)`;
-    if (negativeBuildings > 0) buildingText += ` (+${negativeBuildings} ⚠️)`;
-    
-    document.getElementById('machinesCount').textContent = amenityBuildings;
-    document.getElementById('buildingsCount').textContent = buildingText;
-    document.getElementById('goldPerSec').textContent = game.goldPerSecond.toFixed(1);
-    
-    updateRocketProgress();
+    // Draw sneaking indicator for yellow males
+    if (this.gender === 'male' && 
+        this.reproductionStrategy === 'yellow' && 
+        this.task === 'reproducing') {
+        
+        const fitness = game.populationFitness ? game.populationFitness.yellow : 1;
+        
+        // Stealth shimmer effect
+        const shimmer = Math.sin(game.time * 0.2) * 0.4 + 0.6;
+        ctx.shadowColor = `rgba(255, 255, 0, ${shimmer * fitness})`;
+        ctx.shadowBlur = 8 + fitness * 4;
+        
+        // Draw small stealth indicator
+        ctx.fillStyle = `rgba(255, 255, 0, ${0.4 + fitness * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y - 25, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+    }
 }
 
-function updateRocketProgress() {
-    const totalParts = Object.keys(game.rocketParts).length;
-    let completedParts = 0;
-    for (let part in game.rocketParts) {
-        if (game.rocketParts[part].built) completedParts++;
-    }
-    const overallProgress = (completedParts / totalParts) * 100;
+// Mating success visual feedback
+// Add this method to the Dworf class:
+
+drawMatingAttempt(success, partnerName) {
+    // Create visual feedback for mating attempts
+    const indicator = {
+        x: this.x,
+        y: this.y - 30,
+        timer: 120,
+        success: success,
+        partner: partnerName,
+        strategy: this.reproductionStrategy
+    };
     
-    document.getElementById('overallProgress').style.width = overallProgress + '%';
+    // Add to a global array for rendering
+    if (!game.matingIndicators) game.matingIndicators = [];
+    game.matingIndicators.push(indicator);
+}
+
+// Add this to the main renderGame function in js/rendering.js:
+function renderMatingIndicators() {
+    if (!game.matingIndicators) return;
     
-    let progressText = 'Planning phase...';
-    if (overallProgress === 100) progressText = '🚀 READY FOR LAUNCH!';
-    else if (overallProgress > 80) progressText = 'Final assembly...';
-    else if (overallProgress > 60) progressText = 'Major construction...';
-    else if (overallProgress > 40) progressText = 'Building components...';
-    else if (overallProgress > 20) progressText = 'Foundation work...';
-    else if (overallProgress > 0) progressText = 'Starting construction...';
-    
-    document.getElementById('progressText').textContent = progressText;
-    
-    const partNames = ['engine', 'fuel', 'hull', 'navigation', 'launchpad'];
-    const partIcons = ['🔥', '⛽', '🛡️', '📡', '🗏️'];
-    
-    for (let i = 0; i < partNames.length; i++) {
-        const partName = partNames[i];
-        const partData = game.rocketParts[partName];
-        const element = document.getElementById(partName);
-        const icon = partIcons[i];
-        const capitalName = partName.charAt(0).toUpperCase() + partName.slice(1);
+    game.matingIndicators.forEach((indicator, index) => {
+        indicator.timer--;
         
-        if (partData.built) {
-            element.className = 'rocket-part completed';
-            element.textContent = icon + ' ' + capitalName + ': ✅ Complete';
-        } else if (partData.building) {
-            element.className = 'rocket-part building';
-            element.textContent = icon + ' ' + capitalName + ': 🔨 Building... ' + Math.floor(partData.progress * 100) + '%';
-        } else if (game.gold >= partData.cost) {
-            element.className = 'rocket-part';
-            element.textContent = icon + ' ' + capitalName + ': 💰 Ready to build (' + partData.cost + ' gold)';
+        const alpha = indicator.timer / 120;
+        const y = indicator.y - (120 - indicator.timer) * 0.5;
+        
+        if (indicator.success) {
+            ctx.fillStyle = `rgba(255, 105, 180, ${alpha})`;
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('💕', indicator.x, y);
         } else {
-            element.className = 'rocket-part';
-            element.textContent = icon + ' ' + capitalName + ': ⏳ Need ' + partData.cost + ' gold';
+            ctx.fillStyle = `rgba(255, 68, 68, ${alpha})`;
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('💔', indicator.x, y);
         }
-    }
+        
+        if (indicator.timer <= 0) {
+            game.matingIndicators.splice(index, 1);
+        }
+    });
+    
+    ctx.textAlign = 'left';
+}
+
+// Call renderMatingIndicators() at the end of renderGame()
+function renderGame() {
+    drawBackground();
+    drawStars();
+    drawColonyCenter(); // Now shows fitness bars!
+    
+    // Draw all game objects
+    game.goldDeposits.forEach(drawGoldDeposit);
+    game.foodSources.forEach(drawFoodSource);
+    game.waterSources.forEach(drawWaterSource);
+    game.buildings.forEach(drawBuilding);
+    game.negativeBuildings.forEach(drawNegativeBuilding);
+    
+    // Draw dwarfs
+    game.dworfs.forEach(function(dworf) {
+        dworf.draw();
+    });
+    
+    // Draw fitness-related overlays
+    renderMatingIndicators();
+    
+    drawRocketConstruction();
 }
