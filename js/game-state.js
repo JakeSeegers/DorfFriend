@@ -3,6 +3,7 @@ const game = {
     gold: 0,
     goldPerSecond: 0,
     dworfs: [],
+    populationFitness: null, // ADD THIS LINE
     machines: [],
     buildings: [],
     negativeBuildings: [], // Negative personality-driven buildings
