@@ -1,4 +1,4 @@
-// Game constants and configuration
+// Game constants and configuration - FIXED BUILDING COSTS
 const TASK_PRIORITIES = {
     // SURVIVAL (highest priority)
     'CRITICAL_SURVIVAL': 100,    // Hunger/thirst below critical thresholds
@@ -29,19 +29,36 @@ const DWARF_NAMES = [
     'Gloin', 'Oin', 'Ori', 'Nori', 'Dori', 'Bifur', 'Bofur', 'Bombur'
 ];
 
-// Building costs and names
+// FIXED: Much lower building costs
 const BUILDING_COSTS = {
-    'house': 120, 'spa': 150, 'coffee_shop': 130, 'inn': 140,
-    'community_center': 160, 'gym': 180, 'museum': 200, 'library': 170
+    // Essential amenities - much more affordable
+    'house': 80,             // LOWERED from 120
+    'coffee_shop': 90,       // LOWERED from 130
+    'inn': 100,              // LOWERED from 140
+    'spa': 110,              // LOWERED from 150
+    
+    // Luxury amenities - still affordable but higher tier
+    'community_center': 140, // LOWERED from 160
+    'gym': 140,              // LOWERED from 180
+    'library': 140,          // LOWERED from 170
+    'museum': 140,           // LOWERED from 200
+    
+    // Basic building
+    'building': 80           // LOWERED from 100
 };
 
 const BUILDING_NAMES = {
-    'house': 'Rest House', 'spa': 'Spa & Bathhouse', 'coffee_shop': 'Coffee Shop', 
-    'inn': 'Joy Inn', 'community_center': 'Community Center', 'gym': 'Fitness Gym',
-    'museum': 'Art Museum', 'library': 'Wisdom Library'
+    'house': 'Rest House', 
+    'spa': 'Spa & Bathhouse', 
+    'coffee_shop': 'Coffee Shop', 
+    'inn': 'Joy Inn', 
+    'community_center': 'Community Center', 
+    'gym': 'Fitness Gym',
+    'museum': 'Art Museum', 
+    'library': 'Wisdom Library'
 };
 
-// Rocket part configurations
+// Rocket part configurations - keep original costs for challenge
 const ROCKET_PARTS_CONFIG = {
     engine: { cost: 1000, built: false, building: false, progress: 0 },
     fuel: { cost: 2500, built: false, building: false, progress: 0 },
