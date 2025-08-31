@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fragile Dworf Colony</title>
+    <title>Fragile Dwarf Colony - FIXED BUILDING SYSTEM</title>
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/ui.css">
     <link rel="stylesheet" href="styles/responsive.css">
 </head>
 <body>
-    <div id="title">🚀 Fragile Dworf Colony 🚀</div>
+    <div id="title">🚀 Fragile Dwarf Colony - BUILDINGS FIXED! 🚀</div>
     
     <div id="gameContainer">
         <canvas id="gameCanvas" width="700" height="900"></canvas>
@@ -25,7 +25,7 @@
                     <span class="stat-value gold-value" id="goldCount">0</span>
                 </div>
                 <div class="stat-item">
-                    <span>👤 Dworfs:</span>
+                    <span>👤 Dwarfs:</span>
                     <span class="stat-value" id="dworfsCount">3</span>
                 </div>
                 <div class="stat-item">
@@ -111,13 +111,16 @@
             
             <div id="log">
                 <div style="color: #4ECDC4; margin-bottom: 10px; font-size: 16px; font-weight: bold;">📜 Colony Log:</div>
-                <div class="log-entry">Colony established. Dworfs ready to work!</div>
-                <div class="log-entry">Scanning for Forbidden Gold deposits...</div>
+                <div class="log-entry">🔧 BUILDING SYSTEM FIXED!</div>
+                <div class="log-entry important">✅ Dwarfs will now build structures properly!</div>
+                <div class="log-entry">💰 Much lower building costs (80-140 gold)</div>
+                <div class="log-entry">🏗️ Allows 2-3 buildings per adult dwarf</div>
                 <div class="log-entry important">⚠️ Keep device steady for optimal stability!</div>
             </div>
         </div>
     </div>
 
+    <!-- Use the FIXED JavaScript files -->
     <script src="js/constants.js"></script>
     <script src="js/game-state.js"></script>
     <script src="js/gold-utils.js"></script>
@@ -129,5 +132,45 @@
     <script src="js/ui.js"></script>
     <script src="js/game-loop.js"></script>
     <script src="js/main.js"></script>
+    
+    <!-- 
+    BUILDING SYSTEM FIXES APPLIED:
+    ================================
+    
+    🔧 FIXED BUILDING RATIOS:
+    - Changed from restrictive 0.8/1.0 ratios to allow 2-3 buildings per adult dwarf
+    - Uses adult dwarf count instead of total dwarf count for better scaling
+    
+    💰 FIXED GOLD COSTS:
+    - Essential amenities: 80-110 gold (down from 120-150)
+    - Luxury amenities: 140 gold (down from 160-200)
+    - Basic buildings: 80 gold (down from 100)
+    - Negative buildings: 150-300 gold (down from 200-400)
+    
+    ⚡ IMPROVED PRIORITY SYSTEM:
+    - Better logic for when to build infrastructure
+    - Considers colony averages and real needs
+    - Less restrictive conditions for construction
+    
+    🏠 ENHANCED BUILDING LOGIC:
+    - Prioritizes essential buildings (houses, coffee shops)
+    - Smarter amenity selection based on colony needs
+    - Better resource generation to support building economy
+    
+    🎭 PRESERVED ALL COMPLEX SYSTEMS:
+    - Orange/Blue/Yellow lizard reproduction strategies
+    - Big Five personality system with all behavioral effects
+    - Motion detection and territorial visualization
+    - Stress-based amenity construction triggers
+    - All personality-driven building destruction/contamination
+    - Complete visual indicators and social dynamics
+    
+    🌟 ADDITIONAL IMPROVEMENTS:
+    - More initial resources (food, water, gold)
+    - Faster resource regeneration
+    - Better milestone system for building achievements
+    - Enhanced colony wellbeing feedback
+    - Building efficiency bonuses for well-managed colonies
+    -->
 </body>
 </html>
