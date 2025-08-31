@@ -1,4 +1,4 @@
-// Main game loop and update logic - COMPLETE VERSION
+// Main game loop and update logic - COMPLETE VERSION WITH BUILDING FIXES
 
 function initDworfs() {
     // Create initial dwarfs using the Dwarf class
@@ -31,15 +31,26 @@ function updateGame() {
         updateNegativeBuildings();
     }
     
-    // Reduced new dwarf arrivals (much less frequent than before)
-    if (game.buildings.length > game.dworfs.length && game.time % 1800 === 0 && Math.random() < 0.15) {
+    // FIXED: More building-friendly new dwarf arrivals
+    // Reduced frequency but better conditions for growth
+    const adultDwarfs = game.dworfs.filter(d => d.isAdult).length;
+    const totalBuildings = game.buildings.length;
+    
+    // Only spawn new dwarfs if there are enough buildings and occasionally
+    if (totalBuildings >= adultDwarfs && 
+        game.time % 2400 === 0 && 
+        Math.random() < 0.12) {
+        
         const newX = Math.max(50, Math.min(canvas.width - 50, canvas.width / 2 + Math.random() * 100 - 50));
         const newY = Math.max(50, Math.min(canvas.height - 50, canvas.height / 2));
         
         // Create new dwarf
         game.dworfs.push(new Dwarf(newX, newY));
-        addLog('👤 New dwarf joined the colony!', false);
+        addLog('👤 New dwarf joined the colony seeking work!', false);
     }
+    
+    // ENHANCED: Building milestone checks
+    checkBuildingMilestones();
     
     // Check for game milestones
     checkMilestones();
@@ -51,11 +62,90 @@ function updateGame() {
         game.lastGoldCheck = currentGold;
     }
     
-    // Spawn new gold deposits occasionally
-    if (game.time % 900 === 0 && Math.random() < 0.3) {
+    // Spawn new gold deposits occasionally - more frequent when buildings exist
+    const depositSpawnRate = totalBuildings > 5 ? 0.4 : 0.3;
+    if (game.time % 900 === 0 && Math.random() < depositSpawnRate) {
         if (typeof createGoldDeposit === 'function') {
             createGoldDeposit();
         }
+    }
+    
+    // ENHANCED: Check colony happiness and building effectiveness
+    if (game.time % 600 === 0) {
+        checkColonyWellbeing();
+    }
+}
+
+// NEW: Enhanced building milestone system
+function checkBuildingMilestones() {
+    const regularBuildings = game.buildings.filter(b => b.type !== 'amenity').length;
+    const amenityBuildings = game.buildings.filter(b => b.type === 'amenity').length;
+    const adultDwarfs = game.dwarfs.filter(d => d.isAdult).length;
+    
+    // Building efficiency milestones
+    if (amenityBuildings >= 3 && !game.milestones.threeAmenities) {
+        game.milestones.threeAmenities = true;
+        addLog('🏘️ Colony has 3+ amenity buildings! Dwarfs are happier!', true, 'success');
+    }
+    
+    if (amenityBuildings >= adultDwarfs && !game.milestones.amenityPerDwarf) {
+        game.milestones.amenityPerDwarf = true;
+        addLog('🏡 Every adult dwarf has an amenity building! Maximum comfort!', true, 'success');
+    }
+    
+    // Construction speed bonuses
+    if (game.buildings.length >= 5 && !game.milestones.fiveBuildings) {
+        game.milestones.fiveBuildings = true;
+        addLog('🏗️ 5 buildings complete! Construction efficiency improved!', true, 'success');
+        
+        // Boost construction speed for all dwarfs
+        game.dworfs.forEach(dwarf => {
+            if (dwarf.personality.conscientiousness > 50) {
+                dwarf.efficiency *= 1.1;
+            }
+        });
+    }
+}
+
+// NEW: Check overall colony wellbeing and building effectiveness
+function checkColonyWellbeing() {
+    if (game.dworfs.length === 0) return;
+    
+    // Calculate average needs satisfaction
+    let totalSatisfaction = 0;
+    let criticalNeedsCount = 0;
+    
+    game.dworfs.forEach(dwarf => {
+        const needs = [dwarf.hunger, dwarf.thirst, dwarf.rest, dwarf.joy, dwarf.coffee, dwarf.cleanliness];
+        const avgNeed = needs.reduce((sum, need) => sum + need, 0) / needs.length;
+        totalSatisfaction += avgNeed;
+        
+        // Count critical needs
+        if (dwarf.hunger < 20 || dwarf.thirst < 15) criticalNeedsCount++;
+    });
+    
+    const colonySatisfaction = totalSatisfaction / game.dworfs.length;
+    const amenityBuildings = game.buildings.filter(b => b.type === 'amenity').length;
+    
+    // Positive feedback for well-managed colonies
+    if (colonySatisfaction > 70 && amenityBuildings >= 3) {
+        if (Math.random() < 0.3) {
+            addLog('😊 Colony morale is high! Dwarfs work more efficiently!', false, 'success');
+            
+            // Temporary efficiency boost
+            game.dworfs.forEach(dwarf => {
+                if (dwarf.isAdult) {
+                    dwarf.efficiency *= 1.05;
+                }
+            });
+        }
+    }
+    
+    // Warnings for poorly managed colonies
+    if (criticalNeedsCount > game.dworfs.length / 2) {
+        addLog('⚠️ Many dwarfs have critical needs! Build more amenities!', false, 'disaster');
+    } else if (colonySatisfaction < 40) {
+        addLog('😟 Colony satisfaction is low. Consider building amenities.', false, 'disaster');
     }
 }
 
@@ -82,7 +172,7 @@ function checkMilestones() {
     
     if (!game.milestones.firstAmenity && game.buildings.filter(b => b.type === 'amenity').length >= 1) {
         game.milestones.firstAmenity = true;
-        addLog('🛏️ First amenity building completed!', true);
+        addLog('🛏️ First amenity building completed! Comfort improved!', true);
     }
     
     // Population milestones
@@ -146,7 +236,7 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// Backup food and water initialization if the main function doesn't exist
+// Enhanced food and water initialization
 function initFoodAndWaterSources() {
     if (!canvas) return;
     
@@ -154,28 +244,28 @@ function initFoodAndWaterSources() {
     if (!game.foodSources) game.foodSources = [];
     if (!game.waterSources) game.waterSources = [];
     
-    // Create initial food sources (berry bushes) if none exist
+    // Create MORE initial food sources for better building support
     if (game.foodSources.length === 0) {
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 6; i++) { // INCREASED from 5 to 6
             game.foodSources.push({
                 x: Math.random() * (canvas.width - 100) + 50,
                 y: Math.random() * (canvas.height - 100) + 50,
-                amount: 60 + Math.random() * 60,
-                maxAmount: 120,
+                amount: 80 + Math.random() * 80, // INCREASED amounts
+                maxAmount: 150, // INCREASED max amounts
                 regrowTimer: 0,
                 type: 'berries'
             });
         }
     }
     
-    // Create initial water sources (springs) if none exist
+    // Create MORE initial water sources
     if (game.waterSources.length === 0) {
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 5; i++) { // INCREASED from 4 to 5
             game.waterSources.push({
                 x: Math.random() * (canvas.width - 100) + 50,
                 y: Math.random() * (canvas.height - 100) + 50,
-                amount: 100 + Math.random() * 80,
-                maxAmount: 200,
+                amount: 120 + Math.random() * 100, // INCREASED amounts
+                maxAmount: 250, // INCREASED max amounts
                 regrowTimer: 0,
                 type: 'spring'
             });
@@ -183,53 +273,53 @@ function initFoodAndWaterSources() {
     }
 }
 
-// Backup resource update function if the main one doesn't exist
+// Enhanced resource update with better regeneration
 function updateFoodAndWaterSources() {
     if (!game.foodSources) game.foodSources = [];
     if (!game.waterSources) game.waterSources = [];
     
-    // Regrow food sources over time (faster as requested)
+    // FASTER regrowth for food sources
     game.foodSources.forEach(source => {
         if (source.amount < source.maxAmount) {
             source.regrowTimer++;
-            if (source.regrowTimer > 60) { // 3x faster regrowth
-                source.amount = Math.min(source.maxAmount, source.amount + 5);
+            if (source.regrowTimer > 45) { // FASTER regrowth
+                source.amount = Math.min(source.maxAmount, source.amount + 6); // MORE regeneration
                 source.regrowTimer = 0;
             }
         }
     });
     
-    // Refill water sources over time (faster as requested)  
+    // FASTER refill for water sources  
     game.waterSources.forEach(source => {
         if (source.amount < source.maxAmount) {
             source.regrowTimer++;
-            if (source.regrowTimer > 40) { // 3x faster refill
-                source.amount = Math.min(source.maxAmount, source.amount + 6);
+            if (source.regrowTimer > 30) { // FASTER refill
+                source.amount = Math.min(source.maxAmount, source.amount + 8); // MORE regeneration
                 source.regrowTimer = 0;
             }
         }
     });
     
-    // Occasionally spawn new sources if there are too few
-    if (game.time % 1800 === 0) {
-        if (game.foodSources.length < 3) {
+    // More frequently spawn new sources if there are too few
+    if (game.time % 1200 === 0) { // More frequent checks
+        if (game.foodSources.length < 4) {
             game.foodSources.push({
                 x: Math.random() * (canvas.width - 100) + 50,
                 y: Math.random() * (canvas.height - 100) + 50,
-                amount: 30,
-                maxAmount: 60,
+                amount: 40,
+                maxAmount: 80,
                 regrowTimer: 0,
                 type: 'berries'
             });
             addLog('🍓 New berry bush has grown!', false);
         }
         
-        if (game.waterSources.length < 2) {
+        if (game.waterSources.length < 3) {
             game.waterSources.push({
                 x: Math.random() * (canvas.width - 100) + 50,
                 y: Math.random() * (canvas.height - 100) + 50,
-                amount: 50,
-                maxAmount: 100,
+                amount: 60,
+                maxAmount: 120,
                 regrowTimer: 0,
                 type: 'spring'
             });
@@ -238,30 +328,30 @@ function updateFoodAndWaterSources() {
     }
 }
 
-// Initialize gold deposits if the function doesn't exist elsewhere
+// Initialize gold deposits with better distribution
 function initializeGoldDeposits() {
     if (!canvas) return;
     if (!game.goldDeposits) game.goldDeposits = [];
     
-    // Create initial gold deposits
-    for (let i = 0; i < 4; i++) {
+    // Create MORE initial gold deposits to support building
+    for (let i = 0; i < 5; i++) { // INCREASED from 4 to 5
         game.goldDeposits.push({
             x: Math.random() * (canvas.width - 100) + 50,
             y: Math.random() * (canvas.height - 100) + 50,
-            gold: 15 + Math.random() * 25,
+            gold: 20 + Math.random() * 30, // INCREASED amounts
             discovered: false
         });
     }
 }
 
-// Create individual gold deposit 
+// Create individual gold deposit with better amounts
 function createGoldDeposit() {
     if (!canvas || !game.goldDeposits) return null;
     
     const deposit = {
         x: Math.random() * (canvas.width - 100) + 50,
         y: Math.random() * (canvas.height - 100) + 50,
-        gold: 15 + Math.random() * 25,
+        gold: 18 + Math.random() * 32, // INCREASED gold amounts
         discovered: false
     };
     
@@ -290,7 +380,11 @@ function resetGame() {
         thousandGold: false,
         tenThousandGold: false,
         tenDwarfs: false,
-        rocketComplete: false
+        rocketComplete: false,
+        // New building milestones
+        threeAmenities: false,
+        amenityPerDwarf: false,
+        fiveBuildings: false
     };
     
     // Reinitialize everything
