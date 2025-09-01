@@ -23,8 +23,8 @@ const TASK_PRIORITIES = {
     'IDLE': 0                   // Wandering around
 };
 
-// Dwarf names for random generation
-const DWARF_NAMES = [
+// dworf names for random generation
+const dworf_NAMES = [
     'Gimli', 'Thorin', 'Balin', 'Dwalin', 'Fili', 'Kili', 
     'Gloin', 'Oin', 'Ori', 'Nori', 'Dori', 'Bifur', 'Bofur', 'Bombur'
 ];
