@@ -1,6 +1,6 @@
-// Complete Dwarf class with FIXED building system - ALL original features preserved
+// Complete dworf class with FIXED building system - ALL original features preserved
 
-class Dwarf {
+class dworf {
     constructor(x, y, name = null, isAdult = true) {
         this.x = x;
         this.y = y;
@@ -404,13 +404,13 @@ class Dwarf {
     shouldBuildInfrastructure() {
         if (!this.isAdult) return false;
         
-        const adultDwarfs = game.dworfs.filter(d => d.isAdult).length;
+        const adultdworfs = game.dworfs.filter(d => d.isAdult).length;
         const totalBuildings = game.buildings.length;
         const amenityBuildings = game.buildings.filter(b => b.type === 'amenity').length;
         
-        // FIXED: Allow 2-3 buildings per adult dwarf (much more permissive)
-        const maxBuildings = adultDwarfs * 3;
-        const maxAmenities = adultDwarfs * 2;
+        // FIXED: Allow 2-3 buildings per adult dworf (much more permissive)
+        const maxBuildings = adultdworfs * 3;
+        const maxAmenities = adultdworfs * 2;
         
         const averageNeeds = this.calculateAverageNeeds();
         
@@ -441,7 +441,7 @@ class Dwarf {
     shouldBuildNegativeBuilding() {
         if (!this.isAdult) return false;
         
-        // Only if dwarf has extreme negative personality traits
+        // Only if dworf has extreme negative personality traits
         const isExtreme = this.personality.neuroticism > 85 || 
                          this.personality.agreeableness < 15 ||
                          this.personality.conscientiousness < 10;
@@ -453,11 +453,11 @@ class Dwarf {
         if (game.dworfs.length === 0) return { rest: 100, joy: 100, coffee: 100, cleanliness: 100 };
         
         const totals = { rest: 0, joy: 0, coffee: 0, cleanliness: 0 };
-        game.dworfs.forEach(dwarf => {
-            totals.rest += dwarf.rest;
-            totals.joy += dwarf.joy;
-            totals.coffee += dwarf.coffee;
-            totals.cleanliness += dwarf.cleanliness;
+        game.dworfs.forEach(dworf => {
+            totals.rest += dworf.rest;
+            totals.joy += dworf.joy;
+            totals.coffee += dworf.coffee;
+            totals.cleanliness += dworf.cleanliness;
         });
         
         const count = game.dworfs.length;
@@ -793,7 +793,7 @@ class Dwarf {
     }
     
     panic() {
-        // Panicking dwarfs move erratically
+        // Panicking dworfs move erratically
         this.targetX = this.x + Math.random() * 100 - 50;
         this.targetY = this.y + Math.random() * 100 - 50;
         
@@ -866,7 +866,7 @@ class Dwarf {
         this.pregnancyTimer = 0;
         this.reproductionCooldown = 7200; // 2 minute cooldown
         
-        const baby = new Dwarf(
+        const baby = new dworf(
             this.x + Math.random() * 40 - 20,
             this.y + Math.random() * 40 - 20,
             null,
@@ -1039,4 +1039,4 @@ class Dwarf {
 }
 
 // Legacy compatibility
-window.Dworf = Dwarf;
+window.Dworf = dworf;
