@@ -1,7 +1,7 @@
 // Main game loop and update logic - COMPLETE VERSION WITH BUILDING FIXES
 
 function initDworfs() {
-    // Create initial dwarfs using the Dwarf class
+    // Create initial dworfs using the dworf class
     for (let i = 0; i < 3; i++) {
         game.dworfs.push(new Dworf(
             canvas.width / 2 + (i - 1) * 40,
@@ -9,7 +9,7 @@ function initDworfs() {
         ));
     }
     
-    addLog('🌟 Three dwarfs have arrived to start the colony!', true);
+    addLog('🌟 Three dworfs have arrived to start the colony!', true);
 }
 
 function updateGame() {
@@ -31,22 +31,22 @@ function updateGame() {
         updateNegativeBuildings();
     }
     
-    // FIXED: More building-friendly new dwarf arrivals
+    // FIXED: More building-friendly new dworf arrivals
     // Reduced frequency but better conditions for growth
-    const adultDwarfs = game.dworfs.filter(d => d.isAdult).length;
+    const adultdworfs = game.dworfs.filter(d => d.isAdult).length;
     const totalBuildings = game.buildings.length;
     
-    // Only spawn new dwarfs if there are enough buildings and occasionally
-    if (totalBuildings >= adultDwarfs && 
+    // Only spawn new dworfs if there are enough buildings and occasionally
+    if (totalBuildings >= adultdworfs && 
         game.time % 2400 === 0 && 
         Math.random() < 0.12) {
         
         const newX = Math.max(50, Math.min(canvas.width - 50, canvas.width / 2 + Math.random() * 100 - 50));
         const newY = Math.max(50, Math.min(canvas.height - 50, canvas.height / 2));
         
-        // Create new dwarf
-        game.dworfs.push(new Dwarf(newX, newY));
-        addLog('👤 New dwarf joined the colony seeking work!', false);
+        // Create new dworf
+        game.dworfs.push(new dworf(newX, newY));
+        addLog('👤 New dworf joined the colony seeking work!', false);
     }
     
     // ENHANCED: Building milestone checks
@@ -80,17 +80,17 @@ function updateGame() {
 function checkBuildingMilestones() {
     const regularBuildings = game.buildings.filter(b => b.type !== 'amenity').length;
     const amenityBuildings = game.buildings.filter(b => b.type === 'amenity').length;
-    const adultDwarfs = game.dwarfs.filter(d => d.isAdult).length;
+    const adultdworfs = game.dworfs.filter(d => d.isAdult).length;
     
     // Building efficiency milestones
     if (amenityBuildings >= 3 && !game.milestones.threeAmenities) {
         game.milestones.threeAmenities = true;
-        addLog('🏘️ Colony has 3+ amenity buildings! Dwarfs are happier!', true, 'success');
+        addLog('🏘️ Colony has 3+ amenity buildings! dworfs are happier!', true, 'success');
     }
     
-    if (amenityBuildings >= adultDwarfs && !game.milestones.amenityPerDwarf) {
-        game.milestones.amenityPerDwarf = true;
-        addLog('🏡 Every adult dwarf has an amenity building! Maximum comfort!', true, 'success');
+    if (amenityBuildings >= adultdworfs && !game.milestones.amenityPerdworf) {
+        game.milestones.amenityPerdworf = true;
+        addLog('🏡 Every adult dworf has an amenity building! Maximum comfort!', true, 'success');
     }
     
     // Construction speed bonuses
@@ -98,10 +98,10 @@ function checkBuildingMilestones() {
         game.milestones.fiveBuildings = true;
         addLog('🏗️ 5 buildings complete! Construction efficiency improved!', true, 'success');
         
-        // Boost construction speed for all dwarfs
-        game.dworfs.forEach(dwarf => {
-            if (dwarf.personality.conscientiousness > 50) {
-                dwarf.efficiency *= 1.1;
+        // Boost construction speed for all dworfs
+        game.dworfs.forEach(dworf => {
+            if (dworf.personality.conscientiousness > 50) {
+                dworf.efficiency *= 1.1;
             }
         });
     }
@@ -115,13 +115,13 @@ function checkColonyWellbeing() {
     let totalSatisfaction = 0;
     let criticalNeedsCount = 0;
     
-    game.dworfs.forEach(dwarf => {
-        const needs = [dwarf.hunger, dwarf.thirst, dwarf.rest, dwarf.joy, dwarf.coffee, dwarf.cleanliness];
+    game.dworfs.forEach(dworf => {
+        const needs = [dworf.hunger, dworf.thirst, dworf.rest, dworf.joy, dworf.coffee, dworf.cleanliness];
         const avgNeed = needs.reduce((sum, need) => sum + need, 0) / needs.length;
         totalSatisfaction += avgNeed;
         
         // Count critical needs
-        if (dwarf.hunger < 20 || dwarf.thirst < 15) criticalNeedsCount++;
+        if (dworf.hunger < 20 || dworf.thirst < 15) criticalNeedsCount++;
     });
     
     const colonySatisfaction = totalSatisfaction / game.dworfs.length;
@@ -130,12 +130,12 @@ function checkColonyWellbeing() {
     // Positive feedback for well-managed colonies
     if (colonySatisfaction > 70 && amenityBuildings >= 3) {
         if (Math.random() < 0.3) {
-            addLog('😊 Colony morale is high! Dwarfs work more efficiently!', false, 'success');
+            addLog('😊 Colony morale is high! dworfs work more efficiently!', false, 'success');
             
             // Temporary efficiency boost
-            game.dworfs.forEach(dwarf => {
-                if (dwarf.isAdult) {
-                    dwarf.efficiency *= 1.05;
+            game.dworfs.forEach(dworf => {
+                if (dworf.isAdult) {
+                    dworf.efficiency *= 1.05;
                 }
             });
         }
@@ -143,7 +143,7 @@ function checkColonyWellbeing() {
     
     // Warnings for poorly managed colonies
     if (criticalNeedsCount > game.dworfs.length / 2) {
-        addLog('⚠️ Many dwarfs have critical needs! Build more amenities!', false, 'disaster');
+        addLog('⚠️ Many dworfs have critical needs! Build more amenities!', false, 'disaster');
     } else if (colonySatisfaction < 40) {
         addLog('😟 Colony satisfaction is low. Consider building amenities.', false, 'disaster');
     }
@@ -176,9 +176,9 @@ function checkMilestones() {
     }
     
     // Population milestones
-    if (game.dworfs.length >= 10 && !game.milestones.tenDwarfs) {
-        game.milestones.tenDwarfs = true;
-        addLog('👥 Colony has grown to 10 dwarfs!', true);
+    if (game.dworfs.length >= 10 && !game.milestones.tendworfs) {
+        game.milestones.tendworfs = true;
+        addLog('👥 Colony has grown to 10 dworfs!', true);
     }
     
     // Rocket completion check
@@ -192,23 +192,23 @@ function checkMilestones() {
     
     if (allPartsBuilt && !game.milestones.rocketComplete) {
         game.milestones.rocketComplete = true;
-        addLog('🚀 ROCKET COMPLETED! Your dwarfs can escape to space!', true, 'success');
-        addLog('🎉 VICTORY! The Fragile Dwarf Colony has achieved its goal!', true, 'success');
+        addLog('🚀 ROCKET COMPLETED! Your dworfs can escape to space!', true, 'success');
+        addLog('🎉 VICTORY! The Fragile dworf Colony has achieved its goal!', true, 'success');
         
         // Victory celebration
         setTimeout(() => {
-            addLog('👽 The dwarfs blast off into the cosmos, leaving their fragile world behind...', true, 'success');
+            addLog('👽 The dworfs blast off into the cosmos, leaving their fragile world behind...', true, 'success');
             addLog('✨ Thanks for playing! Your colony succeeded against all odds!', true, 'success');
         }, 3000);
     }
 }
 
 function gameLoop() {
-    // Update all dwarfs
+    // Update all dworfs
     if (game.dworfs && game.dworfs.length > 0) {
-        game.dworfs.forEach(function(dwarf) {
-            if (dwarf && typeof dwarf.update === 'function') {
-                dwarf.update();
+        game.dworfs.forEach(function(dworf) {
+            if (dworf && typeof dworf.update === 'function') {
+                dworf.update();
             }
         });
     }
@@ -379,11 +379,11 @@ function resetGame() {
         hundredGold: false,
         thousandGold: false,
         tenThousandGold: false,
-        tenDwarfs: false,
+        tendworfs: false,
         rocketComplete: false,
         // New building milestones
         threeAmenities: false,
-        amenityPerDwarf: false,
+        amenityPerdworf: false,
         fiveBuildings: false
     };
     
