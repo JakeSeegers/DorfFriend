@@ -76,7 +76,7 @@ function renderGame() {
     game.buildings.forEach(drawBuilding);
     game.negativeBuildings.forEach(drawNegativeBuilding);
     
-    // Draw dwarfs
+    // Draw dworfs
     game.dworfs.forEach(function(dworf) {
         dworf.draw();
     });
