@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fragile Dwarf Colony - Medieval Sprites Edition</title>
+    <title>Medieval Dwarf Colony - Complete Edition</title>
     <style>
         /* Complete CSS styling */
         body {
@@ -255,7 +255,7 @@
     </style>
 </head>
 <body>
-    <div id="title">🏰 Fragile Dwarf Colony - Medieval Sprites! 🏰</div>
+    <div id="title">🏰 Medieval Dwarf Colony - Complete Edition! 🏰</div>
     
     <div id="gameContainer">
         <canvas id="gameCanvas" width="700" height="900"></canvas>
@@ -357,17 +357,17 @@
             
             <div id="log">
                 <div style="color: #4ECDC4; margin-bottom: 10px; font-size: 16px; font-weight: bold;">📜 Colony Log:</div>
-                <div class="log-entry">🎨 MEDIEVAL SPRITES INTEGRATED!</div>
-                <div class="log-entry important">✅ Beautiful pixel art for all entities!</div>
-                <div class="log-entry">🏰 Medieval buildings, characters & items</div>
-                <div class="log-entry">⚔️ Fantasy-themed dwarf colony simulation</div>
+                <div class="log-entry">🎨 MEDIEVAL SPRITES + COMPLEX AI!</div>
+                <div class="log-entry important">✅ Beautiful pixel art + sophisticated behaviors!</div>
+                <div class="log-entry">🏰 Medieval buildings, characters & advanced AI</div>
+                <div class="log-entry">⚔️ Fantasy-themed with complex personality system</div>
                 <div class="log-entry important">⚠️ Keep device steady for optimal stability!</div>
             </div>
         </div>
     </div>
 
     <script>
-        console.log('Medieval Dwarf Colony starting...');
+        console.log('Medieval Dwarf Colony Complete Edition starting...');
         
         // Sprite System - Load the tileset
         let spriteSheet = null;
@@ -424,12 +424,396 @@
             spriteSheet.onload = function() {
                 spriteSheetLoaded = true;
                 console.log('Sprite sheet loaded successfully!');
-                addLog('🎨 Medieval sprites loaded!', true, 'success');
+                addLog('✅ Motion detection enabled automatically!', true);
+                addLog('⚠️ Keep device steady to protect your colony!', true);
+                
+            } catch (error) {
+                console.error('Error enabling accelerometer:', error);
+                statusDiv.textContent = '❌ Failed to enable motion detection. Try refreshing.';
+                statusDiv.className = 'motion-status inactive';
+            }
+        }
+
+        function updateStability() {
+            if (isTracking) {
+                stabilityLevel = Math.min(100, stabilityLevel + 0.05);
+            }
+            
+            if (motionFlash > 0) motionFlash--;
+            
+            const stabilityBar = document.getElementById('stabilityBar');
+            const stabilityText = document.getElementById('stabilityText');
+            
+            stabilityBar.style.width = stabilityLevel + '%';
+            
+            const motionText = 'Motion: ' + lastMotionIntensity.toFixed(1);
+            
+            if (stabilityLevel > 75) {
+                stabilityBar.className = 'stability-bar stability-high';
+                stabilityText.textContent = 'Stable (' + motionText + ')';
+            } else if (stabilityLevel > 50) {
+                stabilityBar.className = 'stability-bar stability-medium';
+                stabilityText.textContent = 'Unstable (' + motionText + ')';
+            } else if (stabilityLevel > 25) {
+                stabilityBar.className = 'stability-bar stability-low';
+                stabilityText.textContent = 'Dangerous (' + motionText + ')';
+            } else {
+                stabilityBar.className = 'stability-bar stability-critical';
+                stabilityText.textContent = 'Critical! (' + motionText + ')';
+            }
+        }
+
+        // UI Functions
+        function addLog(message, important, type) {
+            const logDiv = document.getElementById('log');
+            const cleanMessage = message.replace(/^[A-Za-z_0-9]+\s+(chose:|is|feels|couldn't|needs|had|learned|made|was)/, 'dwarf $1');
+            
+            if (!important && messageTracker.isDuplicate(cleanMessage)) {
+                if (messageTracker.updateCounter(cleanMessage)) {
+                    return;
+                }
+            }
+            
+            const entry = document.createElement('div');
+            
+            if (important) {
+                entry.className = 'log-entry important';
+            } else if (type === 'disaster') {
+                entry.className = 'log-entry disaster';
+            } else if (type === 'success') {
+                entry.className = 'log-entry success';
+            } else {
+                entry.className = 'log-entry';
+            }
+            
+            const timeStr = '[' + Math.floor(game.time / 60) + 's]';
+            entry.textContent = timeStr + ' ' + message;
+            
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            if (!important) {
+                messageTracker.addMessage(cleanMessage, entry, type);
+            }
+            
+            while (logDiv.children.length > 25) {
+                const removedElement = logDiv.children[1];
+                
+                for (let [msg, data] of messageTracker.recentMessages) {
+                    if (data.element === removedElement) {
+                        messageTracker.recentMessages.delete(msg);
+                        break;
+                    }
+                }
+                
+                logDiv.removeChild(removedElement);
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('goldCount').textContent = Math.floor(game.gold);
+            
+            const adults = game.dwarfs.filter(d => d.isAdult);
+            const children = game.dwarfs.filter(d => !d.isAdult);
+            const males = adults.filter(d => d.gender === 'male');
+            const females = adults.filter(d => d.gender === 'female');
+            const pregnant = females.filter(f => f.isPregnant);
+            
+            const orangeMales = males.filter(m => m.reproductionStrategy === 'orange').length;
+            const blueMales = males.filter(m => m.reproductionStrategy === 'blue').length;
+            const yellowMales = males.filter(m => m.reproductionStrategy === 'yellow').length;
+            
+            let populationText = game.dwarfs.length.toString();
+            if (adults.length > 0) {
+                populationText += ` (${adults.length}👥`;
+                if (children.length > 0) populationText += `, ${children.length}👶`;
+                if (pregnant.length > 0) populationText += `, ${pregnant.length}🤱`;
+                populationText += ')';
+            }
+            
+            if (males.length > 0) {
+                populationText += ` [🟠${orangeMales} 🔵${blueMales} 🟡${yellowMales}]`;
+            }
+            
+            document.getElementById('dwarfsCount').textContent = populationText;
+            
+            if (game.dwarfs.length > 0) {
+                const totals = {
+                    hunger: 0, thirst: 0, rest: 0, joy: 0, coffee: 0, cleanliness: 0
+                };
+                
+                const criticalCounts = {
+                    hunger: 0, thirst: 0, rest: 0, joy: 0, coffee: 0, cleanliness: 0
+                };
+                
+                game.dwarfs.forEach(dwarf => {
+                    totals.hunger += dwarf.hunger;
+                    totals.thirst += dwarf.thirst;
+                    totals.rest += dwarf.rest;
+                    totals.joy += dwarf.joy;
+                    totals.coffee += dwarf.coffee;
+                    totals.cleanliness += dwarf.cleanliness;
+                    
+                    if (dwarf.hunger < 15) criticalCounts.hunger++;
+                    if (dwarf.thirst < 15) criticalCounts.thirst++;
+                    if (dwarf.rest < 15) criticalCounts.rest++;
+                    if (dwarf.joy < 15) criticalCounts.joy++;
+                    if (dwarf.coffee < 10) criticalCounts.coffee++;
+                    if (dwarf.cleanliness < 15) criticalCounts.cleanliness++;
+                });
+                
+                const count = game.dwarfs.length;
+                const averages = {
+                    hunger: totals.hunger / count,
+                    thirst: totals.thirst / count,
+                    rest: totals.rest / count,
+                    joy: totals.joy / count,
+                    coffee: totals.coffee / count,
+                    cleanliness: totals.cleanliness / count
+                };
+                
+                function updateNeedDisplay(elementId, value, criticalCount, criticalThreshold = 15, lowThreshold = 30) {
+                    const element = document.getElementById(elementId);
+                    let displayText = Math.floor(value).toString();
+                    
+                    if (criticalCount > 0) {
+                        displayText += ` (${criticalCount}⚠️)`;
+                    }
+                    
+                    element.textContent = displayText;
+                    
+                    if (value < criticalThreshold || criticalCount > 0) {
+                        element.style.color = '#FF4444';
+                    } else if (value < lowThreshold) {
+                        element.style.color = '#FF9800';
+                    } else {
+                        element.style.color = '#4CAF50';
+                    }
+                }
+                
+                updateNeedDisplay('avgHunger', averages.hunger, criticalCounts.hunger, 15, 35);
+                updateNeedDisplay('avgThirst', averages.thirst, criticalCounts.thirst, 10, 30);
+                updateNeedDisplay('avgRest', averages.rest, criticalCounts.rest, 10, 30);
+                updateNeedDisplay('avgJoy', averages.joy, criticalCounts.joy, 10, 30);
+                updateNeedDisplay('avgCoffee', averages.coffee, criticalCounts.coffee, 5, 25);
+                updateNeedDisplay('avgClean', averages.cleanliness, criticalCounts.cleanliness, 15, 35);
+            }
+            
+            const amenityBuildings = game.buildings.filter(b => b.type === 'amenity').length;
+            const regularBuildings = game.buildings.filter(b => b.type !== 'amenity').length;
+            
+            document.getElementById('machinesCount').textContent = amenityBuildings;
+            document.getElementById('buildingsCount').textContent = regularBuildings;
+            document.getElementById('goldPerSec').textContent = game.goldPerSecond.toFixed(1);
+            
+            updateRocketProgress();
+        }
+
+        function updateRocketProgress() {
+            const totalParts = Object.keys(game.rocketParts).length;
+            let completedParts = 0;
+            for (let part in game.rocketParts) {
+                if (game.rocketParts[part].built) completedParts++;
+            }
+            const overallProgress = (completedParts / totalParts) * 100;
+            
+            document.getElementById('overallProgress').style.width = overallProgress + '%';
+            
+            let progressText = 'Planning phase...';
+            if (overallProgress === 100) progressText = '🚀 READY FOR LAUNCH!';
+            else if (overallProgress > 80) progressText = 'Final assembly...';
+            else if (overallProgress > 60) progressText = 'Major construction...';
+            else if (overallProgress > 40) progressText = 'Building components...';
+            else if (overallProgress > 20) progressText = 'Foundation work...';
+            else if (overallProgress > 0) progressText = 'Starting construction...';
+            
+            document.getElementById('progressText').textContent = progressText;
+            
+            const partNames = ['engine', 'fuel', 'hull', 'navigation', 'launchpad'];
+            const partIcons = ['🔥', '⛽', '🛡️', '📡', '🚿'];
+            
+            for (let i = 0; i < partNames.length; i++) {
+                const partName = partNames[i];
+                const partData = game.rocketParts[partName];
+                const element = document.getElementById(partName);
+                const icon = partIcons[i];
+                const capitalName = partName.charAt(0).toUpperCase() + partName.slice(1);
+                
+                if (partData.built) {
+                    element.className = 'rocket-part completed';
+                    element.textContent = icon + ' ' + capitalName + ': ✅ Complete';
+                } else if (partData.building) {
+                    element.className = 'rocket-part building';
+                    element.textContent = icon + ' ' + capitalName + ': 🔨 Building... ' + Math.floor(partData.progress * 100) + '%';
+                } else if (game.gold >= partData.cost) {
+                    element.className = 'rocket-part';
+                    element.textContent = icon + ' ' + capitalName + ': 💰 Ready (' + partData.cost + ' gold)';
+                } else {
+                    element.className = 'rocket-part';
+                    element.textContent = icon + ' ' + capitalName + ': ⏳ Need ' + partData.cost + ' gold';
+                }
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            try {
+                updateGame();
+                renderGame();
+                updateUI();
+                updateStability();
+                
+                game.time++;
+                requestAnimationFrame(gameLoop);
+                
+            } catch (error) {
+                console.error('Game loop error:', error);
+                addLog('❌ Game loop error: ' + error.message, true, 'disaster');
+            }
+        }
+
+        // Initialize and start the game
+        function initializeGame() {
+            console.log('Starting medieval dwarf colony...');
+            
+            if (!initializeCanvas()) {
+                console.error('Failed to initialize canvas!');
+                return;
+            }
+            
+            resizeCanvas();
+            
+            // Load sprites first
+            loadSpriteSheet();
+            
+            setTimeout(() => {
+                initDwarfs();
+                initFoodAndWaterSources();
+                initializeGoldDeposits();
+                
+                addLog('🏰 Medieval Dwarf Colony Complete Edition started!', true);
+                addLog('🎨 Beautiful pixel art sprites + complex AI behaviors!', true);
+                addLog('🎯 Goal: Build a rocket using medieval technology!', true);
+                addLog('🦎 REPRODUCTION SYSTEM: Orange🟠=Territorial, Blue🔵=Guard, Yellow🟡=Sneaky', true);
+                addLog('👶 MATURITY: Children must mature before working (30 sec)', false);
+                addLog('🤱 PREGNANCY: 60-second pregnancy timer with birth mechanics', false);
+                addLog('🧠 PERSONALITY: Big Five traits affect all behavior and decisions', false);
+                addLog('😰 PANIC STATES: Motion causes high-neuroticism dwarfs to panic', false);
+                addLog('⚖️ SMART AI: Priority system - Survival > Rocket > Infrastructure > Amenities', false);
+                addLog('🏠 BUILDINGS: Amenities restore needs, negative buildings cause problems', false);
+                addLog('📱 MOTION DETECTION: Keep device steady or face consequences!', true);
+                
+                gameLoop();
+            }, 200);
+            
+            setTimeout(() => {
+                enableAccelerometer();
+            }, 1500);
+        }
+
+        // Event listeners
+        window.addEventListener('load', function() {
+            console.log('Page loaded, initializing medieval game...');
+            initializeGame();
+        });
+
+        window.addEventListener('orientationchange', function() {
+            setTimeout(resizeCanvas, 100);
+        });
+
+        window.addEventListener('resize', function() {
+            setTimeout(resizeCanvas, 100);
+        });
+
+        // Debug commands
+        window.debugCommands = {
+            spawnDwarf: function() {
+                if (!canvas || !ctx) return null;
+                const x = canvas.width / 2 + Math.random() * 100 - 50;
+                const y = canvas.height / 2 + Math.random() * 100 - 50;
+                const newDwarf = new Dwarf(x, y);
+                game.dwarfs.push(newDwarf);
+                addLog(`🧙 DEBUG: Spawned ${newDwarf.name} (${newDwarf.gender}, ${newDwarf.reproductionStrategy || 'female'})`, true);
+                return newDwarf;
+            },
+            
+            showPersonalities: function() {
+                console.log('🧠 PERSONALITY ANALYSIS:');
+                game.dwarfs.forEach((dwarf, i) => {
+                    const p = dwarf.personality;
+                    console.log(`${i}: ${dwarf.name} (${dwarf.gender}${dwarf.reproductionStrategy ? ', ' + dwarf.reproductionStrategy : ''})`);
+                    console.log(`  🎭 State: ${dwarf.personalityState} | Task: ${dwarf.task}`);
+                    console.log(`  📊 O:${Math.floor(p.openness)} C:${Math.floor(p.conscientiousness)} E:${Math.floor(p.extraversion)} A:${Math.floor(p.agreeableness)} N:${Math.floor(p.neuroticism)}`);
+                    if (dwarf.isPregnant) console.log(`  🤱 Pregnant: ${Math.floor(dwarf.pregnancyTimer/36)}% complete`);
+                    if (!dwarf.isAdult) console.log(`  👶 Child: ${Math.floor(dwarf.maturityTimer/18)}% mature`);
+                });
+                return game.dwarfs.map(d => ({ 
+                    name: d.name, 
+                    gender: d.gender, 
+                    strategy: d.reproductionStrategy, 
+                    state: d.personalityState,
+                    personality: d.personality
+                }));
+            },
+            
+            triggerMotion: function() {
+                handleMotionDamage(15);
+                addLog('🔨 DEBUG: Simulated strong motion event', true, 'disaster');
+                return 'Motion event triggered';
+            },
+            
+            forcePregnancy: function() {
+                const females = game.dwarfs.filter(d => d.gender === 'female' && d.isAdult && !d.isPregnant);
+                if (females.length > 0) {
+                    const female = females[0];
+                    female.isPregnant = true;
+                    female.pregnancyTimer = 0;
+                    addLog(`🤱 DEBUG: ${female.name} is now pregnant`, true, 'success');
+                    return female;
+                }
+                return 'No available females';
+            },
+            
+            showStats: function() {
+                const adults = game.dwarfs.filter(d => d.isAdult);
+                const children = game.dwarfs.filter(d => !d.isAdult);
+                const pregnant = game.dwarfs.filter(d => d.isPregnant);
+                const males = adults.filter(d => d.gender === 'male');
+                
+                console.log('📊 COLONY STATISTICS:');
+                console.log(`👥 Total Population: ${game.dwarfs.length} (${adults.length} adults, ${children.length} children)`);
+                console.log(`🤱 Pregnant: ${pregnant.length}`);
+                console.log(`🚹 Males: ${males.length} (🟠${males.filter(m => m.reproductionStrategy === 'orange').length} 🔵${males.filter(m => m.reproductionStrategy === 'blue').length} 🟡${males.filter(m => m.reproductionStrategy === 'yellow').length})`);
+                console.log(`🏠 Buildings: ${game.buildings.length} (${game.buildings.filter(b => b.type === 'amenity').length} amenities)`);
+                console.log(`💰 Gold: ${Math.floor(game.gold)} (${game.goldPerSecond.toFixed(1)}/sec)`);
+                console.log(`🚀 Rocket Parts: ${Object.values(game.rocketParts).filter(p => p.built).length}/5 complete`);
+                
+                return {
+                    population: game.dwarfs.length,
+                    adults: adults.length,
+                    children: children.length,
+                    pregnant: pregnant.length,
+                    buildings: game.buildings.length,
+                    gold: game.gold,
+                    rocketParts: Object.values(game.rocketParts).filter(p => p.built).length
+                };
+            }
+        };
+
+        // Make some functions globally available for debugging
+        window.game = game;
+        window.Dwarf = Dwarf;
+        window.drawSprite = drawSprite;
+        
+        console.log('🎮 Medieval Dwarf Colony Complete Edition loaded!');
+        console.log('🔧 Debug commands available: debugCommands.spawnDwarf(), showPersonalities(), triggerMotion(), forcePregnancy(), showStats()');
+    </script>
+</body>
+</html>🎨 Medieval sprites loaded!', true, 'success');
             };
             spriteSheet.onerror = function() {
                 console.error('Failed to load sprite sheet');
                 addLog('❌ Failed to load sprites - using fallback graphics', true, 'disaster');
-                // Create fallback if the main image fails to load
                 createFallbackSpriteSheet();
             };
             
@@ -576,6 +960,9 @@
         let lastMotionIntensity = 0;
         let lastMotionDetected = 0;
         let isAccelerometerEnabled = false;
+        let currentAccelX = 0;
+        let currentAccelY = 0;
+        let currentAccelZ = 9.8;
 
         // Message tracking for spam reduction
         const messageTracker = {
@@ -637,7 +1024,7 @@
             }
         };
 
-        // Enhanced Dwarf class with sprite rendering
+        // Enhanced Dwarf class with sprites AND complex behaviors
         class Dwarf {
             constructor(x, y, name = null, isAdult = true) {
                 this.x = x || 100;
@@ -655,7 +1042,7 @@
                 this.coffee = 50 + Math.random() * 50;
                 this.cleanliness = 70 + Math.random() * 30;
                 
-                // Personality traits
+                // Personality traits (Big Five model)
                 this.personality = {
                     openness: Math.random() * 100,
                     conscientiousness: Math.random() * 100,
@@ -663,6 +1050,18 @@
                     agreeableness: Math.random() * 100,
                     neuroticism: Math.random() * 100
                 };
+                
+                // Reproduction system with mating strategies
+                this.reproductionStrategy = this.gender === 'male' ? 
+                    ['orange', 'blue', 'yellow'][Math.floor(Math.random() * 3)] : null;
+                this.isPregnant = false;
+                this.pregnancyTimer = 0;
+                this.maturityTimer = isAdult ? 0 : Math.random() * 1800;
+                this.reproductionCooldown = 0;
+                this.territoryX = x;
+                this.territoryY = y;
+                this.guardedFemale = null;
+                this.mateSeekingTimer = 0;
                 
                 // Work and behavior
                 this.task = 'idle';
@@ -677,9 +1076,20 @@
                 this.amenityType = null;
                 this.negativeType = null;
                 
-                // Visual
+                // Personality states
+                this.panicLevel = 0;
+                this.confusionLevel = 0;
+                this.lastTaskFailed = false;
+                this.personalityState = 'normal';
+                
+                // Visual and animation
                 this.direction = Math.random() * Math.PI * 2;
                 this.animPhase = Math.random() * Math.PI * 2;
+                this.lastDecisionLog = '';
+                
+                // Decision making cooldowns
+                this.lastTaskChange = 0;
+                this.taskConsistency = 0;
             }
             
             generateName() {
@@ -693,6 +1103,27 @@
             }
             
             update() {
+                // Age and maturity system
+                if (!this.isAdult) {
+                    this.maturityTimer++;
+                    if (this.maturityTimer >= 1800) {
+                        this.isAdult = true;
+                        addLog(`👤 ${this.name} has reached maturity!`, true);
+                    }
+                }
+                
+                // Pregnancy system
+                if (this.isPregnant) {
+                    this.pregnancyTimer++;
+                    if (this.pregnancyTimer >= 3600) {
+                        this.giveBirth();
+                    }
+                }
+                
+                // Cooldowns
+                if (this.reproductionCooldown > 0) this.reproductionCooldown--;
+                if (this.mateSeekingTimer > 0) this.mateSeekingTimer--;
+                
                 // Needs decay
                 if (game.time % 4 === 0) {
                     this.hunger = Math.max(0, this.hunger - 0.06);
@@ -703,6 +1134,14 @@
                     this.cleanliness = Math.max(0, this.cleanliness - 0.035);
                 }
                 
+                // Personality state updates
+                this.updatePersonalityState();
+                
+                // Reproduction behavior for adults
+                if (this.isAdult && this.reproductionCooldown <= 0) {
+                    this.updateReproductionBehavior();
+                }
+                
                 this.executeTask();
                 this.updateTask();
                 this.move();
@@ -711,12 +1150,213 @@
                 this.animPhase += 0.1;
             }
             
+            updatePersonalityState() {
+                // Handle panic and confusion
+                if (this.panicLevel > 0) this.panicLevel = Math.max(0, this.panicLevel - 1);
+                if (this.confusionLevel > 0) this.confusionLevel = Math.max(0, this.confusionLevel - 1);
+                
+                // Motion-induced panic
+                if (lastMotionDetected > 0 && (Date.now() - lastMotionDetected) < 2000) {
+                    if (this.personality.neuroticism > 60 && Math.random() < 0.1) {
+                        this.panicLevel = Math.min(100, this.panicLevel + 5);
+                        if (this.panicLevel > 50 && this.personalityState !== 'panicking') {
+                            this.personalityState = 'panicking';
+                            this.task = 'panicking';
+                            this.workTimer = 120;
+                        }
+                    }
+                }
+                
+                // Personality-based state changes
+                if (this.personalityState === 'normal') {
+                    if (this.personality.neuroticism > 80 && Math.random() < 0.001) {
+                        this.personalityState = 'anxious';
+                    } else if (this.personality.conscientiousness < 20 && Math.random() < 0.0008) {
+                        this.personalityState = 'lazy';
+                    } else if (this.personality.openness > 85 && Math.random() < 0.0005) {
+                        this.personalityState = 'creative_burst';
+                    }
+                } else {
+                    if (Math.random() < 0.01) {
+                        this.personalityState = 'normal';
+                    }
+                }
+            }
+            
+            updateReproductionBehavior() {
+                if (!this.isAdult || this.reproductionCooldown > 0) return;
+                
+                if (this.gender === 'male' && this.mateSeekingTimer <= 0) {
+                    this.seekMating();
+                } else if (this.gender === 'female' && !this.isPregnant) {
+                    this.evaluateMales();
+                }
+            }
+            
+            seekMating() {
+                const availableFemales = game.dwarfs.filter(d => 
+                    d.isAdult && d.gender === 'female' && !d.isPregnant && d.reproductionCooldown <= 0
+                );
+                
+                if (availableFemales.length === 0) return;
+                
+                const target = availableFemales[Math.floor(Math.random() * availableFemales.length)];
+                
+                switch (this.reproductionStrategy) {
+                    case 'orange':
+                        this.establishTerritory(target);
+                        break;
+                    case 'blue':
+                        this.guardFemale(target);
+                        break;
+                    case 'yellow':
+                        this.sneakyMating(target);
+                        break;
+                }
+            }
+            
+            establishTerritory(female) {
+                const distance = this.distanceTo(female);
+                if (distance < 80) {
+                    this.territoryX = female.x;
+                    this.territoryY = female.y;
+                    
+                    const competitors = game.dwarfs.filter(d => 
+                        d.gender === 'male' && d !== this && d.distanceTo(female) < 60
+                    );
+                    
+                    competitors.forEach(competitor => {
+                        if (Math.random() < 0.1) {
+                            competitor.task = 'fleeing';
+                            competitor.workTimer = 180;
+                            competitor.targetX = this.x < competitor.x ? canvas.width : 0;
+                            competitor.targetY = this.y < competitor.y ? canvas.height : 0;
+                        }
+                    });
+                    
+                    if (distance < 25 && Math.random() < 0.02) {
+                        this.attemptMating(female);
+                    }
+                }
+                
+                this.mateSeekingTimer = 300;
+            }
+            
+            guardFemale(female) {
+                this.guardedFemale = female;
+                this.targetX = female.x + Math.random() * 40 - 20;
+                this.targetY = female.y + Math.random() * 40 - 20;
+                
+                const distance = this.distanceTo(female);
+                if (distance < 30 && Math.random() < 0.015) {
+                    this.attemptMating(female);
+                }
+                
+                this.mateSeekingTimer = 240;
+            }
+            
+            sneakyMating(female) {
+                const distance = this.distanceTo(female);
+                
+                const guardsNearby = game.dwarfs.filter(d => 
+                    d.gender === 'male' && d !== this && d.distanceTo(female) < 50
+                ).length > 0;
+                
+                if (!guardsNearby && distance < 35) {
+                    if (Math.random() < 0.025) {
+                        this.attemptMating(female);
+                    }
+                } else if (guardsNearby) {
+                    this.targetX = female.x + Math.random() * 100 - 50;
+                    this.targetY = female.y + Math.random() * 100 - 50;
+                }
+                
+                this.mateSeekingTimer = 180;
+            }
+            
+            evaluateMales() {
+                if (this.isPregnant) return;
+                
+                const nearbyMales = game.dwarfs.filter(d => 
+                    d.isAdult && d.gender === 'male' && d.distanceTo(this) < 40
+                );
+                
+                if (nearbyMales.length > 0) {
+                    const preferred = this.selectPreferredMale(nearbyMales);
+                    if (preferred && Math.random() < 0.008) {
+                        this.acceptMating(preferred);
+                    }
+                }
+            }
+            
+            selectPreferredMale(males) {
+                let scored = males.map(male => ({
+                    male: male,
+                    score: this.scoreMate(male)
+                }));
+                
+                scored.sort((a, b) => b.score - a.score);
+                return scored.length > 0 ? scored[0].male : null;
+            }
+            
+            scoreMate(male) {
+                let score = 50;
+                
+                if (this.personality.agreeableness > 60) {
+                    if (male.reproductionStrategy === 'blue') score += 30;
+                    if (male.reproductionStrategy === 'orange') score -= 10;
+                }
+                
+                if (this.personality.openness > 70) {
+                    if (male.reproductionStrategy === 'yellow') score += 20;
+                }
+                
+                if (this.personality.neuroticism < 40) {
+                    if (male.reproductionStrategy === 'orange') score += 25;
+                }
+                
+                return score + Math.random() * 20;
+            }
+            
+            attemptMating(female) {
+                if (female.reproductionCooldown > 0 || female.isPregnant) return false;
+                
+                const success = Math.random() < 0.7;
+                if (success) {
+                    female.isPregnant = true;
+                    female.pregnancyTimer = 0;
+                    female.reproductionCooldown = 7200;
+                    this.reproductionCooldown = 3600;
+                    
+                    addLog(`💕 ${this.name} (${this.reproductionStrategy}) and ${female.name} are expecting!`, true, 'success');
+                    return true;
+                }
+                return false;
+            }
+            
+            acceptMating(male) {
+                return male.attemptMating(this);
+            }
+            
             updateTask() {
                 if (this.workTimer > 0) return;
+                
+                if (this.personalityState === 'panicking' && this.panicLevel > 30) {
+                    this.task = 'panicking';
+                    this.workTimer = 60;
+                    return;
+                }
+                
+                if (this.personalityState === 'lazy' && Math.random() < 0.3) {
+                    this.task = 'idle';
+                    this.workTimer = 120;
+                    return;
+                }
                 
                 const newTask = this.chooseBestTask();
                 if (newTask !== this.task) {
                     this.task = newTask;
+                    this.lastTaskChange = game.time;
                     this.setTaskTarget();
                 }
             }
@@ -747,6 +1387,11 @@
                 // Mining for gold
                 if (game.goldDeposits && game.goldDeposits.length > 0) {
                     return 'mining';
+                }
+                
+                // Negative personality building
+                if (this.shouldBuildNegativeBuilding()) {
+                    return 'negative_construction';
                 }
                 
                 return 'idle';
@@ -790,6 +1435,16 @@
                 return false;
             }
             
+            shouldBuildNegativeBuilding() {
+                if (!this.isAdult) return false;
+                
+                const isExtreme = this.personality.neuroticism > 85 || 
+                                 this.personality.agreeableness < 15 ||
+                                 this.personality.conscientiousness < 10;
+                
+                return isExtreme && Math.random() < 0.001 && game.gold >= 150;
+            }
+            
             calculateAverageNeeds() {
                 if (game.dwarfs.length === 0) return { rest: 100, joy: 100, coffee: 100, cleanliness: 100 };
                 
@@ -825,6 +1480,9 @@
                         break;
                     case 'infrastructure_construction':
                         this.startInfrastructureConstruction();
+                        break;
+                    case 'negative_construction':
+                        this.startNegativeBuildingConstruction();
                         break;
                 }
             }
@@ -893,6 +1551,31 @@
                 }
             }
             
+            startNegativeBuildingConstruction() {
+                const negativeTypes = ['gold_mutation_chamber', 'motion_alarm_tower', 'party_pavilion', 'unsafe_mining_rig', 'personal_gold_vault'];
+                const type = negativeTypes[Math.floor(Math.random() * negativeTypes.length)];
+                
+                const costs = {
+                    'gold_mutation_chamber': 250,
+                    'motion_alarm_tower': 180,
+                    'party_pavilion': 300,
+                    'unsafe_mining_rig': 150,
+                    'personal_gold_vault': 220
+                };
+                
+                const cost = costs[type];
+                if (game.gold >= cost) {
+                    game.gold -= cost;
+                    this.task = 'building_negative';
+                    this.negativeType = type;
+                    this.workTimer = 600;
+                    this.targetX = Math.random() * (canvas.width - 100) + 50;
+                    this.targetY = Math.random() * (canvas.height - 100) + 50;
+                    
+                    addLog(`⚠️ ${this.name} building something suspicious...`, true, 'disaster');
+                }
+            }
+            
             executeTask() {
                 switch (this.task) {
                     case 'seeking_food':
@@ -909,6 +1592,7 @@
                         break;
                     case 'building_structure':
                     case 'building_amenity':
+                    case 'building_negative':
                         this.buildStructure();
                         break;
                     case 'seeking_rest':
@@ -916,6 +1600,11 @@
                     case 'seeking_coffee':
                     case 'seeking_cleanliness':
                         this.useAmenity();
+                        break;
+                    case 'panicking':
+                        this.panic();
+                        break;
+                    case 'fleeing':
                         break;
                     default:
                         this.wander();
@@ -1016,6 +1705,16 @@
                             game.buildings.push(newBuilding);
                             addLog(`🏠 ${BUILDING_NAMES[this.amenityType] || this.amenityType} completed!`, true, 'success');
                             
+                        } else if (this.task === 'building_negative') {
+                            const newBuilding = {
+                                x: this.targetX,
+                                y: this.targetY,
+                                type: this.negativeType,
+                                timer: 0
+                            };
+                            game.negativeBuildings.push(newBuilding);
+                            addLog(`⚠️ Suspicious building completed by ${this.name}!`, true, 'disaster');
+                            
                         } else {
                             const newBuilding = {
                                 x: this.targetX,
@@ -1029,6 +1728,7 @@
                         this.task = 'idle';
                         this.workTimer = 0;
                         this.amenityType = null;
+                        this.negativeType = null;
                     }
                 }
             }
@@ -1081,6 +1781,20 @@
                 }
             }
             
+            panic() {
+                this.targetX = this.x + Math.random() * 100 - 50;
+                this.targetY = this.y + Math.random() * 100 - 50;
+                
+                this.targetX = Math.max(50, Math.min(canvas.width - 50, this.targetX));
+                this.targetY = Math.max(50, Math.min(canvas.height - 50, this.targetY));
+                
+                if (this.workTimer <= 0) {
+                    this.personalityState = 'normal';
+                    this.panicLevel = 0;
+                    this.task = 'idle';
+                }
+            }
+            
             wander() {
                 if (Math.random() < 0.02) {
                     this.targetX = Math.random() * canvas.width;
@@ -1094,8 +1808,14 @@
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
                 if (distance > 5) {
-                    this.x += (dx / distance) * this.speed;
-                    this.y += (dy / distance) * this.speed;
+                    let moveSpeed = this.speed;
+                    
+                    if (this.task === 'panicking') moveSpeed *= 2;
+                    if (this.task === 'fleeing') moveSpeed *= 1.5;
+                    if (this.personalityState === 'lazy') moveSpeed *= 0.5;
+                    
+                    this.x += (dx / distance) * moveSpeed;
+                    this.y += (dy / distance) * moveSpeed;
                     this.direction = Math.atan2(dy, dx);
                 }
                 
@@ -1126,41 +1846,137 @@
                 return Math.sqrt(dx * dx + dy * dy);
             }
             
+            giveBirth() {
+                this.isPregnant = false;
+                this.pregnancyTimer = 0;
+                this.reproductionCooldown = 7200;
+                
+                const baby = new Dwarf(
+                    this.x + Math.random() * 40 - 20,
+                    this.y + Math.random() * 40 - 20,
+                    null,
+                    false
+                );
+                
+                game.dwarfs.push(baby);
+                addLog(`👶 ${this.name} gave birth to ${baby.name}!`, true, 'success');
+            }
+            
             draw() {
                 if (!ctx) return;
                 
-                // Try to draw sprite first, fall back to simple graphics if needed
+                ctx.save();
+                
+                // Territory visualization for orange males
+                if (this.isAdult && this.gender === 'male' && this.reproductionStrategy === 'orange') {
+                    ctx.strokeStyle = 'rgba(255, 102, 0, 0.3)';
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.arc(this.territoryX, this.territoryY, 40, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+                
+                // Guard lines for blue males
+                if (this.isAdult && this.gender === 'male' && this.reproductionStrategy === 'blue' && this.guardedFemale) {
+                    ctx.strokeStyle = 'rgba(0, 102, 255, 0.4)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(this.guardedFemale.x, this.guardedFemale.y);
+                    ctx.stroke();
+                    ctx.lineWidth = 1;
+                }
+                
+                // Try to draw sprite first, fall back if needed
                 const spriteDrawn = drawSprite(ctx, this.getSpriteId(), this.x, this.y, 2);
                 
                 if (!spriteDrawn) {
                     // Fallback drawing
-                    ctx.save();
+                    if (this.isAdult) {
+                        ctx.fillStyle = this.gender === 'male' ? '#4A90E2' : '#E24A90';
+                    } else {
+                        ctx.fillStyle = '#FFB6C1';
+                    }
                     
-                    // Main body with gender colors
-                    ctx.fillStyle = this.gender === 'male' ? '#4A90E2' : '#E24A90';
                     const bodySize = this.isAdult ? 8 : 5;
+                    
+                    // Add personality state visual effects
+                    if (this.personalityState === 'panicking') {
+                        ctx.shadowColor = '#FF0000';
+                        ctx.shadowBlur = 10;
+                    } else if (this.personalityState === 'creative_burst') {
+                        ctx.shadowColor = '#FF00FF';
+                        ctx.shadowBlur = 5;
+                    }
+                    
                     ctx.fillRect(this.x - bodySize, this.y - bodySize, bodySize * 2, bodySize * 2);
+                    ctx.shadowBlur = 0;
                     
-                    // Class indicator
-                    const classColors = {
-                        fighter: '#FF0000',
-                        mage: '#0000FF',
-                        archer: '#00FF00'
-                    };
-                    ctx.fillStyle = classColors[this.class];
-                    ctx.fillRect(this.x - 4, this.y - bodySize - 6, 8, 4);
-                    
-                    ctx.restore();
+                    // Personality hat color
+                    const hatColor = this.getPersonalityColor();
+                    ctx.fillStyle = hatColor;
+                    ctx.fillRect(this.x - 6, this.y - bodySize - 4, 12, 4);
                 }
                 
-                // Draw name and status
+                // Gender indicator dot
+                ctx.fillStyle = this.gender === 'male' ? '#0066FF' : '#FF69B4';
+                ctx.beginPath();
+                ctx.arc(this.x - 10, this.y - 10, 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Strategy indicator for adult males
+                if (this.isAdult && this.gender === 'male') {
+                    const strategyColors = {
+                        'orange': '#FF6600',
+                        'blue': '#0066FF', 
+                        'yellow': '#FFFF00'
+                    };
+                    ctx.fillStyle = strategyColors[this.reproductionStrategy];
+                    ctx.beginPath();
+                    ctx.arc(this.x + 10, this.y - 10, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Pregnancy glow and progress
+                if (this.isPregnant) {
+                    ctx.shadowColor = '#FFD700';
+                    ctx.shadowBlur = 15;
+                    ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+                    const bodySize = this.isAdult ? 8 : 5;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, bodySize + 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    
+                    const progressWidth = 20;
+                    const progress = this.pregnancyTimer / 3600;
+                    ctx.fillStyle = 'rgba(255, 20, 147, 0.7)';
+                    ctx.fillRect(this.x - progressWidth/2, this.y + bodySize + 5, progressWidth * progress, 3);
+                }
+                
+                // Maturity progress for children
+                if (!this.isAdult) {
+                    const progressWidth = 16;
+                    const progress = this.maturityTimer / 1800;
+                    ctx.fillStyle = 'rgba(50, 205, 50, 0.7)';
+                    const bodySize = 5;
+                    ctx.fillRect(this.x - progressWidth/2, this.y + bodySize + 5, progressWidth * progress, 2);
+                }
+                
+                // Need bars
+                this.drawNeedBars();
+                
+                // Name and task indicator
                 ctx.fillStyle = '#FFFFFF';
                 ctx.font = '8px Arial';
                 ctx.textAlign = 'center';
                 ctx.fillText(this.name, this.x, this.y - 20);
                 
-                // Task indicator
+                // Task indicator emoji
                 const taskEmojis = {
+                    'panicking': '😰',
+                    'fleeing': '🏃',
                     'building_rocket': '🚀',
                     'mining': '⛏️',
                     'seeking_food': '🍓',
@@ -1175,6 +1991,41 @@
                 }
                 
                 ctx.textAlign = 'left';
+                ctx.restore();
+            }
+            
+            drawNeedBars() {
+                const barWidth = 12;
+                const barHeight = 2;
+                const startY = this.y - 25;
+                
+                // Hunger (red)
+                ctx.fillStyle = this.hunger < 20 ? '#FF0000' : '#FF4444';
+                ctx.fillRect(this.x - barWidth/2, startY, barWidth * (this.hunger / 100), barHeight);
+                
+                // Thirst (blue)
+                ctx.fillStyle = this.thirst < 15 ? '#0000FF' : '#4444FF';
+                ctx.fillRect(this.x - barWidth/2, startY + 3, barWidth * (this.thirst / 100), barHeight);
+                
+                // Show other needs if low
+                if (this.rest < 25) {
+                    ctx.fillStyle = '#8B4513';
+                    ctx.fillRect(this.x - barWidth/2, startY + 6, barWidth * (this.rest / 100), 1);
+                }
+                
+                if (this.coffee < 20) {
+                    ctx.fillStyle = '#8B4513';
+                    ctx.fillRect(this.x - barWidth/2, startY + 8, barWidth * (this.coffee / 100), 1);
+                }
+            }
+            
+            getPersonalityColor() {
+                if (this.personality.openness > 70) return '#8A2BE2';
+                if (this.personality.conscientiousness > 70) return '#20B2AA';
+                if (this.personality.extraversion > 70) return '#FFD700';
+                if (this.personality.agreeableness > 70) return '#32CD32';
+                if (this.personality.neuroticism > 70) return '#FF6347';
+                return '#708090';
             }
         }
 
@@ -1323,7 +2174,7 @@
             ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, Math.PI * 2);
             ctx.fill();
             
-            // Draw a medieval bell in the center
+            // Draw a medieval castle in the center
             drawSprite(ctx, SPRITE_MAP.castle, canvas.width / 2, canvas.height / 2, 3);
         }
 
@@ -1491,7 +2342,7 @@
             drawRocketConstruction();
         }
 
-        // Game update and other functions (simplified versions)
+        // Game update and other functions
         function updateGame() {
             if (game.dwarfs && game.dwarfs.length > 0) {
                 game.dwarfs.forEach(function(dwarf) {
@@ -1503,6 +2354,22 @@
             
             updateFoodAndWaterSources();
             updateGoldDeposits();
+            
+            // Spawn new dwarfs occasionally
+            const adultDwarfs = game.dwarfs.filter(d => d.isAdult).length;
+            const totalBuildings = game.buildings.length;
+            
+            if (totalBuildings >= adultDwarfs && 
+                game.time % 2400 === 0 && 
+                Math.random() < 0.12) {
+                
+                const newX = Math.max(50, Math.min(canvas.width - 50, canvas.width / 2 + Math.random() * 100 - 50));
+                const newY = Math.max(50, Math.min(canvas.height - 50, canvas.height / 2));
+                
+                game.dwarfs.push(new Dwarf(newX, newY));
+                addLog('👤 New dwarf joined the colony seeking work!', false);
+            }
+            
             checkMilestones();
             
             if (game.time % 60 === 0) {
@@ -1600,232 +2467,154 @@
             }
         }
 
-        // UI Functions
-        function addLog(message, important, type) {
-            const logDiv = document.getElementById('log');
-            const cleanMessage = message.replace(/^[A-Za-z_0-9]+\s+(chose:|is|feels|couldn't|needs|had|learned|made|was)/, 'dwarf $1');
+        // Motion detection functions
+        function handleMotionDamage(intensity) {
+            lastMotionIntensity = intensity;
+            lastMotionDetected = Date.now();
             
-            if (!important && messageTracker.isDuplicate(cleanMessage)) {
-                if (messageTracker.updateCounter(cleanMessage)) {
+            if (intensity > 10.0) {
+                motionFlash = 20;
+                stabilityLevel = Math.max(0, stabilityLevel - (intensity * 3));
+                
+                addLog('📳 Motion detected! Intensity: ' + intensity.toFixed(2), true, 'disaster');
+                
+                if (Math.random() < 0.1) {
+                    destroyRandomThing();
+                }
+            }
+        }
+
+        function handleAccelerometerMotion(event) {
+            const accel = event.accelerationIncludingGravity;
+            if (accel) {
+                const x = accel.x || 0;
+                const y = accel.y || 0;
+                const z = accel.z || 0;
+                
+                currentAccelX = x;
+                currentAccelY = y;
+                currentAccelZ = z;
+                
+                const intensity = Math.sqrt(x * x + y * y + z * z);
+                handleMotionDamage(intensity);
+            }
+        }
+
+        function destroyRandomThing() {
+            const targets = [];
+            
+            if (game.dwarfs.length > 1) targets.push('dwarf');
+            if (game.buildings.length > 0) targets.push('building');
+            if (game.negativeBuildings.length > 0) targets.push('negative_building');
+            if (game.goldDeposits.length > 0) targets.push('deposit');
+            if (game.foodSources.length > 1) targets.push('food');
+            if (game.waterSources.length > 1) targets.push('water');
+            
+            if (targets.length === 0) return false;
+            
+            const target = targets[Math.floor(Math.random() * targets.length)];
+            
+            switch (target) {
+                case 'dwarf':
+                    if (game.dwarfs.length > 1) {
+                        let mostVulnerable = game.dwarfs[0];
+                        let highestVulnerability = 0;
+                        
+                        game.dwarfs.forEach(dwarf => {
+                            const vulnerability = dwarf.personality.neuroticism + 
+                                                 (100 - Math.min(dwarf.hunger, dwarf.thirst));
+                            if (vulnerability > highestVulnerability) {
+                                highestVulnerability = vulnerability;
+                                mostVulnerable = dwarf;
+                            }
+                        });
+                        
+                        const index = game.dwarfs.indexOf(mostVulnerable);
+                        if (index > 0) {
+                            const removedDwarf = game.dwarfs.splice(index, 1)[0];
+                            addLog('💀 ' + removedDwarf.name + ' was overwhelmed by the chaos!', true, 'disaster');
+                            return true;
+                        }
+                    }
+                    break;
+                case 'building':
+                    if (game.buildings.length > 0) {
+                        game.buildings.pop();
+                        addLog('🏠 A building collapsed from instability!', false, 'disaster');
+                        return true;
+                    }
+                    break;
+                case 'negative_building':
+                    if (game.negativeBuildings.length > 0) {
+                        const destroyed = game.negativeBuildings.pop();
+                        addLog('💥 Negative building destroyed by instability!', true);
+                        return true;
+                    }
+                    break;
+                case 'deposit':
+                    if (game.goldDeposits.length > 0) {
+                        game.goldDeposits.pop();
+                        addLog('✨ A gold deposit was scattered by motion!', false, 'disaster');
+                        return true;
+                    }
+                    break;
+                case 'food':
+                    if (game.foodSources.length > 1) {
+                        game.foodSources.pop();
+                        addLog('🍓 Berry bush destroyed by instability!', false, 'disaster');
+                        return true;
+                    }
+                    break;
+                case 'water':
+                    if (game.waterSources.length > 1) {
+                        game.waterSources.pop();
+                        addLog('💧 Water spring dried up from the chaos!', false, 'disaster');
+                        return true;
+                    }
+                    break;
+            }
+            return false;
+        }
+
+        async function requestPermissioniOS() {
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                try {
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    return permission === 'granted';
+                } catch (error) {
+                    console.error('Error requesting permission:', error);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        async function enableAccelerometer() {
+            const statusDiv = document.getElementById('motionStatus');
+            statusDiv.textContent = '🔄 Requesting permissions...';
+            
+            try {
+                const hasPermission = await requestPermissioniOS();
+                
+                if (!hasPermission) {
+                    statusDiv.textContent = '❌ Permission denied. Enable in Safari settings.';
+                    statusDiv.className = 'motion-status inactive';
                     return;
                 }
-            }
-            
-            const entry = document.createElement('div');
-            
-            if (important) {
-                entry.className = 'log-entry important';
-            } else if (type === 'disaster') {
-                entry.className = 'log-entry disaster';
-            } else if (type === 'success') {
-                entry.className = 'log-entry success';
-            } else {
-                entry.className = 'log-entry';
-            }
-            
-            const timeStr = '[' + Math.floor(game.time / 60) + 's]';
-            entry.textContent = timeStr + ' ' + message;
-            
-            logDiv.appendChild(entry);
-            logDiv.scrollTop = logDiv.scrollHeight;
-            
-            if (!important) {
-                messageTracker.addMessage(cleanMessage, entry, type);
-            }
-            
-            while (logDiv.children.length > 25) {
-                const removedElement = logDiv.children[1];
                 
-                for (let [msg, data] of messageTracker.recentMessages) {
-                    if (data.element === removedElement) {
-                        messageTracker.recentMessages.delete(msg);
-                        break;
-                    }
+                if (!window.DeviceMotionEvent && !window.DeviceOrientationEvent) {
+                    statusDiv.textContent = '❌ Motion sensors not supported on this device.';
+                    statusDiv.className = 'motion-status inactive';
+                    return;
                 }
                 
-                logDiv.removeChild(removedElement);
-            }
-        }
-
-        function updateUI() {
-            document.getElementById('goldCount').textContent = Math.floor(game.gold);
-            document.getElementById('dwarfsCount').textContent = game.dwarfs.length;
-            
-            if (game.dwarfs.length > 0) {
-                const totals = {
-                    hunger: 0, thirst: 0, rest: 0, joy: 0, coffee: 0, cleanliness: 0
-                };
-                
-                game.dwarfs.forEach(dwarf => {
-                    totals.hunger += dwarf.hunger;
-                    totals.thirst += dwarf.thirst;
-                    totals.rest += dwarf.rest;
-                    totals.joy += dwarf.joy;
-                    totals.coffee += dwarf.coffee;
-                    totals.cleanliness += dwarf.cleanliness;
-                });
-                
-                const count = game.dwarfs.length;
-                document.getElementById('avgHunger').textContent = Math.floor(totals.hunger / count);
-                document.getElementById('avgThirst').textContent = Math.floor(totals.thirst / count);
-                document.getElementById('avgRest').textContent = Math.floor(totals.rest / count);
-                document.getElementById('avgJoy').textContent = Math.floor(totals.joy / count);
-                document.getElementById('avgCoffee').textContent = Math.floor(totals.coffee / count);
-                document.getElementById('avgClean').textContent = Math.floor(totals.cleanliness / count);
-            }
-            
-            const amenityBuildings = game.buildings.filter(b => b.type === 'amenity').length;
-            const regularBuildings = game.buildings.filter(b => b.type !== 'amenity').length;
-            
-            document.getElementById('machinesCount').textContent = amenityBuildings;
-            document.getElementById('buildingsCount').textContent = regularBuildings;
-            document.getElementById('goldPerSec').textContent = game.goldPerSecond.toFixed(1);
-            
-            updateRocketProgress();
-        }
-
-        function updateRocketProgress() {
-            const totalParts = Object.keys(game.rocketParts).length;
-            let completedParts = 0;
-            for (let part in game.rocketParts) {
-                if (game.rocketParts[part].built) completedParts++;
-            }
-            const overallProgress = (completedParts / totalParts) * 100;
-            
-            document.getElementById('overallProgress').style.width = overallProgress + '%';
-            
-            let progressText = 'Planning phase...';
-            if (overallProgress === 100) progressText = '🚀 READY FOR LAUNCH!';
-            else if (overallProgress > 80) progressText = 'Final assembly...';
-            else if (overallProgress > 60) progressText = 'Major construction...';
-            else if (overallProgress > 40) progressText = 'Building components...';
-            else if (overallProgress > 20) progressText = 'Foundation work...';
-            else if (overallProgress > 0) progressText = 'Starting construction...';
-            
-            document.getElementById('progressText').textContent = progressText;
-            
-            const partNames = ['engine', 'fuel', 'hull', 'navigation', 'launchpad'];
-            const partIcons = ['🔥', '⛽', '🛡️', '📡', '🚿'];
-            
-            for (let i = 0; i < partNames.length; i++) {
-                const partName = partNames[i];
-                const partData = game.rocketParts[partName];
-                const element = document.getElementById(partName);
-                const icon = partIcons[i];
-                const capitalName = partName.charAt(0).toUpperCase() + partName.slice(1);
-                
-                if (partData.built) {
-                    element.className = 'rocket-part completed';
-                    element.textContent = icon + ' ' + capitalName + ': ✅ Complete';
-                } else if (partData.building) {
-                    element.className = 'rocket-part building';
-                    element.textContent = icon + ' ' + capitalName + ': 🔨 Building... ' + Math.floor(partData.progress * 100) + '%';
-                } else if (game.gold >= partData.cost) {
-                    element.className = 'rocket-part';
-                    element.textContent = icon + ' ' + capitalName + ': 💰 Ready (' + partData.cost + ' gold)';
-                } else {
-                    element.className = 'rocket-part';
-                    element.textContent = icon + ' ' + capitalName + ': ⏳ Need ' + partData.cost + ' gold';
+                if (window.DeviceMotionEvent) {
+                    window.addEventListener('devicemotion', handleAccelerometerMotion);
                 }
-            }
-        }
-
-        // Motion detection (simplified)
-        function enableAccelerometer() {
-            const statusDiv = document.getElementById('motionStatus');
-            statusDiv.textContent = '✅ Motion detection active - Keep device steady!';
-            statusDiv.className = 'motion-status active';
-            isTracking = true;
-        }
-
-        function updateStability() {
-            if (isTracking) {
-                stabilityLevel = Math.min(100, stabilityLevel + 0.05);
-            }
-            
-            if (motionFlash > 0) motionFlash--;
-            
-            const stabilityBar = document.getElementById('stabilityBar');
-            const stabilityText = document.getElementById('stabilityText');
-            
-            stabilityBar.style.width = stabilityLevel + '%';
-            
-            if (stabilityLevel > 75) {
-                stabilityBar.className = 'stability-bar stability-high';
-                stabilityText.textContent = 'Stable';
-            } else if (stabilityLevel > 50) {
-                stabilityBar.className = 'stability-bar stability-medium';
-                stabilityText.textContent = 'Unstable';
-            } else if (stabilityLevel > 25) {
-                stabilityBar.className = 'stability-bar stability-low';
-                stabilityText.textContent = 'Dangerous';
-            } else {
-                stabilityBar.className = 'stability-bar stability-critical';
-                stabilityText.textContent = 'Critical!';
-            }
-        }
-
-        // Game loop
-        function gameLoop() {
-            try {
-                updateGame();
-                renderGame();
-                updateUI();
-                updateStability();
                 
-                game.time++;
-                requestAnimationFrame(gameLoop);
+                isAccelerometerEnabled = true;
+                isTracking = true;
+                statusDiv.textContent = '✅ Motion detection active - Keep device steady!';
+                statusDiv.className = 'motion-status active';
                 
-            } catch (error) {
-                console.error('Game loop error:', error);
-                addLog('❌ Game loop error: ' + error.message, true, 'disaster');
-            }
-        }
-
-        // Initialize and start the game
-        function initializeGame() {
-            console.log('Starting medieval dwarf colony...');
-            
-            if (!initializeCanvas()) {
-                console.error('Failed to initialize canvas!');
-                return;
-            }
-            
-            resizeCanvas();
-            
-            // Load sprites first
-            loadSpriteSheet();
-            
-            setTimeout(() => {
-                initDwarfs();
-                initFoodAndWaterSources();
-                initializeGoldDeposits();
-                
-                addLog('🏰 Medieval Dwarf Colony started!', true);
-                addLog('🎨 Beautiful pixel art sprites loaded!', true);
-                addLog('🎯 Goal: Build a rocket using medieval technology!', true);
-                
-                gameLoop();
-            }, 200);
-            
-            setTimeout(() => {
-                enableAccelerometer();
-            }, 1500);
-        }
-
-        // Event listeners
-        window.addEventListener('load', function() {
-            console.log('Page loaded, initializing medieval game...');
-            initializeGame();
-        });
-
-        window.addEventListener('orientationchange', function() {
-            setTimeout(resizeCanvas, 100);
-        });
-
-        window.addEventListener('resize', function() {
-            setTimeout(resizeCanvas, 100);
-        });
-    </script>
-</body>
-</html>
+                addLog('
