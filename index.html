@@ -429,14 +429,13 @@
             spriteSheet.onerror = function() {
                 console.error('Failed to load sprite sheet');
                 addLog('❌ Failed to load sprites - using fallback graphics', true, 'disaster');
+                // Create fallback if the main image fails to load
+                createFallbackSpriteSheet();
             };
             
-            // For this demo, we'll create a simple colored rectangle as a fallback
-            // In your actual implementation, you'd set this to the path of your PNG file
-            // spriteSheet.src = 'colored.png';
-            
-            // Since we can't access external files in this demo, create a fallback
-            createFallbackSpriteSheet();
+            // Load your actual sprite sheet from GitHub
+            spriteSheet.crossOrigin = 'anonymous'; // Handle CORS
+            spriteSheet.src = 'https://raw.githubusercontent.com/JakeSeegers/DorfFriend/JakeSeegers-patch-2/colored.png';
         }
         
         function createFallbackSpriteSheet() {
