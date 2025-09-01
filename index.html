@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medieval Dwarf Colony - Complete Edition</title>
     <style>
-        /* Complete CSS styling */
         body {
             margin: 0;
             padding: 10px;
@@ -373,7 +372,7 @@
         let spriteSheet = null;
         let spriteSheetLoaded = false;
         
-        // Tileset configuration from the JSON
+        // Tileset configuration
         const TILESET_CONFIG = {
             columns: 20,
             tileWidth: 12,
@@ -385,37 +384,37 @@
         
         // Sprite mappings for game entities
         const SPRITE_MAP = {
-            // Buildings (from tileset IDs)
-            house: 4,              // Building with chimney
-            inn: 5,                // Tent/Inn
-            church: 10,            // Church
-            tower: 6,              // Tower
-            castle: 7,             // Castle
-            city: 9,               // City building
-            windmill: 198,         // Windmill
+            // Buildings
+            house: 4,
+            inn: 5,
+            church: 10,
+            tower: 6,
+            castle: 7,
+            city: 9,
+            windmill: 198,
             
             // Characters
-            male_fighter: 21,      // Male fighter
-            female_fighter: 20,    // Female fighter
-            male_mage: 23,         // Male mage
-            female_mage: 22,       // Female mage
-            male_archer: 25,       // Male archer
-            female_archer: 24,     // Female archer
+            male_fighter: 21,
+            female_fighter: 20,
+            male_mage: 23,
+            female_mage: 22,
+            male_archer: 25,
+            female_archer: 24,
             
             // Items and resources
-            gold_chest: 162,       // Full chest
-            water_well: 187,       // Well
-            food_source: 196,      // Flowers (representing berries)
+            gold_chest: 162,
+            water_well: 187,
+            food_source: 196,
             
             // Special buildings
-            spa: 184,              // Cauldron (spa)
-            coffee_shop: 183,      // Boiler (coffee shop)
-            library: 153,          // Magic book
-            gym: 185,              // Anvil
-            museum: 180,           // Bust
+            spa: 184,
+            coffee_shop: 183,
+            library: 153,
+            gym: 185,
+            museum: 180,
             
             // Negative buildings
-            negative_building: 179 // Torture device
+            negative_building: 179
         };
         
         // Create and load the sprite sheet
@@ -424,392 +423,7 @@
             spriteSheet.onload = function() {
                 spriteSheetLoaded = true;
                 console.log('Sprite sheet loaded successfully!');
-                addLog('✅ Motion detection enabled automatically!', true);
-                addLog('⚠️ Keep device steady to protect your colony!', true);
-                
-            } catch (error) {
-                console.error('Error enabling accelerometer:', error);
-                statusDiv.textContent = '❌ Failed to enable motion detection. Try refreshing.';
-                statusDiv.className = 'motion-status inactive';
-            }
-        }
-
-        function updateStability() {
-            if (isTracking) {
-                stabilityLevel = Math.min(100, stabilityLevel + 0.05);
-            }
-            
-            if (motionFlash > 0) motionFlash--;
-            
-            const stabilityBar = document.getElementById('stabilityBar');
-            const stabilityText = document.getElementById('stabilityText');
-            
-            stabilityBar.style.width = stabilityLevel + '%';
-            
-            const motionText = 'Motion: ' + lastMotionIntensity.toFixed(1);
-            
-            if (stabilityLevel > 75) {
-                stabilityBar.className = 'stability-bar stability-high';
-                stabilityText.textContent = 'Stable (' + motionText + ')';
-            } else if (stabilityLevel > 50) {
-                stabilityBar.className = 'stability-bar stability-medium';
-                stabilityText.textContent = 'Unstable (' + motionText + ')';
-            } else if (stabilityLevel > 25) {
-                stabilityBar.className = 'stability-bar stability-low';
-                stabilityText.textContent = 'Dangerous (' + motionText + ')';
-            } else {
-                stabilityBar.className = 'stability-bar stability-critical';
-                stabilityText.textContent = 'Critical! (' + motionText + ')';
-            }
-        }
-
-        // UI Functions
-        function addLog(message, important, type) {
-            const logDiv = document.getElementById('log');
-            const cleanMessage = message.replace(/^[A-Za-z_0-9]+\s+(chose:|is|feels|couldn't|needs|had|learned|made|was)/, 'dwarf $1');
-            
-            if (!important && messageTracker.isDuplicate(cleanMessage)) {
-                if (messageTracker.updateCounter(cleanMessage)) {
-                    return;
-                }
-            }
-            
-            const entry = document.createElement('div');
-            
-            if (important) {
-                entry.className = 'log-entry important';
-            } else if (type === 'disaster') {
-                entry.className = 'log-entry disaster';
-            } else if (type === 'success') {
-                entry.className = 'log-entry success';
-            } else {
-                entry.className = 'log-entry';
-            }
-            
-            const timeStr = '[' + Math.floor(game.time / 60) + 's]';
-            entry.textContent = timeStr + ' ' + message;
-            
-            logDiv.appendChild(entry);
-            logDiv.scrollTop = logDiv.scrollHeight;
-            
-            if (!important) {
-                messageTracker.addMessage(cleanMessage, entry, type);
-            }
-            
-            while (logDiv.children.length > 25) {
-                const removedElement = logDiv.children[1];
-                
-                for (let [msg, data] of messageTracker.recentMessages) {
-                    if (data.element === removedElement) {
-                        messageTracker.recentMessages.delete(msg);
-                        break;
-                    }
-                }
-                
-                logDiv.removeChild(removedElement);
-            }
-        }
-
-        function updateUI() {
-            document.getElementById('goldCount').textContent = Math.floor(game.gold);
-            
-            const adults = game.dwarfs.filter(d => d.isAdult);
-            const children = game.dwarfs.filter(d => !d.isAdult);
-            const males = adults.filter(d => d.gender === 'male');
-            const females = adults.filter(d => d.gender === 'female');
-            const pregnant = females.filter(f => f.isPregnant);
-            
-            const orangeMales = males.filter(m => m.reproductionStrategy === 'orange').length;
-            const blueMales = males.filter(m => m.reproductionStrategy === 'blue').length;
-            const yellowMales = males.filter(m => m.reproductionStrategy === 'yellow').length;
-            
-            let populationText = game.dwarfs.length.toString();
-            if (adults.length > 0) {
-                populationText += ` (${adults.length}👥`;
-                if (children.length > 0) populationText += `, ${children.length}👶`;
-                if (pregnant.length > 0) populationText += `, ${pregnant.length}🤱`;
-                populationText += ')';
-            }
-            
-            if (males.length > 0) {
-                populationText += ` [🟠${orangeMales} 🔵${blueMales} 🟡${yellowMales}]`;
-            }
-            
-            document.getElementById('dwarfsCount').textContent = populationText;
-            
-            if (game.dwarfs.length > 0) {
-                const totals = {
-                    hunger: 0, thirst: 0, rest: 0, joy: 0, coffee: 0, cleanliness: 0
-                };
-                
-                const criticalCounts = {
-                    hunger: 0, thirst: 0, rest: 0, joy: 0, coffee: 0, cleanliness: 0
-                };
-                
-                game.dwarfs.forEach(dwarf => {
-                    totals.hunger += dwarf.hunger;
-                    totals.thirst += dwarf.thirst;
-                    totals.rest += dwarf.rest;
-                    totals.joy += dwarf.joy;
-                    totals.coffee += dwarf.coffee;
-                    totals.cleanliness += dwarf.cleanliness;
-                    
-                    if (dwarf.hunger < 15) criticalCounts.hunger++;
-                    if (dwarf.thirst < 15) criticalCounts.thirst++;
-                    if (dwarf.rest < 15) criticalCounts.rest++;
-                    if (dwarf.joy < 15) criticalCounts.joy++;
-                    if (dwarf.coffee < 10) criticalCounts.coffee++;
-                    if (dwarf.cleanliness < 15) criticalCounts.cleanliness++;
-                });
-                
-                const count = game.dwarfs.length;
-                const averages = {
-                    hunger: totals.hunger / count,
-                    thirst: totals.thirst / count,
-                    rest: totals.rest / count,
-                    joy: totals.joy / count,
-                    coffee: totals.coffee / count,
-                    cleanliness: totals.cleanliness / count
-                };
-                
-                function updateNeedDisplay(elementId, value, criticalCount, criticalThreshold = 15, lowThreshold = 30) {
-                    const element = document.getElementById(elementId);
-                    let displayText = Math.floor(value).toString();
-                    
-                    if (criticalCount > 0) {
-                        displayText += ` (${criticalCount}⚠️)`;
-                    }
-                    
-                    element.textContent = displayText;
-                    
-                    if (value < criticalThreshold || criticalCount > 0) {
-                        element.style.color = '#FF4444';
-                    } else if (value < lowThreshold) {
-                        element.style.color = '#FF9800';
-                    } else {
-                        element.style.color = '#4CAF50';
-                    }
-                }
-                
-                updateNeedDisplay('avgHunger', averages.hunger, criticalCounts.hunger, 15, 35);
-                updateNeedDisplay('avgThirst', averages.thirst, criticalCounts.thirst, 10, 30);
-                updateNeedDisplay('avgRest', averages.rest, criticalCounts.rest, 10, 30);
-                updateNeedDisplay('avgJoy', averages.joy, criticalCounts.joy, 10, 30);
-                updateNeedDisplay('avgCoffee', averages.coffee, criticalCounts.coffee, 5, 25);
-                updateNeedDisplay('avgClean', averages.cleanliness, criticalCounts.cleanliness, 15, 35);
-            }
-            
-            const amenityBuildings = game.buildings.filter(b => b.type === 'amenity').length;
-            const regularBuildings = game.buildings.filter(b => b.type !== 'amenity').length;
-            
-            document.getElementById('machinesCount').textContent = amenityBuildings;
-            document.getElementById('buildingsCount').textContent = regularBuildings;
-            document.getElementById('goldPerSec').textContent = game.goldPerSecond.toFixed(1);
-            
-            updateRocketProgress();
-        }
-
-        function updateRocketProgress() {
-            const totalParts = Object.keys(game.rocketParts).length;
-            let completedParts = 0;
-            for (let part in game.rocketParts) {
-                if (game.rocketParts[part].built) completedParts++;
-            }
-            const overallProgress = (completedParts / totalParts) * 100;
-            
-            document.getElementById('overallProgress').style.width = overallProgress + '%';
-            
-            let progressText = 'Planning phase...';
-            if (overallProgress === 100) progressText = '🚀 READY FOR LAUNCH!';
-            else if (overallProgress > 80) progressText = 'Final assembly...';
-            else if (overallProgress > 60) progressText = 'Major construction...';
-            else if (overallProgress > 40) progressText = 'Building components...';
-            else if (overallProgress > 20) progressText = 'Foundation work...';
-            else if (overallProgress > 0) progressText = 'Starting construction...';
-            
-            document.getElementById('progressText').textContent = progressText;
-            
-            const partNames = ['engine', 'fuel', 'hull', 'navigation', 'launchpad'];
-            const partIcons = ['🔥', '⛽', '🛡️', '📡', '🚿'];
-            
-            for (let i = 0; i < partNames.length; i++) {
-                const partName = partNames[i];
-                const partData = game.rocketParts[partName];
-                const element = document.getElementById(partName);
-                const icon = partIcons[i];
-                const capitalName = partName.charAt(0).toUpperCase() + partName.slice(1);
-                
-                if (partData.built) {
-                    element.className = 'rocket-part completed';
-                    element.textContent = icon + ' ' + capitalName + ': ✅ Complete';
-                } else if (partData.building) {
-                    element.className = 'rocket-part building';
-                    element.textContent = icon + ' ' + capitalName + ': 🔨 Building... ' + Math.floor(partData.progress * 100) + '%';
-                } else if (game.gold >= partData.cost) {
-                    element.className = 'rocket-part';
-                    element.textContent = icon + ' ' + capitalName + ': 💰 Ready (' + partData.cost + ' gold)';
-                } else {
-                    element.className = 'rocket-part';
-                    element.textContent = icon + ' ' + capitalName + ': ⏳ Need ' + partData.cost + ' gold';
-                }
-            }
-        }
-
-        // Game loop
-        function gameLoop() {
-            try {
-                updateGame();
-                renderGame();
-                updateUI();
-                updateStability();
-                
-                game.time++;
-                requestAnimationFrame(gameLoop);
-                
-            } catch (error) {
-                console.error('Game loop error:', error);
-                addLog('❌ Game loop error: ' + error.message, true, 'disaster');
-            }
-        }
-
-        // Initialize and start the game
-        function initializeGame() {
-            console.log('Starting medieval dwarf colony...');
-            
-            if (!initializeCanvas()) {
-                console.error('Failed to initialize canvas!');
-                return;
-            }
-            
-            resizeCanvas();
-            
-            // Load sprites first
-            loadSpriteSheet();
-            
-            setTimeout(() => {
-                initDwarfs();
-                initFoodAndWaterSources();
-                initializeGoldDeposits();
-                
-                addLog('🏰 Medieval Dwarf Colony Complete Edition started!', true);
-                addLog('🎨 Beautiful pixel art sprites + complex AI behaviors!', true);
-                addLog('🎯 Goal: Build a rocket using medieval technology!', true);
-                addLog('🦎 REPRODUCTION SYSTEM: Orange🟠=Territorial, Blue🔵=Guard, Yellow🟡=Sneaky', true);
-                addLog('👶 MATURITY: Children must mature before working (30 sec)', false);
-                addLog('🤱 PREGNANCY: 60-second pregnancy timer with birth mechanics', false);
-                addLog('🧠 PERSONALITY: Big Five traits affect all behavior and decisions', false);
-                addLog('😰 PANIC STATES: Motion causes high-neuroticism dwarfs to panic', false);
-                addLog('⚖️ SMART AI: Priority system - Survival > Rocket > Infrastructure > Amenities', false);
-                addLog('🏠 BUILDINGS: Amenities restore needs, negative buildings cause problems', false);
-                addLog('📱 MOTION DETECTION: Keep device steady or face consequences!', true);
-                
-                gameLoop();
-            }, 200);
-            
-            setTimeout(() => {
-                enableAccelerometer();
-            }, 1500);
-        }
-
-        // Event listeners
-        window.addEventListener('load', function() {
-            console.log('Page loaded, initializing medieval game...');
-            initializeGame();
-        });
-
-        window.addEventListener('orientationchange', function() {
-            setTimeout(resizeCanvas, 100);
-        });
-
-        window.addEventListener('resize', function() {
-            setTimeout(resizeCanvas, 100);
-        });
-
-        // Debug commands
-        window.debugCommands = {
-            spawnDwarf: function() {
-                if (!canvas || !ctx) return null;
-                const x = canvas.width / 2 + Math.random() * 100 - 50;
-                const y = canvas.height / 2 + Math.random() * 100 - 50;
-                const newDwarf = new Dwarf(x, y);
-                game.dwarfs.push(newDwarf);
-                addLog(`🧙 DEBUG: Spawned ${newDwarf.name} (${newDwarf.gender}, ${newDwarf.reproductionStrategy || 'female'})`, true);
-                return newDwarf;
-            },
-            
-            showPersonalities: function() {
-                console.log('🧠 PERSONALITY ANALYSIS:');
-                game.dwarfs.forEach((dwarf, i) => {
-                    const p = dwarf.personality;
-                    console.log(`${i}: ${dwarf.name} (${dwarf.gender}${dwarf.reproductionStrategy ? ', ' + dwarf.reproductionStrategy : ''})`);
-                    console.log(`  🎭 State: ${dwarf.personalityState} | Task: ${dwarf.task}`);
-                    console.log(`  📊 O:${Math.floor(p.openness)} C:${Math.floor(p.conscientiousness)} E:${Math.floor(p.extraversion)} A:${Math.floor(p.agreeableness)} N:${Math.floor(p.neuroticism)}`);
-                    if (dwarf.isPregnant) console.log(`  🤱 Pregnant: ${Math.floor(dwarf.pregnancyTimer/36)}% complete`);
-                    if (!dwarf.isAdult) console.log(`  👶 Child: ${Math.floor(dwarf.maturityTimer/18)}% mature`);
-                });
-                return game.dwarfs.map(d => ({ 
-                    name: d.name, 
-                    gender: d.gender, 
-                    strategy: d.reproductionStrategy, 
-                    state: d.personalityState,
-                    personality: d.personality
-                }));
-            },
-            
-            triggerMotion: function() {
-                handleMotionDamage(15);
-                addLog('🔨 DEBUG: Simulated strong motion event', true, 'disaster');
-                return 'Motion event triggered';
-            },
-            
-            forcePregnancy: function() {
-                const females = game.dwarfs.filter(d => d.gender === 'female' && d.isAdult && !d.isPregnant);
-                if (females.length > 0) {
-                    const female = females[0];
-                    female.isPregnant = true;
-                    female.pregnancyTimer = 0;
-                    addLog(`🤱 DEBUG: ${female.name} is now pregnant`, true, 'success');
-                    return female;
-                }
-                return 'No available females';
-            },
-            
-            showStats: function() {
-                const adults = game.dwarfs.filter(d => d.isAdult);
-                const children = game.dwarfs.filter(d => !d.isAdult);
-                const pregnant = game.dwarfs.filter(d => d.isPregnant);
-                const males = adults.filter(d => d.gender === 'male');
-                
-                console.log('📊 COLONY STATISTICS:');
-                console.log(`👥 Total Population: ${game.dwarfs.length} (${adults.length} adults, ${children.length} children)`);
-                console.log(`🤱 Pregnant: ${pregnant.length}`);
-                console.log(`🚹 Males: ${males.length} (🟠${males.filter(m => m.reproductionStrategy === 'orange').length} 🔵${males.filter(m => m.reproductionStrategy === 'blue').length} 🟡${males.filter(m => m.reproductionStrategy === 'yellow').length})`);
-                console.log(`🏠 Buildings: ${game.buildings.length} (${game.buildings.filter(b => b.type === 'amenity').length} amenities)`);
-                console.log(`💰 Gold: ${Math.floor(game.gold)} (${game.goldPerSecond.toFixed(1)}/sec)`);
-                console.log(`🚀 Rocket Parts: ${Object.values(game.rocketParts).filter(p => p.built).length}/5 complete`);
-                
-                return {
-                    population: game.dwarfs.length,
-                    adults: adults.length,
-                    children: children.length,
-                    pregnant: pregnant.length,
-                    buildings: game.buildings.length,
-                    gold: game.gold,
-                    rocketParts: Object.values(game.rocketParts).filter(p => p.built).length
-                };
-            }
-        };
-
-        // Make some functions globally available for debugging
-        window.game = game;
-        window.Dwarf = Dwarf;
-        window.drawSprite = drawSprite;
-        
-        console.log('🎮 Medieval Dwarf Colony Complete Edition loaded!');
-        console.log('🔧 Debug commands available: debugCommands.spawnDwarf(), showPersonalities(), triggerMotion(), forcePregnancy(), showStats()');
-    </script>
-</body>
-</html>🎨 Medieval sprites loaded!', true, 'success');
+                addLog('🎨 Medieval sprites loaded!', true, 'success');
             };
             spriteSheet.onerror = function() {
                 console.error('Failed to load sprite sheet');
@@ -817,19 +431,16 @@
                 createFallbackSpriteSheet();
             };
             
-            // Load your actual sprite sheet from GitHub
-            spriteSheet.crossOrigin = 'anonymous'; // Handle CORS
+            spriteSheet.crossOrigin = 'anonymous';
             spriteSheet.src = 'https://raw.githubusercontent.com/JakeSeegers/DorfFriend/JakeSeegers-patch-2/colored.png';
         }
         
         function createFallbackSpriteSheet() {
-            // Create a canvas to draw our fallback sprites
             const fallbackCanvas = document.createElement('canvas');
             fallbackCanvas.width = 261;
             fallbackCanvas.height = 131;
             const fallbackCtx = fallbackCanvas.getContext('2d');
             
-            // Draw colored rectangles for each sprite type
             const colors = [
                 '#8B4513', '#FF6347', '#32CD32', '#4682B4', '#FFD700',
                 '#FF69B4', '#40E0D0', '#9370DB', '#228B22', '#B22222'
@@ -838,13 +449,12 @@
             for (let i = 0; i < 200; i++) {
                 const col = i % 20;
                 const row = Math.floor(i / 20);
-                const x = col * 13; // 12 + 1 for spacing
-                const y = row * 13; // 12 + 1 for spacing
+                const x = col * 13;
+                const y = row * 13;
                 
                 fallbackCtx.fillStyle = colors[i % colors.length];
                 fallbackCtx.fillRect(x, y, 12, 12);
                 
-                // Add a simple pattern to differentiate sprites
                 fallbackCtx.fillStyle = 'rgba(255,255,255,0.3)';
                 if (i % 3 === 0) fallbackCtx.fillRect(x + 2, y + 2, 8, 8);
                 if (i % 5 === 0) fallbackCtx.fillRect(x + 4, y + 4, 4, 4);
@@ -857,13 +467,11 @@
         function drawSprite(ctx, spriteId, x, y, scale = 2) {
             if (!spriteSheetLoaded || !spriteSheet) return false;
             
-            // Calculate source position on sprite sheet
             const col = spriteId % TILESET_CONFIG.columns;
             const row = Math.floor(spriteId / TILESET_CONFIG.columns);
-            const srcX = col * (TILESET_CONFIG.tileWidth + 1); // +1 for spacing
+            const srcX = col * (TILESET_CONFIG.tileWidth + 1);
             const srcY = row * (TILESET_CONFIG.tileHeight + 1);
             
-            // Draw the sprite
             ctx.drawImage(
                 spriteSheet,
                 srcX, srcY, TILESET_CONFIG.tileWidth, TILESET_CONFIG.tileHeight,
@@ -875,18 +483,7 @@
             return true;
         }
         
-        // Game constants and configuration
-        const TASK_PRIORITIES = {
-            'CRITICAL_SURVIVAL': 100,
-            'BASIC_SURVIVAL': 90,
-            'RECOVERY_STATES': 80,
-            'ROCKET_BUILDING': 70,
-            'INFRASTRUCTURE': 60,
-            'AMENITY_SEEKING': 50,
-            'MINING': 40,
-            'IDLE': 0
-        };
-
+        // Game constants
         const DWARF_NAMES = [
             'Gimli', 'Thorin', 'Balin', 'Dwalin', 'Fili', 'Kili', 
             'Gloin', 'Oin', 'Ori', 'Nori', 'Dori', 'Bifur', 'Bofur', 'Bombur'
@@ -928,14 +525,13 @@
             gold: 0,
             goldPerSecond: 0,
             dwarfs: [],
-            machines: [],
             buildings: [],
             negativeBuildings: [],
             goldDeposits: [],
             foodSources: [],
             waterSources: [],
             time: 0,
-            rocketParts: { ...ROCKET_PARTS_CONFIG },
+            rocketParts: JSON.parse(JSON.stringify(ROCKET_PARTS_CONFIG)),
             milestones: {
                 firstAmenity: false,
                 firstBuilding: false,
@@ -943,10 +539,7 @@
                 thousandGold: false,
                 tenThousandGold: false,
                 tenDwarfs: false,
-                rocketComplete: false,
-                threeAmenities: false,
-                amenityPerDwarf: false,
-                fiveBuildings: false
+                rocketComplete: false
             }
         };
 
@@ -959,17 +552,13 @@
         let motionFlash = 0;
         let lastMotionIntensity = 0;
         let lastMotionDetected = 0;
-        let isAccelerometerEnabled = false;
-        let currentAccelX = 0;
-        let currentAccelY = 0;
-        let currentAccelZ = 9.8;
 
         // Message tracking for spam reduction
         const messageTracker = {
             recentMessages: new Map(),
             duplicateWindow: 5000,
             
-            cleanup() {
+            cleanup: function() {
                 const now = Date.now();
                 for (let [message, data] of this.recentMessages) {
                     if (now - data.timestamp > this.duplicateWindow) {
@@ -978,22 +567,22 @@
                 }
             },
             
-            isDuplicate(message) {
+            isDuplicate: function(message) {
                 this.cleanup();
                 return this.recentMessages.has(message);
             },
             
-            updateCounter(message) {
+            updateCounter: function(message) {
                 const data = this.recentMessages.get(message);
                 if (data) {
                     data.count++;
                     data.timestamp = Date.now();
                     
                     const timeStr = '[' + Math.floor(game.time / 60) + 's]';
-                    data.element.textContent = `${timeStr} ${message} (x${data.count})`;
+                    data.element.textContent = timeStr + ' ' + message + ' (x' + data.count + ')';
                     
                     data.element.classList.add('spam-counter');
-                    setTimeout(() => {
+                    setTimeout(function() {
                         if (data.element) data.element.classList.remove('spam-counter');
                     }, 300);
                     
@@ -1002,35 +591,23 @@
                 return false;
             },
             
-            addMessage(message, element, type) {
+            addMessage: function(message, element, type) {
                 this.recentMessages.set(message, {
                     count: 1,
                     element: element,
                     timestamp: Date.now(),
                     type: type || 'normal'
                 });
-            },
-            
-            shouldSuppress(message) {
-                const suppressPatterns = [
-                    /chose: Need amenity:/,
-                    /chose: Mine for gold/,
-                    /chose: Nothing urgent/,
-                    /feels refreshed and ready to work/,
-                    /couldn't find any sustenance/
-                ];
-                
-                return suppressPatterns.some(pattern => pattern.test(message));
             }
         };
 
         // Enhanced Dwarf class with sprites AND complex behaviors
         class Dwarf {
-            constructor(x, y, name = null, isAdult = true) {
+            constructor(x, y, name, isAdult) {
                 this.x = x || 100;
                 this.y = y || 100;
                 this.name = name || this.generateName();
-                this.isAdult = isAdult;
+                this.isAdult = isAdult !== false;
                 this.gender = Math.random() < 0.5 ? 'male' : 'female';
                 this.class = ['fighter', 'mage', 'archer'][Math.floor(Math.random() * 3)];
                 
@@ -1051,12 +628,12 @@
                     neuroticism: Math.random() * 100
                 };
                 
-                // Reproduction system with mating strategies
+                // Reproduction system
                 this.reproductionStrategy = this.gender === 'male' ? 
                     ['orange', 'blue', 'yellow'][Math.floor(Math.random() * 3)] : null;
                 this.isPregnant = false;
                 this.pregnancyTimer = 0;
-                this.maturityTimer = isAdult ? 0 : Math.random() * 1800;
+                this.maturityTimer = isAdult !== false ? 0 : Math.random() * 1800;
                 this.reproductionCooldown = 0;
                 this.territoryX = x;
                 this.territoryY = y;
@@ -1078,18 +655,11 @@
                 
                 // Personality states
                 this.panicLevel = 0;
-                this.confusionLevel = 0;
-                this.lastTaskFailed = false;
                 this.personalityState = 'normal';
                 
-                // Visual and animation
+                // Visual
                 this.direction = Math.random() * Math.PI * 2;
                 this.animPhase = Math.random() * Math.PI * 2;
-                this.lastDecisionLog = '';
-                
-                // Decision making cooldowns
-                this.lastTaskChange = 0;
-                this.taskConsistency = 0;
             }
             
             generateName() {
@@ -1097,7 +667,6 @@
             }
             
             getSpriteId() {
-                // Return appropriate sprite based on gender and class
                 const key = this.gender + '_' + this.class;
                 return SPRITE_MAP[key] || SPRITE_MAP.male_fighter;
             }
@@ -1108,7 +677,7 @@
                     this.maturityTimer++;
                     if (this.maturityTimer >= 1800) {
                         this.isAdult = true;
-                        addLog(`👤 ${this.name} has reached maturity!`, true);
+                        addLog(this.name + ' has reached maturity!', true);
                     }
                 }
                 
@@ -1137,7 +706,7 @@
                 // Personality state updates
                 this.updatePersonalityState();
                 
-                // Reproduction behavior for adults
+                // Reproduction behavior
                 if (this.isAdult && this.reproductionCooldown <= 0) {
                     this.updateReproductionBehavior();
                 }
@@ -1151,9 +720,7 @@
             }
             
             updatePersonalityState() {
-                // Handle panic and confusion
                 if (this.panicLevel > 0) this.panicLevel = Math.max(0, this.panicLevel - 1);
-                if (this.confusionLevel > 0) this.confusionLevel = Math.max(0, this.confusionLevel - 1);
                 
                 // Motion-induced panic
                 if (lastMotionDetected > 0 && (Date.now() - lastMotionDetected) < 2000) {
@@ -1194,9 +761,9 @@
             }
             
             seekMating() {
-                const availableFemales = game.dwarfs.filter(d => 
-                    d.isAdult && d.gender === 'female' && !d.isPregnant && d.reproductionCooldown <= 0
-                );
+                const availableFemales = game.dwarfs.filter(function(d) {
+                    return d.isAdult && d.gender === 'female' && !d.isPregnant && d.reproductionCooldown <= 0;
+                });
                 
                 if (availableFemales.length === 0) return;
                 
@@ -1221,16 +788,17 @@
                     this.territoryX = female.x;
                     this.territoryY = female.y;
                     
-                    const competitors = game.dwarfs.filter(d => 
-                        d.gender === 'male' && d !== this && d.distanceTo(female) < 60
-                    );
+                    const competitors = game.dwarfs.filter(function(d) {
+                        return d.gender === 'male' && d !== this && d.distanceTo(female) < 60;
+                    }, this);
                     
-                    competitors.forEach(competitor => {
+                    const self = this;
+                    competitors.forEach(function(competitor) {
                         if (Math.random() < 0.1) {
                             competitor.task = 'fleeing';
                             competitor.workTimer = 180;
-                            competitor.targetX = this.x < competitor.x ? canvas.width : 0;
-                            competitor.targetY = this.y < competitor.y ? canvas.height : 0;
+                            competitor.targetX = self.x < competitor.x ? canvas.width : 0;
+                            competitor.targetY = self.y < competitor.y ? canvas.height : 0;
                         }
                     });
                     
@@ -1258,9 +826,9 @@
             sneakyMating(female) {
                 const distance = this.distanceTo(female);
                 
-                const guardsNearby = game.dwarfs.filter(d => 
-                    d.gender === 'male' && d !== this && d.distanceTo(female) < 50
-                ).length > 0;
+                const guardsNearby = game.dwarfs.filter(function(d) {
+                    return d.gender === 'male' && d !== this && d.distanceTo(female) < 50;
+                }, this).length > 0;
                 
                 if (!guardsNearby && distance < 35) {
                     if (Math.random() < 0.025) {
@@ -1277,9 +845,9 @@
             evaluateMales() {
                 if (this.isPregnant) return;
                 
-                const nearbyMales = game.dwarfs.filter(d => 
-                    d.isAdult && d.gender === 'male' && d.distanceTo(this) < 40
-                );
+                const nearbyMales = game.dwarfs.filter(function(d) {
+                    return d.isAdult && d.gender === 'male' && d.distanceTo(this) < 40;
+                }, this);
                 
                 if (nearbyMales.length > 0) {
                     const preferred = this.selectPreferredMale(nearbyMales);
@@ -1290,12 +858,15 @@
             }
             
             selectPreferredMale(males) {
-                let scored = males.map(male => ({
-                    male: male,
-                    score: this.scoreMate(male)
-                }));
+                const self = this;
+                let scored = males.map(function(male) {
+                    return {
+                        male: male,
+                        score: self.scoreMate(male)
+                    };
+                });
                 
-                scored.sort((a, b) => b.score - a.score);
+                scored.sort(function(a, b) { return b.score - a.score; });
                 return scored.length > 0 ? scored[0].male : null;
             }
             
@@ -1328,7 +899,7 @@
                     female.reproductionCooldown = 7200;
                     this.reproductionCooldown = 3600;
                     
-                    addLog(`💕 ${this.name} (${this.reproductionStrategy}) and ${female.name} are expecting!`, true, 'success');
+                    addLog(this.name + ' (' + this.reproductionStrategy + ') and ' + female.name + ' are expecting!', true, 'success');
                     return true;
                 }
                 return false;
@@ -1356,7 +927,6 @@
                 const newTask = this.chooseBestTask();
                 if (newTask !== this.task) {
                     this.task = newTask;
-                    this.lastTaskChange = game.time;
                     this.setTaskTarget();
                 }
             }
@@ -1380,18 +950,13 @@
                     return 'infrastructure_construction';
                 }
                 
-                // Amenity seeking for low needs
+                // Amenity seeking
                 const neededAmenity = this.getNeededAmenity();
                 if (neededAmenity) return neededAmenity;
                 
-                // Mining for gold
+                // Mining
                 if (game.goldDeposits && game.goldDeposits.length > 0) {
                     return 'mining';
-                }
-                
-                // Negative personality building
-                if (this.shouldBuildNegativeBuilding()) {
-                    return 'negative_construction';
                 }
                 
                 return 'idle';
@@ -1412,9 +977,9 @@
             shouldBuildInfrastructure() {
                 if (!this.isAdult) return false;
                 
-                const adultDwarfs = game.dwarfs.filter(d => d.isAdult).length;
+                const adultDwarfs = game.dwarfs.filter(function(d) { return d.isAdult; }).length;
                 const totalBuildings = game.buildings.length;
-                const amenityBuildings = game.buildings.filter(b => b.type === 'amenity').length;
+                const amenityBuildings = game.buildings.filter(function(b) { return b.type === 'amenity'; }).length;
                 
                 const maxBuildings = adultDwarfs * 3;
                 const maxAmenities = adultDwarfs * 2;
@@ -1435,21 +1000,11 @@
                 return false;
             }
             
-            shouldBuildNegativeBuilding() {
-                if (!this.isAdult) return false;
-                
-                const isExtreme = this.personality.neuroticism > 85 || 
-                                 this.personality.agreeableness < 15 ||
-                                 this.personality.conscientiousness < 10;
-                
-                return isExtreme && Math.random() < 0.001 && game.gold >= 150;
-            }
-            
             calculateAverageNeeds() {
                 if (game.dwarfs.length === 0) return { rest: 100, joy: 100, coffee: 100, cleanliness: 100 };
                 
                 const totals = { rest: 0, joy: 0, coffee: 0, cleanliness: 0 };
-                game.dwarfs.forEach(dwarf => {
+                game.dwarfs.forEach(function(dwarf) {
                     totals.rest += dwarf.rest;
                     totals.joy += dwarf.joy;
                     totals.coffee += dwarf.coffee;
@@ -1481,9 +1036,6 @@
                     case 'infrastructure_construction':
                         this.startInfrastructureConstruction();
                         break;
-                    case 'negative_construction':
-                        this.startNegativeBuildingConstruction();
-                        break;
                 }
             }
             
@@ -1504,7 +1056,7 @@
                     this.targetX = canvas.width / 2;
                     this.targetY = 100;
                     
-                    addLog(`🚀 ${this.name} starting ${part} construction!`, true);
+                    addLog(this.name + ' starting ' + part + ' construction!', true);
                 }
             }
             
@@ -1525,9 +1077,6 @@
                 } else if (averageNeeds.cleanliness < 45 && game.gold >= 110) {
                     buildingType = 'spa';
                     cost = 110;
-                } else if (game.gold >= 140) {
-                    buildingType = 'community_center';
-                    cost = 140;
                 } else if (game.gold >= 80) {
                     buildingType = 'building';
                     cost = 80;
@@ -1543,36 +1092,11 @@
                         this.task = 'building_amenity';
                         this.amenityType = buildingType;
                         this.workTimer = 450;
-                        addLog(`🏠 ${this.name} building ${BUILDING_NAMES[buildingType] || buildingType}!`, true);
+                        addLog(this.name + ' building ' + (BUILDING_NAMES[buildingType] || buildingType) + '!', true);
                     }
                     
                     this.targetX = Math.random() * (canvas.width - 100) + 50;
                     this.targetY = Math.random() * (canvas.height - 100) + 50;
-                }
-            }
-            
-            startNegativeBuildingConstruction() {
-                const negativeTypes = ['gold_mutation_chamber', 'motion_alarm_tower', 'party_pavilion', 'unsafe_mining_rig', 'personal_gold_vault'];
-                const type = negativeTypes[Math.floor(Math.random() * negativeTypes.length)];
-                
-                const costs = {
-                    'gold_mutation_chamber': 250,
-                    'motion_alarm_tower': 180,
-                    'party_pavilion': 300,
-                    'unsafe_mining_rig': 150,
-                    'personal_gold_vault': 220
-                };
-                
-                const cost = costs[type];
-                if (game.gold >= cost) {
-                    game.gold -= cost;
-                    this.task = 'building_negative';
-                    this.negativeType = type;
-                    this.workTimer = 600;
-                    this.targetX = Math.random() * (canvas.width - 100) + 50;
-                    this.targetY = Math.random() * (canvas.height - 100) + 50;
-                    
-                    addLog(`⚠️ ${this.name} building something suspicious...`, true, 'disaster');
                 }
             }
             
@@ -1592,7 +1116,6 @@
                         break;
                     case 'building_structure':
                     case 'building_amenity':
-                    case 'building_negative':
                         this.buildStructure();
                         break;
                     case 'seeking_rest':
@@ -1622,7 +1145,7 @@
                         this.workTimer = 30;
                         
                         if (Math.random() < 0.1) {
-                            addLog(`🍓 ${this.name} feels satisfied after eating`, false);
+                            addLog(this.name + ' feels satisfied after eating', false);
                         }
                     }
                 } else if (nearbyFood) {
@@ -1644,7 +1167,7 @@
                         this.workTimer = 30;
                         
                         if (Math.random() < 0.1) {
-                            addLog(`💧 ${this.name} feels refreshed after drinking`, false);
+                            addLog(this.name + ' feels refreshed after drinking', false);
                         }
                     }
                 } else if (nearbyWater) {
@@ -1683,7 +1206,7 @@
                         if (part.progress >= 1) {
                             part.built = true;
                             part.building = false;
-                            addLog(`🚀 ${this.rocketPart.toUpperCase()} completed by ${this.name}!`, true, 'success');
+                            addLog(this.rocketPart.toUpperCase() + ' completed by ' + this.name + '!', true, 'success');
                             this.task = 'idle';
                         }
                     }
@@ -1703,18 +1226,7 @@
                                 amenityType: this.amenityType
                             };
                             game.buildings.push(newBuilding);
-                            addLog(`🏠 ${BUILDING_NAMES[this.amenityType] || this.amenityType} completed!`, true, 'success');
-                            
-                        } else if (this.task === 'building_negative') {
-                            const newBuilding = {
-                                x: this.targetX,
-                                y: this.targetY,
-                                type: this.negativeType,
-                                timer: 0
-                            };
-                            game.negativeBuildings.push(newBuilding);
-                            addLog(`⚠️ Suspicious building completed by ${this.name}!`, true, 'disaster');
-                            
+                            addLog((BUILDING_NAMES[this.amenityType] || this.amenityType) + ' completed!', true, 'success');
                         } else {
                             const newBuilding = {
                                 x: this.targetX,
@@ -1722,22 +1234,21 @@
                                 type: 'building'
                             };
                             game.buildings.push(newBuilding);
-                            addLog(`🏢 Building completed by ${this.name}!`, true, 'success');
+                            addLog('Building completed by ' + this.name + '!', true, 'success');
                         }
                         
                         this.task = 'idle';
                         this.workTimer = 0;
                         this.amenityType = null;
-                        this.negativeType = null;
                     }
                 }
             }
             
             useAmenity() {
                 const amenityType = this.getAmenityTypeForTask();
-                const suitableBuildings = game.buildings.filter(b => 
-                    b.type === 'amenity' && b.amenityType === amenityType
-                );
+                const suitableBuildings = game.buildings.filter(function(b) {
+                    return b.type === 'amenity' && b.amenityType === amenityType;
+                });
                 
                 if (suitableBuildings.length > 0) {
                     const nearest = this.findNearestResource(suitableBuildings);
@@ -1829,7 +1340,8 @@
                 let nearest = resources[0];
                 let minDistance = this.distanceTo(nearest);
                 
-                for (let resource of resources) {
+                for (let i = 0; i < resources.length; i++) {
+                    const resource = resources[i];
                     const distance = this.distanceTo(resource);
                     if (distance < minDistance) {
                         nearest = resource;
@@ -1859,7 +1371,7 @@
                 );
                 
                 game.dwarfs.push(baby);
-                addLog(`👶 ${this.name} gave birth to ${baby.name}!`, true, 'success');
+                addLog(this.name + ' gave birth to ' + baby.name + '!', true, 'success');
             }
             
             draw() {
@@ -1888,7 +1400,7 @@
                     ctx.lineWidth = 1;
                 }
                 
-                // Try to draw sprite first, fall back if needed
+                // Try to draw sprite first
                 const spriteDrawn = drawSprite(ctx, this.getSpriteId(), this.x, this.y, 2);
                 
                 if (!spriteDrawn) {
@@ -1901,13 +1413,9 @@
                     
                     const bodySize = this.isAdult ? 8 : 5;
                     
-                    // Add personality state visual effects
                     if (this.personalityState === 'panicking') {
                         ctx.shadowColor = '#FF0000';
                         ctx.shadowBlur = 10;
-                    } else if (this.personalityState === 'creative_burst') {
-                        ctx.shadowColor = '#FF00FF';
-                        ctx.shadowBlur = 5;
                     }
                     
                     ctx.fillRect(this.x - bodySize, this.y - bodySize, bodySize * 2, bodySize * 2);
@@ -1967,13 +1475,13 @@
                 // Need bars
                 this.drawNeedBars();
                 
-                // Name and task indicator
+                // Name and task
                 ctx.fillStyle = '#FFFFFF';
                 ctx.font = '8px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText(this.name, this.x, this.y - 20);
+                ctx.fillText(this.name, this.x, this.y - 25);
                 
-                // Task indicator emoji
+                // Task indicator
                 const taskEmojis = {
                     'panicking': '😰',
                     'fleeing': '🏃',
@@ -1997,7 +1505,7 @@
             drawNeedBars() {
                 const barWidth = 12;
                 const barHeight = 2;
-                const startY = this.y - 25;
+                const startY = this.y - 30;
                 
                 // Hunger (red)
                 ctx.fillStyle = this.hunger < 20 ? '#FF0000' : '#FF4444';
@@ -2044,7 +1552,6 @@
                 return false;
             }
             
-            // Disable anti-aliasing for crisp pixel art
             ctx.imageSmoothingEnabled = false;
             
             console.log('Canvas initialized successfully:', canvas.width, 'x', canvas.height);
@@ -2063,7 +1570,6 @@
             canvas.style.width = canvas.width + 'px';
             canvas.style.height = canvas.height + 'px';
             
-            // Re-disable anti-aliasing after resize
             if (ctx) {
                 ctx.imageSmoothingEnabled = false;
             }
@@ -2087,7 +1593,7 @@
                 game.dwarfs.push(newDwarf);
             }
             
-            addLog('🌟 Three dwarfs have arrived to start the colony!', true);
+            addLog('Three dwarfs have arrived to start the colony!', true);
             console.log('Dwarf initialization complete. Total dwarfs:', game.dwarfs.length);
         }
 
@@ -2139,7 +1645,7 @@
             }
         }
 
-        // Enhanced drawing functions with sprites
+        // Drawing functions with sprites
         function drawBackground() {
             ctx.fillStyle = '#0f0f23';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -2149,12 +1655,12 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
             
-            // Draw some medieval ground tiles randomly
+            // Draw medieval ground tiles
             for (let i = 0; i < 20; i++) {
                 const x = (i * 47) % canvas.width;
                 const y = Math.floor((i * 47) / canvas.width) * 24 + 10;
                 if (y < canvas.height) {
-                    drawSprite(ctx, 19, x, y, 1.5); // Cave ground
+                    drawSprite(ctx, 19, x, y, 1.5);
                 }
             }
         }
@@ -2164,7 +1670,7 @@
                 const x = (game.time * 0.01 + i * 123) % canvas.width;
                 const y = (game.time * 0.005 + i * 456) % canvas.height;
                 
-                drawSprite(ctx, 17 + (i % 2), x, y, 1); // Star sprites
+                drawSprite(ctx, 17 + (i % 2), x, y, 1);
             }
         }
 
@@ -2174,7 +1680,6 @@
             ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, Math.PI * 2);
             ctx.fill();
             
-            // Draw a medieval castle in the center
             drawSprite(ctx, SPRITE_MAP.castle, canvas.width / 2, canvas.height / 2, 3);
         }
 
@@ -2191,7 +1696,6 @@
                 const rocketX = canvas.width / 2 - 30;
                 const rocketY = 70;
                 
-                // Draw construction site with medieval sprites
                 drawSprite(ctx, SPRITE_MAP.tower, rocketX + 30, rocketY + 30, 4);
                 
                 ctx.strokeStyle = '#FF6B6B';
@@ -2202,18 +1706,15 @@
         }
 
         function drawFoodSource(source) {
-            // Use flower sprite for food source
             const spriteDrawn = drawSprite(ctx, SPRITE_MAP.food_source, source.x, source.y, 2);
             
             if (!spriteDrawn) {
-                // Fallback
                 ctx.fillStyle = source.amount > 15 ? '#228B22' : '#8B4513';
                 ctx.beginPath();
                 ctx.arc(source.x, source.y, 12, 0, Math.PI * 2);
                 ctx.fill();
             }
             
-            // Amount text
             ctx.fillStyle = '#FFFFFF';
             ctx.font = '10px Arial';
             ctx.textAlign = 'center';
@@ -2222,18 +1723,15 @@
         }
 
         function drawWaterSource(source) {
-            // Use well sprite for water source
             const spriteDrawn = drawSprite(ctx, SPRITE_MAP.water_well, source.x, source.y, 2);
             
             if (!spriteDrawn) {
-                // Fallback
                 ctx.fillStyle = source.amount > 30 ? '#1E90FF' : '#4682B4';
                 ctx.beginPath();
                 ctx.arc(source.x, source.y, 15, 0, Math.PI * 2);
                 ctx.fill();
             }
             
-            // Amount text
             ctx.fillStyle = '#FFFFFF';
             ctx.font = '10px Arial';
             ctx.textAlign = 'center';
@@ -2242,11 +1740,9 @@
         }
 
         function drawGoldDeposit(deposit) {
-            // Use chest sprite for gold deposit
             const spriteDrawn = drawSprite(ctx, SPRITE_MAP.gold_chest, deposit.x, deposit.y, 2);
             
             if (!spriteDrawn) {
-                // Fallback with sparkle effect
                 ctx.shadowColor = '#FFD700';
                 ctx.shadowBlur = 10;
                 ctx.fillStyle = '#FFD700';
@@ -2256,7 +1752,6 @@
                 ctx.shadowBlur = 0;
             }
             
-            // Amount text
             ctx.fillStyle = '#FFD700';
             ctx.font = '12px Arial';
             ctx.textAlign = 'center';
@@ -2265,7 +1760,7 @@
         }
 
         function drawBuilding(building) {
-            let spriteId = SPRITE_MAP.house; // Default
+            let spriteId = SPRITE_MAP.house;
             
             if (building.type === 'amenity') {
                 switch (building.amenityType) {
@@ -2285,18 +1780,7 @@
             const spriteDrawn = drawSprite(ctx, spriteId, building.x, building.y, 3);
             
             if (!spriteDrawn) {
-                // Fallback drawing
                 ctx.fillStyle = '#4682B4';
-                ctx.fillRect(building.x - 15, building.y - 15, 30, 25);
-            }
-        }
-
-        function drawNegativeBuilding(building) {
-            const spriteDrawn = drawSprite(ctx, SPRITE_MAP.negative_building, building.x, building.y, 3);
-            
-            if (!spriteDrawn) {
-                // Fallback
-                ctx.fillStyle = '#8B0000';
                 ctx.fillRect(building.x - 15, building.y - 15, 30, 25);
             }
         }
@@ -2311,7 +1795,6 @@
             drawStars();
             drawColonyCenter();
             
-            // Draw all game objects
             if (game.goldDeposits && game.goldDeposits.length > 0) {
                 game.goldDeposits.forEach(drawGoldDeposit);
             }
@@ -2328,11 +1811,6 @@
                 game.buildings.forEach(drawBuilding);
             }
             
-            if (game.negativeBuildings && game.negativeBuildings.length > 0) {
-                game.negativeBuildings.forEach(drawNegativeBuilding);
-            }
-            
-            // Draw dwarfs
             game.dwarfs.forEach(function(dwarf) {
                 if (dwarf && typeof dwarf.draw === 'function') {
                     dwarf.draw();
@@ -2342,7 +1820,7 @@
             drawRocketConstruction();
         }
 
-        // Game update and other functions
+        // Game update
         function updateGame() {
             if (game.dwarfs && game.dwarfs.length > 0) {
                 game.dwarfs.forEach(function(dwarf) {
@@ -2356,7 +1834,7 @@
             updateGoldDeposits();
             
             // Spawn new dwarfs occasionally
-            const adultDwarfs = game.dwarfs.filter(d => d.isAdult).length;
+            const adultDwarfs = game.dwarfs.filter(function(d) { return d.isAdult; }).length;
             const totalBuildings = game.buildings.length;
             
             if (totalBuildings >= adultDwarfs && 
@@ -2367,7 +1845,7 @@
                 const newY = Math.max(50, Math.min(canvas.height - 50, canvas.height / 2));
                 
                 game.dwarfs.push(new Dwarf(newX, newY));
-                addLog('👤 New dwarf joined the colony seeking work!', false);
+                addLog('New dwarf joined the colony seeking work!', false);
             }
             
             checkMilestones();
@@ -2387,7 +1865,7 @@
             if (!game.foodSources) game.foodSources = [];
             if (!game.waterSources) game.waterSources = [];
             
-            game.foodSources.forEach(source => {
+            game.foodSources.forEach(function(source) {
                 if (source.amount < source.maxAmount) {
                     source.regrowTimer++;
                     if (source.regrowTimer > 45) {
@@ -2397,7 +1875,7 @@
                 }
             });
             
-            game.waterSources.forEach(source => {
+            game.waterSources.forEach(function(source) {
                 if (source.amount < source.maxAmount) {
                     source.regrowTimer++;
                     if (source.regrowTimer > 30) {
@@ -2426,31 +1904,31 @@
             if (game.goldDeposits && game.goldDeposits.length < 3 && Math.random() < 0.02) {
                 createGoldDeposit();
                 if (Math.random() < 0.3) {
-                    addLog('✨ New gold deposit discovered!', false);
+                    addLog('New gold deposit discovered!', false);
                 }
             }
             
-            game.goldDeposits = game.goldDeposits.filter(deposit => deposit.gold > 0.1);
+            game.goldDeposits = game.goldDeposits.filter(function(deposit) { return deposit.gold > 0.1; });
         }
 
         function checkMilestones() {
             if (!game.milestones.hundredGold && game.gold >= 100) {
                 game.milestones.hundredGold = true;
-                addLog('💰 First 100 gold collected!', true);
+                addLog('First 100 gold collected!', true);
             }
             if (!game.milestones.thousandGold && game.gold >= 1000) {
                 game.milestones.thousandGold = true;
-                addLog('💎 1000 gold milestone reached!', true);
+                addLog('1000 gold milestone reached!', true);
             }
             
             if (!game.milestones.firstBuilding && game.buildings.length >= 1) {
                 game.milestones.firstBuilding = true;
-                addLog('🏠 First building constructed!', true);
+                addLog('First building constructed!', true);
             }
             
-            if (!game.milestones.firstAmenity && game.buildings.filter(b => b.type === 'amenity').length >= 1) {
+            if (!game.milestones.firstAmenity && game.buildings.filter(function(b) { return b.type === 'amenity'; }).length >= 1) {
                 game.milestones.firstAmenity = true;
-                addLog('🛏️ First amenity building completed!', true);
+                addLog('First amenity building completed!', true);
             }
             
             let allPartsBuilt = true;
@@ -2463,7 +1941,7 @@
             
             if (allPartsBuilt && !game.milestones.rocketComplete) {
                 game.milestones.rocketComplete = true;
-                addLog('🚀 ROCKET COMPLETED! Victory achieved!', true, 'success');
+                addLog('ROCKET COMPLETED! Victory achieved!', true, 'success');
             }
         }
 
@@ -2476,7 +1954,7 @@
                 motionFlash = 20;
                 stabilityLevel = Math.max(0, stabilityLevel - (intensity * 3));
                 
-                addLog('📳 Motion detected! Intensity: ' + intensity.toFixed(2), true, 'disaster');
+                addLog('Motion detected! Intensity: ' + intensity.toFixed(2), true, 'disaster');
                 
                 if (Math.random() < 0.1) {
                     destroyRandomThing();
@@ -2491,10 +1969,6 @@
                 const y = accel.y || 0;
                 const z = accel.z || 0;
                 
-                currentAccelX = x;
-                currentAccelY = y;
-                currentAccelZ = z;
-                
                 const intensity = Math.sqrt(x * x + y * y + z * z);
                 handleMotionDamage(intensity);
             }
@@ -2505,7 +1979,6 @@
             
             if (game.dwarfs.length > 1) targets.push('dwarf');
             if (game.buildings.length > 0) targets.push('building');
-            if (game.negativeBuildings.length > 0) targets.push('negative_building');
             if (game.goldDeposits.length > 0) targets.push('deposit');
             if (game.foodSources.length > 1) targets.push('food');
             if (game.waterSources.length > 1) targets.push('water');
@@ -2520,7 +1993,7 @@
                         let mostVulnerable = game.dwarfs[0];
                         let highestVulnerability = 0;
                         
-                        game.dwarfs.forEach(dwarf => {
+                        game.dwarfs.forEach(function(dwarf) {
                             const vulnerability = dwarf.personality.neuroticism + 
                                                  (100 - Math.min(dwarf.hunger, dwarf.thirst));
                             if (vulnerability > highestVulnerability) {
@@ -2532,7 +2005,7 @@
                         const index = game.dwarfs.indexOf(mostVulnerable);
                         if (index > 0) {
                             const removedDwarf = game.dwarfs.splice(index, 1)[0];
-                            addLog('💀 ' + removedDwarf.name + ' was overwhelmed by the chaos!', true, 'disaster');
+                            addLog(removedDwarf.name + ' was overwhelmed by the chaos!', true, 'disaster');
                             return true;
                         }
                     }
@@ -2540,35 +2013,28 @@
                 case 'building':
                     if (game.buildings.length > 0) {
                         game.buildings.pop();
-                        addLog('🏠 A building collapsed from instability!', false, 'disaster');
-                        return true;
-                    }
-                    break;
-                case 'negative_building':
-                    if (game.negativeBuildings.length > 0) {
-                        const destroyed = game.negativeBuildings.pop();
-                        addLog('💥 Negative building destroyed by instability!', true);
+                        addLog('A building collapsed from instability!', false, 'disaster');
                         return true;
                     }
                     break;
                 case 'deposit':
                     if (game.goldDeposits.length > 0) {
                         game.goldDeposits.pop();
-                        addLog('✨ A gold deposit was scattered by motion!', false, 'disaster');
+                        addLog('A gold deposit was scattered by motion!', false, 'disaster');
                         return true;
                     }
                     break;
                 case 'food':
                     if (game.foodSources.length > 1) {
                         game.foodSources.pop();
-                        addLog('🍓 Berry bush destroyed by instability!', false, 'disaster');
+                        addLog('Berry bush destroyed by instability!', false, 'disaster');
                         return true;
                     }
                     break;
                 case 'water':
                     if (game.waterSources.length > 1) {
                         game.waterSources.pop();
-                        addLog('💧 Water spring dried up from the chaos!', false, 'disaster');
+                        addLog('Water spring dried up from the chaos!', false, 'disaster');
                         return true;
                     }
                     break;
@@ -2576,45 +2042,390 @@
             return false;
         }
 
-        async function requestPermissioniOS() {
-            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                try {
-                    const permission = await DeviceOrientationEvent.requestPermission();
-                    return permission === 'granted';
-                } catch (error) {
-                    console.error('Error requesting permission:', error);
-                    return false;
+        function requestPermissioniOS() {
+            return new Promise(function(resolve, reject) {
+                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    DeviceOrientationEvent.requestPermission().then(function(permission) {
+                        resolve(permission === 'granted');
+                    }).catch(function(error) {
+                        console.error('Error requesting permission:', error);
+                        resolve(false);
+                    });
+                } else {
+                    resolve(true);
                 }
-            }
-            return true;
+            });
         }
 
-        async function enableAccelerometer() {
+        function enableAccelerometer() {
             const statusDiv = document.getElementById('motionStatus');
-            statusDiv.textContent = '🔄 Requesting permissions...';
+            statusDiv.textContent = 'Requesting permissions...';
             
-            try {
-                const hasPermission = await requestPermissioniOS();
-                
+            requestPermissioniOS().then(function(hasPermission) {
                 if (!hasPermission) {
-                    statusDiv.textContent = '❌ Permission denied. Enable in Safari settings.';
+                    statusDiv.textContent = 'Permission denied. Enable in Safari settings.';
                     statusDiv.className = 'motion-status inactive';
                     return;
                 }
                 
-                if (!window.DeviceMotionEvent && !window.DeviceOrientationEvent) {
-                    statusDiv.textContent = '❌ Motion sensors not supported on this device.';
+                if (!window.DeviceMotionEvent) {
+                    statusDiv.textContent = 'Motion sensors not supported on this device.';
                     statusDiv.className = 'motion-status inactive';
                     return;
                 }
                 
-                if (window.DeviceMotionEvent) {
-                    window.addEventListener('devicemotion', handleAccelerometerMotion);
-                }
+                window.addEventListener('devicemotion', handleAccelerometerMotion);
                 
-                isAccelerometerEnabled = true;
                 isTracking = true;
-                statusDiv.textContent = '✅ Motion detection active - Keep device steady!';
+                statusDiv.textContent = 'Motion detection active - Keep device steady!';
                 statusDiv.className = 'motion-status active';
                 
-                addLog('
+                addLog('Motion detection enabled!', true);
+                addLog('Keep device steady to protect your colony!', true);
+            }).catch(function(error) {
+                console.error('Error enabling accelerometer:', error);
+                statusDiv.textContent = 'Failed to enable motion detection.';
+                statusDiv.className = 'motion-status inactive';
+            });
+        }
+
+        function updateStability() {
+            if (isTracking) {
+                stabilityLevel = Math.min(100, stabilityLevel + 0.05);
+            }
+            
+            if (motionFlash > 0) motionFlash--;
+            
+            const stabilityBar = document.getElementById('stabilityBar');
+            const stabilityText = document.getElementById('stabilityText');
+            
+            stabilityBar.style.width = stabilityLevel + '%';
+            
+            const motionText = 'Motion: ' + lastMotionIntensity.toFixed(1);
+            
+            if (stabilityLevel > 75) {
+                stabilityBar.className = 'stability-bar stability-high';
+                stabilityText.textContent = 'Stable (' + motionText + ')';
+            } else if (stabilityLevel > 50) {
+                stabilityBar.className = 'stability-bar stability-medium';
+                stabilityText.textContent = 'Unstable (' + motionText + ')';
+            } else if (stabilityLevel > 25) {
+                stabilityBar.className = 'stability-bar stability-low';
+                stabilityText.textContent = 'Dangerous (' + motionText + ')';
+            } else {
+                stabilityBar.className = 'stability-bar stability-critical';
+                stabilityText.textContent = 'Critical! (' + motionText + ')';
+            }
+        }
+
+        // UI Functions
+        function addLog(message, important, type) {
+            const logDiv = document.getElementById('log');
+            const cleanMessage = message.replace(/^[A-Za-z_0-9]+\s+(chose:|is|feels|couldn't|needs|had|learned|made|was)/, 'dwarf $1');
+            
+            if (!important && messageTracker.isDuplicate(cleanMessage)) {
+                if (messageTracker.updateCounter(cleanMessage)) {
+                    return;
+                }
+            }
+            
+            const entry = document.createElement('div');
+            
+            if (important) {
+                entry.className = 'log-entry important';
+            } else if (type === 'disaster') {
+                entry.className = 'log-entry disaster';
+            } else if (type === 'success') {
+                entry.className = 'log-entry success';
+            } else {
+                entry.className = 'log-entry';
+            }
+            
+            const timeStr = '[' + Math.floor(game.time / 60) + 's]';
+            entry.textContent = timeStr + ' ' + message;
+            
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            if (!important) {
+                messageTracker.addMessage(cleanMessage, entry, type);
+            }
+            
+            while (logDiv.children.length > 25) {
+                const removedElement = logDiv.children[1];
+                
+                for (let [msg, data] of messageTracker.recentMessages) {
+                    if (data.element === removedElement) {
+                        messageTracker.recentMessages.delete(msg);
+                        break;
+                    }
+                }
+                
+                logDiv.removeChild(removedElement);
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('goldCount').textContent = Math.floor(game.gold);
+            
+            const adults = game.dwarfs.filter(function(d) { return d.isAdult; });
+            const children = game.dwarfs.filter(function(d) { return !d.isAdult; });
+            const males = adults.filter(function(d) { return d.gender === 'male'; });
+            const females = adults.filter(function(d) { return d.gender === 'female'; });
+            const pregnant = females.filter(function(f) { return f.isPregnant; });
+            
+            const orangeMales = males.filter(function(m) { return m.reproductionStrategy === 'orange'; }).length;
+            const blueMales = males.filter(function(m) { return m.reproductionStrategy === 'blue'; }).length;
+            const yellowMales = males.filter(function(m) { return m.reproductionStrategy === 'yellow'; }).length;
+            
+            let populationText = game.dwarfs.length.toString();
+            if (adults.length > 0) {
+                populationText += ' (' + adults.length + 'A';
+                if (children.length > 0) populationText += ', ' + children.length + 'C';
+                if (pregnant.length > 0) populationText += ', ' + pregnant.length + 'P';
+                populationText += ')';
+            }
+            
+            if (males.length > 0) {
+                populationText += ' [O' + orangeMales + ' B' + blueMales + ' Y' + yellowMales + ']';
+            }
+            
+            document.getElementById('dwarfsCount').textContent = populationText;
+            
+            if (game.dwarfs.length > 0) {
+                const totals = {
+                    hunger: 0, thirst: 0, rest: 0, joy: 0, coffee: 0, cleanliness: 0
+                };
+                
+                game.dwarfs.forEach(function(dwarf) {
+                    totals.hunger += dwarf.hunger;
+                    totals.thirst += dwarf.thirst;
+                    totals.rest += dwarf.rest;
+                    totals.joy += dwarf.joy;
+                    totals.coffee += dwarf.coffee;
+                    totals.cleanliness += dwarf.cleanliness;
+                });
+                
+                const count = game.dwarfs.length;
+                
+                document.getElementById('avgHunger').textContent = Math.floor(totals.hunger / count);
+                document.getElementById('avgThirst').textContent = Math.floor(totals.thirst / count);
+                document.getElementById('avgRest').textContent = Math.floor(totals.rest / count);
+                document.getElementById('avgJoy').textContent = Math.floor(totals.joy / count);
+                document.getElementById('avgCoffee').textContent = Math.floor(totals.coffee / count);
+                document.getElementById('avgClean').textContent = Math.floor(totals.cleanliness / count);
+            }
+            
+            const amenityBuildings = game.buildings.filter(function(b) { return b.type === 'amenity'; }).length;
+            const regularBuildings = game.buildings.filter(function(b) { return b.type !== 'amenity'; }).length;
+            
+            document.getElementById('machinesCount').textContent = amenityBuildings;
+            document.getElementById('buildingsCount').textContent = regularBuildings;
+            document.getElementById('goldPerSec').textContent = game.goldPerSecond.toFixed(1);
+            
+            updateRocketProgress();
+        }
+
+        function updateRocketProgress() {
+            const totalParts = Object.keys(game.rocketParts).length;
+            let completedParts = 0;
+            for (let part in game.rocketParts) {
+                if (game.rocketParts[part].built) completedParts++;
+            }
+            const overallProgress = (completedParts / totalParts) * 100;
+            
+            document.getElementById('overallProgress').style.width = overallProgress + '%';
+            
+            let progressText = 'Planning phase...';
+            if (overallProgress === 100) progressText = 'READY FOR LAUNCH!';
+            else if (overallProgress > 80) progressText = 'Final assembly...';
+            else if (overallProgress > 60) progressText = 'Major construction...';
+            else if (overallProgress > 40) progressText = 'Building components...';
+            else if (overallProgress > 20) progressText = 'Foundation work...';
+            else if (overallProgress > 0) progressText = 'Starting construction...';
+            
+            document.getElementById('progressText').textContent = progressText;
+            
+            const partNames = ['engine', 'fuel', 'hull', 'navigation', 'launchpad'];
+            const partIcons = ['🔥', '⛽', '🛡️', '📡', '🚿'];
+            
+            for (let i = 0; i < partNames.length; i++) {
+                const partName = partNames[i];
+                const partData = game.rocketParts[partName];
+                const element = document.getElementById(partName);
+                const icon = partIcons[i];
+                const capitalName = partName.charAt(0).toUpperCase() + partName.slice(1);
+                
+                if (partData.built) {
+                    element.className = 'rocket-part completed';
+                    element.textContent = icon + ' ' + capitalName + ': ✅ Complete';
+                } else if (partData.building) {
+                    element.className = 'rocket-part building';
+                    element.textContent = icon + ' ' + capitalName + ': 🔨 Building... ' + Math.floor(partData.progress * 100) + '%';
+                } else if (game.gold >= partData.cost) {
+                    element.className = 'rocket-part';
+                    element.textContent = icon + ' ' + capitalName + ': 💰 Ready (' + partData.cost + ' gold)';
+                } else {
+                    element.className = 'rocket-part';
+                    element.textContent = icon + ' ' + capitalName + ': ⏳ Need ' + partData.cost + ' gold';
+                }
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            try {
+                updateGame();
+                renderGame();
+                updateUI();
+                updateStability();
+                
+                game.time++;
+                requestAnimationFrame(gameLoop);
+                
+            } catch (error) {
+                console.error('Game loop error:', error);
+                addLog('Game loop error: ' + error.message, true, 'disaster');
+            }
+        }
+
+        // Initialize and start the game
+        function initializeGame() {
+            console.log('Starting medieval dwarf colony...');
+            
+            if (!initializeCanvas()) {
+                console.error('Failed to initialize canvas!');
+                return;
+            }
+            
+            resizeCanvas();
+            
+            // Load sprites first
+            loadSpriteSheet();
+            
+            setTimeout(function() {
+                initDwarfs();
+                initFoodAndWaterSources();
+                initializeGoldDeposits();
+                
+                addLog('Medieval Dwarf Colony Complete Edition started!', true);
+                addLog('Beautiful pixel art sprites + complex AI behaviors!', true);
+                addLog('Goal: Build a rocket using medieval technology!', true);
+                addLog('REPRODUCTION SYSTEM: Orange=Territorial, Blue=Guard, Yellow=Sneaky', true);
+                addLog('MATURITY: Children must mature before working (30 sec)', false);
+                addLog('PREGNANCY: 60-second pregnancy timer with birth mechanics', false);
+                addLog('PERSONALITY: Big Five traits affect all behavior and decisions', false);
+                addLog('PANIC STATES: Motion causes high-neuroticism dwarfs to panic', false);
+                addLog('SMART AI: Priority system - Survival > Rocket > Infrastructure > Amenities', false);
+                addLog('BUILDINGS: Amenities restore needs, buildings provide infrastructure', false);
+                addLog('MOTION DETECTION: Keep device steady or face consequences!', true);
+                
+                gameLoop();
+            }, 200);
+            
+            setTimeout(function() {
+                enableAccelerometer();
+            }, 1500);
+        }
+
+        // Event listeners
+        window.addEventListener('load', function() {
+            console.log('Page loaded, initializing medieval game...');
+            initializeGame();
+        });
+
+        window.addEventListener('orientationchange', function() {
+            setTimeout(resizeCanvas, 100);
+        });
+
+        window.addEventListener('resize', function() {
+            setTimeout(resizeCanvas, 100);
+        });
+
+        // Debug commands
+        window.debugCommands = {
+            spawnDwarf: function() {
+                if (!canvas || !ctx) return null;
+                const x = canvas.width / 2 + Math.random() * 100 - 50;
+                const y = canvas.height / 2 + Math.random() * 100 - 50;
+                const newDwarf = new Dwarf(x, y);
+                game.dwarfs.push(newDwarf);
+                addLog('DEBUG: Spawned ' + newDwarf.name + ' (' + newDwarf.gender + ', ' + (newDwarf.reproductionStrategy || 'female') + ')', true);
+                return newDwarf;
+            },
+            
+            showPersonalities: function() {
+                console.log('PERSONALITY ANALYSIS:');
+                game.dwarfs.forEach(function(dwarf, i) {
+                    const p = dwarf.personality;
+                    console.log(i + ': ' + dwarf.name + ' (' + dwarf.gender + (dwarf.reproductionStrategy ? ', ' + dwarf.reproductionStrategy : '') + ')');
+                    console.log('  State: ' + dwarf.personalityState + ' | Task: ' + dwarf.task);
+                    console.log('  O:' + Math.floor(p.openness) + ' C:' + Math.floor(p.conscientiousness) + ' E:' + Math.floor(p.extraversion) + ' A:' + Math.floor(p.agreeableness) + ' N:' + Math.floor(p.neuroticism));
+                    if (dwarf.isPregnant) console.log('  Pregnant: ' + Math.floor(dwarf.pregnancyTimer/36) + '% complete');
+                    if (!dwarf.isAdult) console.log('  Child: ' + Math.floor(dwarf.maturityTimer/18) + '% mature');
+                });
+                return game.dwarfs.map(function(d) {
+                    return { 
+                        name: d.name, 
+                        gender: d.gender, 
+                        strategy: d.reproductionStrategy, 
+                        state: d.personalityState,
+                        personality: d.personality
+                    };
+                });
+            },
+            
+            triggerMotion: function() {
+                handleMotionDamage(15);
+                addLog('DEBUG: Simulated strong motion event', true, 'disaster');
+                return 'Motion event triggered';
+            },
+            
+            forcePregnancy: function() {
+                const females = game.dwarfs.filter(function(d) { return d.gender === 'female' && d.isAdult && !d.isPregnant; });
+                if (females.length > 0) {
+                    const female = females[0];
+                    female.isPregnant = true;
+                    female.pregnancyTimer = 0;
+                    addLog('DEBUG: ' + female.name + ' is now pregnant', true, 'success');
+                    return female;
+                }
+                return 'No available females';
+            },
+            
+            showStats: function() {
+                const adults = game.dwarfs.filter(function(d) { return d.isAdult; });
+                const children = game.dwarfs.filter(function(d) { return !d.isAdult; });
+                const pregnant = game.dwarfs.filter(function(d) { return d.isPregnant; });
+                const males = adults.filter(function(d) { return d.gender === 'male'; });
+                
+                console.log('COLONY STATISTICS:');
+                console.log('Total Population: ' + game.dwarfs.length + ' (' + adults.length + ' adults, ' + children.length + ' children)');
+                console.log('Pregnant: ' + pregnant.length);
+                console.log('Males: ' + males.length + ' (O' + males.filter(function(m) { return m.reproductionStrategy === 'orange'; }).length + ' B' + males.filter(function(m) { return m.reproductionStrategy === 'blue'; }).length + ' Y' + males.filter(function(m) { return m.reproductionStrategy === 'yellow'; }).length + ')');
+                console.log('Buildings: ' + game.buildings.length + ' (' + game.buildings.filter(function(b) { return b.type === 'amenity'; }).length + ' amenities)');
+                console.log('Gold: ' + Math.floor(game.gold) + ' (' + game.goldPerSecond.toFixed(1) + '/sec)');
+                console.log('Rocket Parts: ' + Object.values(game.rocketParts).filter(function(p) { return p.built; }).length + '/5 complete');
+                
+                return {
+                    population: game.dwarfs.length,
+                    adults: adults.length,
+                    children: children.length,
+                    pregnant: pregnant.length,
+                    buildings: game.buildings.length,
+                    gold: game.gold,
+                    rocketParts: Object.values(game.rocketParts).filter(function(p) { return p.built; }).length
+                };
+            }
+        };
+
+        // Make some functions globally available for debugging
+        window.game = game;
+        window.Dwarf = Dwarf;
+        window.drawSprite = drawSprite;
+        
+        console.log('Medieval Dwarf Colony Complete Edition loaded!');
+        console.log('Debug commands available: debugCommands.spawnDwarf(), showPersonalities(), triggerMotion(), forcePregnancy(), showStats()');
+    </script>
+</body>
+</html>
