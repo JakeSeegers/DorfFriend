@@ -1,6 +1,6 @@
-// Complete Dwarf class implementation
+// Complete dworf class implementation
 
-class Dwarf {
+class dworf {
     constructor(x, y, name = null, isAdult = true) {
         this.x = x;
         this.y = y;
@@ -226,11 +226,11 @@ class Dwarf {
         if (game.dworfs.length === 0) return { rest: 100, joy: 100, coffee: 100, cleanliness: 100 };
         
         const totals = { rest: 0, joy: 0, coffee: 0, cleanliness: 0 };
-        game.dworfs.forEach(dwarf => {
-            totals.rest += dwarf.rest;
-            totals.joy += dwarf.joy;
-            totals.coffee += dwarf.coffee;
-            totals.cleanliness += dwarf.cleanliness;
+        game.dworfs.forEach(dworf => {
+            totals.rest += dworf.rest;
+            totals.joy += dworf.joy;
+            totals.coffee += dworf.coffee;
+            totals.cleanliness += dworf.cleanliness;
         });
         
         const count = game.dworfs.length;
@@ -463,7 +463,7 @@ class Dwarf {
         this.pregnancyTimer = 0;
         this.reproductionCooldown = 7200; // 2 minute cooldown
         
-        const baby = new Dwarf(
+        const baby = new dworf(
             this.x + Math.random() * 40 - 20,
             this.y + Math.random() * 40 - 20,
             null,
@@ -574,4 +574,4 @@ class Dwarf {
 }
 
 // Legacy alias for compatibility
-window.Dworf = Dwarf;
+window.Dworf = dworf;
