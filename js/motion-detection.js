@@ -58,7 +58,7 @@ function handleAccelerometerOrientation(event) {
 function destroyRandomThing() {
     const targets = [];
     
-    if (game.dworfs.length > 1) targets.push('dwarf');
+    if (game.dworfs.length > 1) targets.push('dworf');
     if (game.machines.length > 0) targets.push('machine');
     if (game.buildings.length > 0) targets.push('building');
     if (game.negativeBuildings.length > 0) targets.push('negative_building');
@@ -71,25 +71,25 @@ function destroyRandomThing() {
     const target = targets[Math.floor(Math.random() * targets.length)];
     
     switch (target) {
-        case 'dwarf':
+        case 'dworf':
             if (game.dworfs.length > 1) {
-                // Neurotic dwarfs are more likely to be affected by motion stress
+                // Neurotic dworfs are more likely to be affected by motion stress
                 let mostVulnerable = game.dworfs[0];
                 let highestVulnerability = 0;
                 
-                game.dworfs.forEach(dwarf => {
-                    const vulnerability = dwarf.personality.neuroticism + 
-                                         (100 - Math.min(dwarf.hunger, dwarf.thirst));
+                game.dworfs.forEach(dworf => {
+                    const vulnerability = dworf.personality.neuroticism + 
+                                         (100 - Math.min(dworf.hunger, dworf.thirst));
                     if (vulnerability > highestVulnerability) {
                         highestVulnerability = vulnerability;
-                        mostVulnerable = dwarf;
+                        mostVulnerable = dworf;
                     }
                 });
                 
                 const index = game.dworfs.indexOf(mostVulnerable);
                 if (index > 0) {
-                    const removedDwarf = game.dworfs.splice(index, 1)[0];
-                    addLog('💀 ' + removedDwarf.name + ' was overwhelmed by the chaos!', true, 'disaster');
+                    const removeddworf = game.dworfs.splice(index, 1)[0];
+                    addLog('💀 ' + removeddworf.name + ' was overwhelmed by the chaos!', true, 'disaster');
                     return true;
                 }
             }
