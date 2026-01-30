@@ -71,8 +71,8 @@ const messageTracker = {
 function addLog(message, important, type) {
     const logDiv = document.getElementById('log');
     
-    // Clean the message for duplicate detection (remove timestamp and dwarf names for better grouping)
-    const cleanMessage = message.replace(/^[A-Za-z_0-9]+\s+(chose:|is|feels|couldn't|needs|had|learned|made|was)/, 'Dwarf $1');
+    // Clean the message for duplicate detection (remove timestamp and dworf names for better grouping)
+    const cleanMessage = message.replace(/^[A-Za-z_0-9]+\s+(chose:|is|feels|couldn't|needs|had|learned|made|was)/, 'dworf $1');
     
     // Check if this is a duplicate message within the time window
     if (!important && messageTracker.isDuplicate(cleanMessage)) {
@@ -170,32 +170,32 @@ function updateUI() {
     
     document.getElementById('dworfsCount').textContent = populationText;
     
-    // Calculate average needs across all dwarfs
+    // Calculate average needs across all dworfs
     if (game.dworfs.length > 0) {
         const totals = {
             hunger: 0, thirst: 0, rest: 0, joy: 0, coffee: 0, cleanliness: 0
         };
         
-        // Also track how many dwarfs have critical needs
+        // Also track how many dworfs have critical needs
         const criticalCounts = {
             hunger: 0, thirst: 0, rest: 0, joy: 0, coffee: 0, cleanliness: 0
         };
         
-        game.dworfs.forEach(dwarf => {
-            totals.hunger += dwarf.hunger;
-            totals.thirst += dwarf.thirst;
-            totals.rest += dwarf.rest;
-            totals.joy += dwarf.joy;
-            totals.coffee += dwarf.coffee;
-            totals.cleanliness += dwarf.cleanliness;
+        game.dworfs.forEach(dworf => {
+            totals.hunger += dworf.hunger;
+            totals.thirst += dworf.thirst;
+            totals.rest += dworf.rest;
+            totals.joy += dworf.joy;
+            totals.coffee += dworf.coffee;
+            totals.cleanliness += dworf.cleanliness;
             
             // Count critical needs
-            if (dwarf.hunger < 15) criticalCounts.hunger++;
-            if (dwarf.thirst < 15) criticalCounts.thirst++;
-            if (dwarf.rest < 15) criticalCounts.rest++;
-            if (dwarf.joy < 15) criticalCounts.joy++;
-            if (dwarf.coffee < 10) criticalCounts.coffee++;
-            if (dwarf.cleanliness < 15) criticalCounts.cleanliness++;
+            if (dworf.hunger < 15) criticalCounts.hunger++;
+            if (dworf.thirst < 15) criticalCounts.thirst++;
+            if (dworf.rest < 15) criticalCounts.rest++;
+            if (dworf.joy < 15) criticalCounts.joy++;
+            if (dworf.coffee < 10) criticalCounts.coffee++;
+            if (dworf.cleanliness < 15) criticalCounts.cleanliness++;
         });
         
         const count = game.dworfs.length;
@@ -213,7 +213,7 @@ function updateUI() {
             const element = document.getElementById(elementId);
             let displayText = Math.floor(value).toString();
             
-            // Add critical count if there are dwarfs with critical needs
+            // Add critical count if there are dworfs with critical needs
             if (criticalCount > 0) {
                 displayText += ` (${criticalCount}⚠️)`;
             }

@@ -327,30 +327,30 @@ function updateNegativeBuildings() {
                 break;
                 
             case 'motion_alarm_tower':
-                // Makes all dwarfs panic when motion detected
+                // Makes all dworfs panic when motion detected
                 if (lastMotionDetected > 0 && (Date.now() - lastMotionDetected) < 1000) {
-                    game.dworfs.forEach(dwarf => {
-                        if (dwarf.task !== 'panicking' && Math.random() < 0.7) {
-                            dwarf.task = 'panicking';
-                            dwarf.workTimer = 120;
+                    game.dworfs.forEach(dworf => {
+                        if (dworf.task !== 'panicking' && Math.random() < 0.7) {
+                            dworf.task = 'panicking';
+                            dworf.workTimer = 120;
                         }
                     });
                 }
                 break;
                 
             case 'party_pavilion':
-                // Forces all dwarfs to party every 2 minutes for 30 seconds
+                // Forces all dworfs to party every 2 minutes for 30 seconds
                 if (building.timer % 7200 === 0) {
-                    game.dworfs.forEach(dwarf => {
-                        dwarf.task = 'forced_party';
-                        dwarf.workTimer = 1800;
+                    game.dworfs.forEach(dworf => {
+                        dworf.task = 'forced_party';
+                        dworf.workTimer = 1800;
                     });
-                    addLog('🕺 MANDATORY PARTY TIME! All dwarfs must dance!', true, 'disaster');
+                    addLog('🕺 MANDATORY PARTY TIME! All dworfs must dance!', true, 'disaster');
                 }
                 break;
                 
             case 'unsafe_mining_rig':
-                // 10% chance per minute to injure a random dwarf
+                // 10% chance per minute to injure a random dworf
                 if (building.timer % 3600 === 0 && Math.random() < 0.1) {
                     const victim = game.dworfs[Math.floor(Math.random() * game.dworfs.length)];
                     victim.efficiency *= 0.5;

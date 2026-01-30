@@ -1,6 +1,6 @@
-// Complete Dwarf class with ALL original features restored
+// Complete dworf class with FIXED building system - ALL original features preserved
 
-class Dwarf {
+class dworf {
     constructor(x, y, name = null, isAdult = true) {
         this.x = x;
         this.y = y;
@@ -366,7 +366,7 @@ class Dwarf {
             return 'rocket_construction';
         }
         
-        // PRIORITY 3: Infrastructure building
+        // PRIORITY 3: Infrastructure building - FIXED LOGIC HERE
         if (this.shouldBuildInfrastructure()) {
             return 'infrastructure_construction';
         }
@@ -400,39 +400,64 @@ class Dwarf {
         return false;
     }
     
+    // FIXED: Much more permissive building logic
     shouldBuildInfrastructure() {
         if (!this.isAdult) return false;
         
+        const adultdworfs = game.dworfs.filter(d => d.isAdult).length;
+        const totalBuildings = game.buildings.length;
+        const amenityBuildings = game.buildings.filter(b => b.type === 'amenity').length;
+        
+        // FIXED: Allow 2-3 buildings per adult dworf (much more permissive)
+        const maxBuildings = adultdworfs * 3;
+        const maxAmenities = adultdworfs * 2;
+        
         const averageNeeds = this.calculateAverageNeeds();
         
-        // Prioritize essential amenities when colony needs are low
-        return (averageNeeds.rest < 40 && game.gold >= 120) || // Houses first
-               (averageNeeds.coffee < 30 && game.gold >= 130) || // Coffee shops
-               (averageNeeds.joy < 30 && game.gold >= 140) ||    // Inns
-               (averageNeeds.cleanliness < 35 && game.gold >= 150) || // Spas
-               (game.buildings.length < game.dworfs.length && game.gold >= 100); // Basic buildings
+        // PRIORITY 1: Essential amenities when colony needs are low
+        if (amenityBuildings < maxAmenities) {
+            if (averageNeeds.rest < 50 && game.gold >= 80) return 'house'; // LOWERED from 120 to 80
+            if (averageNeeds.coffee < 40 && game.gold >= 90) return 'coffee_shop'; // LOWERED from 130 to 90
+            if (averageNeeds.joy < 40 && game.gold >= 100) return 'inn'; // LOWERED from 140 to 100
+            if (averageNeeds.cleanliness < 45 && game.gold >= 110) return 'spa'; // LOWERED from 150 to 110
+        }
+        
+        // PRIORITY 2: Basic buildings if we need more infrastructure
+        if (totalBuildings < maxBuildings && game.gold >= 80) { // LOWERED from 100 to 80
+            return 'building';
+        }
+        
+        // PRIORITY 3: Luxury amenities if we have plenty of gold
+        if (game.gold >= 140 && amenityBuildings < maxAmenities) {
+            if (averageNeeds.joy < 60) return 'community_center';
+            if (averageNeeds.rest < 70) return 'gym';
+            if (game.dworfs.some(d => d.personality.openness > 70)) return 'museum';
+            if (game.dworfs.some(d => d.personality.openness > 60)) return 'library';
+        }
+        
+        return false;
     }
     
     shouldBuildNegativeBuilding() {
         if (!this.isAdult) return false;
         
-        // Only if dwarf has extreme negative personality traits
+        // Only if dworf has extreme negative personality traits
         const isExtreme = this.personality.neuroticism > 85 || 
                          this.personality.agreeableness < 15 ||
                          this.personality.conscientiousness < 10;
         
-        return isExtreme && Math.random() < 0.001 && game.gold >= 200;
+        return isExtreme && Math.random() < 0.001 && game.gold >= 150; // LOWERED from 200 to 150
     }
     
     calculateAverageNeeds() {
         if (game.dworfs.length === 0) return { rest: 100, joy: 100, coffee: 100, cleanliness: 100 };
         
         const totals = { rest: 0, joy: 0, coffee: 0, cleanliness: 0 };
-        game.dworfs.forEach(dwarf => {
-            totals.rest += dwarf.rest;
-            totals.joy += dwarf.joy;
-            totals.coffee += dwarf.coffee;
-            totals.cleanliness += dwarf.cleanliness;
+        game.dworfs.forEach(dworf => {
+            totals.rest += dworf.rest;
+            totals.joy += dworf.joy;
+            totals.coffee += dworf.coffee;
+            totals.cleanliness += dworf.cleanliness;
         });
         
         const count = game.dworfs.length;
@@ -445,11 +470,11 @@ class Dwarf {
     }
     
     getNeededAmenity() {
-        // Only seek amenities when really needed
-        if (this.rest < 20) return 'seeking_rest';
-        if (this.joy < 15) return 'seeking_joy';
-        if (this.coffee < 10) return 'seeking_coffee';
-        if (this.cleanliness < 20) return 'seeking_cleanliness';
+        // Only seek amenities when really needed - LOWERED THRESHOLDS
+        if (this.rest < 25) return 'seeking_rest'; // Was 20
+        if (this.joy < 20) return 'seeking_joy'; // Was 15
+        if (this.coffee < 15) return 'seeking_coffee'; // Was 10
+        if (this.cleanliness < 25) return 'seeking_cleanliness'; // Was 20
         return null;
     }
     
@@ -493,22 +518,28 @@ class Dwarf {
         let buildingType = null;
         let cost = 0;
         
-        // Smart building prioritization
-        if (averageNeeds.rest < 40 && game.gold >= 120) {
+        // FIXED: Lowered costs and smarter prioritization
+        if (averageNeeds.rest < 50 && game.gold >= 80) {
             buildingType = 'house';
-            cost = 120;
-        } else if (averageNeeds.coffee < 30 && game.gold >= 130) {
+            cost = 80; // LOWERED from 120
+        } else if (averageNeeds.coffee < 40 && game.gold >= 90) {
             buildingType = 'coffee_shop';
-            cost = 130;
-        } else if (averageNeeds.joy < 30 && game.gold >= 140) {
+            cost = 90; // LOWERED from 130
+        } else if (averageNeeds.joy < 40 && game.gold >= 100) {
             buildingType = 'inn';
-            cost = 140;
-        } else if (averageNeeds.cleanliness < 35 && game.gold >= 150) {
+            cost = 100; // LOWERED from 140
+        } else if (averageNeeds.cleanliness < 45 && game.gold >= 110) {
             buildingType = 'spa';
-            cost = 150;
-        } else if (game.buildings.length < game.dworfs.length && game.gold >= 100) {
+            cost = 110; // LOWERED from 150
+        } else if (game.gold >= 140) {
+            // Luxury amenities
+            if (game.gold >= 140) buildingType = 'community_center', cost = 140; // LOWERED from 160
+            else if (game.gold >= 140) buildingType = 'gym', cost = 140; // LOWERED from 180
+            else if (game.gold >= 140) buildingType = 'museum', cost = 140; // LOWERED from 200
+            else if (game.gold >= 140) buildingType = 'library', cost = 140; // LOWERED from 170
+        } else if (game.gold >= 80) {
             buildingType = 'building';
-            cost = 100;
+            cost = 80; // LOWERED from 100
         }
         
         if (buildingType && game.gold >= cost) {
@@ -521,7 +552,7 @@ class Dwarf {
                 this.task = 'building_amenity';
                 this.amenityType = buildingType;
                 this.workTimer = 450;
-                addLog(`🏠 ${this.name} building ${BUILDING_NAMES[buildingType]}!`, true);
+                addLog(`🏠 ${this.name} building ${BUILDING_NAMES[buildingType] || buildingType}!`, true);
             }
             
             this.targetX = Math.random() * (canvas.width - 100) + 50;
@@ -533,12 +564,13 @@ class Dwarf {
         const negativeTypes = ['gold_mutation_chamber', 'motion_alarm_tower', 'party_pavilion', 'unsafe_mining_rig', 'personal_gold_vault'];
         const type = negativeTypes[Math.floor(Math.random() * negativeTypes.length)];
         
+        // FIXED: Lowered costs for negative buildings
         const costs = {
-            'gold_mutation_chamber': 350,
-            'motion_alarm_tower': 250,
-            'party_pavilion': 400,
-            'unsafe_mining_rig': 200,
-            'personal_gold_vault': 300
+            'gold_mutation_chamber': 250, // LOWERED from 350
+            'motion_alarm_tower': 180,    // LOWERED from 250
+            'party_pavilion': 300,        // LOWERED from 400
+            'unsafe_mining_rig': 150,     // LOWERED from 200
+            'personal_gold_vault': 220    // LOWERED from 300
         };
         
         const cost = costs[type];
@@ -761,7 +793,7 @@ class Dwarf {
     }
     
     panic() {
-        // Panicking dwarfs move erratically
+        // Panicking dworfs move erratically
         this.targetX = this.x + Math.random() * 100 - 50;
         this.targetY = this.y + Math.random() * 100 - 50;
         
@@ -834,7 +866,7 @@ class Dwarf {
         this.pregnancyTimer = 0;
         this.reproductionCooldown = 7200; // 2 minute cooldown
         
-        const baby = new Dwarf(
+        const baby = new dworf(
             this.x + Math.random() * 40 - 20,
             this.y + Math.random() * 40 - 20,
             null,
@@ -1007,4 +1039,4 @@ class Dwarf {
 }
 
 // Legacy compatibility
-window.Dworf = Dwarf;
+window.Dworf = dworf;
